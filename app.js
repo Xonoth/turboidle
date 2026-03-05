@@ -1201,14 +1201,16 @@ function openLogin(){  netlifyIdentity?.open("login");  }
 
 // Rafraîchit le token si expiré (Identity le gère automatiquement)
 async function getValidToken(){
-  if(!currentUser) return null;
+  if(!netlifyIdentity) return null;
   try {
-    const user = await netlifyIdentity.currentUser();
-    const freshToken = user?.token?.access_token;
-    if(freshToken) authToken = freshToken;
+    // currentUser() est synchrone dans le widget Netlify Identity
+    const user = netlifyIdentity.currentUser();
+    if(user?.token?.access_token){
+      authToken = user.token.access_token;
+    }
     return authToken;
   } catch {
-    return authToken; // fallback
+    return authToken;
   }
 }
 
