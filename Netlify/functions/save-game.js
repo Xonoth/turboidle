@@ -34,15 +34,18 @@ exports.handler = async (event) => {
   // Décoder le JWT (Netlify Identity signe avec HS256, on vérifie via leur endpoint)
   let userId;
   try {
-    // Appel à l'API Identity pour valider le token et récupérer l'user
-    const identityUrl = process.env.URL + "/.netlify/identity";
+    // Netlify fournit URL (domaine principal) ou DEPLOY_URL
+    const siteUrl = process.env.URL || process.env.DEPLOY_URL;
+    if(!siteUrl) throw new Error("URL env manquante");
+    const identityUrl = `${siteUrl}/.netlify/identity`;
     const userRes = await fetch(`${identityUrl}/user`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (!userRes.ok) throw new Error("Token invalide");
+    if (!userRes.ok) throw new Error(`Identity ${userRes.status}`);
     const user = await userRes.json();
-    userId = user.id; // UUID Netlify Identity
+    userId = user.id;
   } catch (err) {
+    console.error("Auth error:", err.message);
     return { statusCode: 401, headers, body: JSON.stringify({ error: "Token invalide ou expiré" }) };
   }
 
