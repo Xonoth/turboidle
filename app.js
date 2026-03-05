@@ -1164,13 +1164,16 @@ function initIdentity(){
     authToken   = user.token?.access_token;
     netlifyIdentity.close();
     updateAuthUI();
-    cloudLoad(); // charge la partie depuis le cloud après login
+    localStorage.removeItem(SAVE_KEY); // on efface le local, le cloud fait foi
+    cloudLoad();
   });
 
   netlifyIdentity.on("logout", () => {
     currentUser = null;
     authToken   = null;
     updateAuthUI();
+    // Sauvegarder l'état courant en local pour ne pas perdre la partie
+    localSave();
   });
 
   // Mettre à jour le token quand le widget le rafraîchit automatiquement
@@ -1373,15 +1376,19 @@ function showSaveIndicator(msg){
   setTimeout(() => btn.textContent = orig, 2000);
 }
 
-// Sauvegarde combinée : local + cloud
+// Sauvegarde combinée : cloud si connecté, local sinon
 function save(){
-  localSave();
-  cloudSave(); // async, non bloquant
+  if(currentUser){
+    cloudSave(); // cloud uniquement si connecté
+  } else {
+    localSave(); // local uniquement si non connecté
+  }
 }
 
-// Chargement initial : local d'abord, cloud ensuite si connecté
+// Chargement initial : cloud si connecté, local sinon
 function load(){
-  localLoad();
+  if(!currentUser) localLoad();
+  // Si connecté, cloudLoad() sera appelé après le login event
 }
 
 btnSave.addEventListener("click", save);
