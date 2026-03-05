@@ -70,14 +70,9 @@
 
     <div class="topbar__actions">
 
-      <div class="authBlock" id="authBlock--guest">
-        <button class="iconbtn iconbtn--green" id="btnSignup" title="S'inscrire">✉️</button>
-        <button class="iconbtn" id="btnLogin" title="Se connecter">🔐</button>
-      </div>
-      <div class="authBlock" id="authBlock--user" style="display:none">
-        <span class="authUser" id="authUserName"></span>
-        <button class="iconbtn" id="btnLogout" title="Se déconnecter">🚪</button>
-      </div>
+      <!-- Bouton auth unique -->
+      <button class="iconbtn" id="btnAuth" title="Connexion / Inscription">🔐</button>
+      <span class="authUser" id="authUserName"></span>
 
       <button class="btn btn--ghost" id="btnTalents">⭐ Talents</button>
       <button class="iconbtn" title="Réputation">🏆 <span id="rep">0</span> REP</button>

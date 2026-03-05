@@ -998,8 +998,9 @@ function applyRepairTime(seconds){
 // ACTIONS
 // =====================
 btnAnalyze.addEventListener("click", () => {
-  const queueMax = state.garageCap - 1;
-  if (state.queue.length >= queueMax) return;
+  // Occupés = voiture en atelier + file d'attente
+  const occupied = (state.active ? 1 : 0) + state.queue.length;
+  if (occupied >= state.garageCap) return; // garage plein
 
   state.money += state.diagReward + (state.talentDiagBonus ?? 0);
   state.totalAnalyses = (state.totalAnalyses ?? 0) + 1;
@@ -1113,8 +1114,8 @@ function tick(now){
     if (autoAnalyzeTimer >= delay) {
       autoAnalyzeTimer = 0;
       // Utilise la même limite que le bouton manuel : queue < garageCap - 1
-      const queueMax = state.garageCap - 1;
-      if (state.queue.length < queueMax) {
+      const occupied = (state.active ? 1 : 0) + state.queue.length;
+      if (occupied < state.garageCap) {
         document.getElementById("btnAnalyze").click();
       }
     }
@@ -1176,39 +1177,27 @@ function initIdentity(){
 }
 
 function updateAuthUI(){
-  const guestBlock = document.getElementById("authBlock--guest");
-  const userBlock  = document.getElementById("authBlock--user");
-  const authName   = document.getElementById("authUserName");
-
+  const btn      = document.getElementById("btnAuth");
+  const authName = document.getElementById("authUserName");
+  if(!btn) return;
   if(currentUser){
-    if(guestBlock) guestBlock.style.display = "none";
-    if(userBlock)  userBlock.style.display  = "flex";
-    if(authName)   authName.textContent     = currentUser.email;
+    btn.textContent = "🚪";
+    btn.title       = `Déconnexion (${currentUser.email})`;
+    if(authName) authName.textContent = currentUser.email;
   } else {
-    if(guestBlock) guestBlock.style.display = "flex";
-    if(userBlock)  userBlock.style.display  = "none";
-    if(authName)   authName.textContent     = "";
+    btn.textContent = "🔐";
+    btn.title       = "Connexion / Inscription";
+    if(authName) authName.textContent = "";
   }
 }
 
-// Ouvre le widget sur l'onglet inscription
-function openSignup(){
-  if(!netlifyIdentity) return;
-  netlifyIdentity.open("signup");
-}
-
-// Ouvre le widget sur l'onglet connexion
-function openLogin(){
-  if(!netlifyIdentity) return;
-  netlifyIdentity.open("login");
-}
-
-// Déconnexion
 function openAuth(){
   if(!netlifyIdentity) return;
   if(currentUser) netlifyIdentity.logout();
-  else netlifyIdentity.open("login");
+  else netlifyIdentity.open(); // widget avec onglets Login + Signup intégrés
 }
+function openSignup(){ netlifyIdentity?.open("signup"); }
+function openLogin(){  netlifyIdentity?.open("login");  }
 
 // Rafraîchit le token si expiré (Identity le gère automatiquement)
 async function getValidToken(){
@@ -1371,13 +1360,9 @@ function load(){
 
 btnSave.addEventListener("click", save);
 
-// Boutons auth
-const btnSignup = document.getElementById("btnSignup");
-const btnLogin  = document.getElementById("btnLogin");
-const btnLogout = document.getElementById("btnLogout");
-if(btnSignup) btnSignup.addEventListener("click", openSignup);
-if(btnLogin)  btnLogin.addEventListener("click",  openLogin);
-if(btnLogout) btnLogout.addEventListener("click",  () => netlifyIdentity?.logout());
+// Bouton auth unique
+const btnAuth = document.getElementById("btnAuth");
+if(btnAuth) btnAuth.addEventListener("click", openAuth);
 
 // init
 load();
