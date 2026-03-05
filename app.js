@@ -1176,29 +1176,38 @@ function initIdentity(){
 }
 
 function updateAuthUI(){
-  const authBtn = document.getElementById("btnAuth");
-  const authName= document.getElementById("authUserName");
-  if(!authBtn) return;
+  const guestBlock = document.getElementById("authBlock--guest");
+  const userBlock  = document.getElementById("authBlock--user");
+  const authName   = document.getElementById("authUserName");
 
   if(currentUser){
-    authBtn.textContent  = "🚪 Déconnexion";
-    authBtn.title        = "Se déconnecter";
-    if(authName) authName.textContent = currentUser.email;
+    if(guestBlock) guestBlock.style.display = "none";
+    if(userBlock)  userBlock.style.display  = "flex";
+    if(authName)   authName.textContent     = currentUser.email;
   } else {
-    authBtn.textContent  = "🔐 Connexion";
-    authBtn.title        = "Se connecter / Créer un compte";
-    if(authName) authName.textContent = "";
+    if(guestBlock) guestBlock.style.display = "flex";
+    if(userBlock)  userBlock.style.display  = "none";
+    if(authName)   authName.textContent     = "";
   }
 }
 
-// Ouvre le widget Identity
+// Ouvre le widget sur l'onglet inscription
+function openSignup(){
+  if(!netlifyIdentity) return;
+  netlifyIdentity.open("signup");
+}
+
+// Ouvre le widget sur l'onglet connexion
+function openLogin(){
+  if(!netlifyIdentity) return;
+  netlifyIdentity.open("login");
+}
+
+// Déconnexion
 function openAuth(){
   if(!netlifyIdentity) return;
-  if(currentUser){
-    netlifyIdentity.logout();
-  } else {
-    netlifyIdentity.open();
-  }
+  if(currentUser) netlifyIdentity.logout();
+  else netlifyIdentity.open("login");
 }
 
 // Rafraîchit le token si expiré (Identity le gère automatiquement)
@@ -1362,9 +1371,13 @@ function load(){
 
 btnSave.addEventListener("click", save);
 
-// Bouton auth (branché dans index.html)
-const btnAuth = document.getElementById("btnAuth");
-if(btnAuth) btnAuth.addEventListener("click", openAuth);
+// Boutons auth
+const btnSignup = document.getElementById("btnSignup");
+const btnLogin  = document.getElementById("btnLogin");
+const btnLogout = document.getElementById("btnLogout");
+if(btnSignup) btnSignup.addEventListener("click", openSignup);
+if(btnLogin)  btnLogin.addEventListener("click",  openLogin);
+if(btnLogout) btnLogout.addEventListener("click",  () => netlifyIdentity?.logout());
 
 // init
 load();

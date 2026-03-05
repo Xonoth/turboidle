@@ -85,14 +85,22 @@
   </div>
 
   <div class="topbar__actions">
-    <span class="authUser" id="authUserName"></span>
-    <button class="btn btn--ghost" id="btnAuth">🔐 Connexion</button>
+    <!-- Auth : affiché selon l'état connecté/déconnecté -->
+    <div class="authBlock" id="authBlock--guest">
+      <button class="btn btn--ghost btn--signup" id="btnSignup">✉️ S'inscrire</button>
+      <button class="btn btn--ghost btn--login"  id="btnLogin">🔐 Connexion</button>
+    </div>
+    <div class="authBlock authBlock--user" id="authBlock--user" style="display:none">
+      <span class="authUser" id="authUserName"></span>
+      <button class="iconbtn" id="btnLogout" title="Se déconnecter">🚪</button>
+    </div>
+
+    <!-- Boutons originaux inchangés -->
     <button class="btn btn--ghost" id="btnTalents">⭐ Talents</button>
     <button class="iconbtn" title="Réputation">🏆 <span id="rep">0</span> REP</button>
     <button class="iconbtn" title="Sauvegarder" id="btnSave">💾</button>
     <button class="iconbtn" title="Statistiques" id="btnStats">📊</button>
     <button class="iconbtn" title="Options">⚙️</button>
-    <button class="iconbtn" title="Déconnexion">🚪</button>
   </div>
 </header>
 

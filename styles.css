@@ -68,14 +68,32 @@ body{
 .money__amount{font-weight:800; color: var(--green); font-size:18px}
 .money__rate{font-size:12px; color: rgba(46,229,157,.75)}
 
+.authBlock{
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.authBlock--user{
+  gap:8px;
+}
+.btn--signup{
+  font-size:12px;
+  padding:6px 10px;
+  border-color: rgba(46,229,157,.25);
+  color: var(--green);
+}
+.btn--signup:hover{ border-color:rgba(46,229,157,.5); }
+.btn--login{
+  font-size:12px;
+  padding:6px 10px;
+}
 .authUser{
   font-size:12px;
   color:var(--muted);
-  max-width:140px;
+  max-width:150px;
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
-  align-self:center;
 }display:flex; align-items:center; gap:10px}
 
 /* BUTTONS */
