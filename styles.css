@@ -68,7 +68,15 @@ body{
 .money__amount{font-weight:800; color: var(--green); font-size:18px}
 .money__rate{font-size:12px; color: rgba(46,229,157,.75)}
 
-.topbar__actions{display:flex; align-items:center; gap:10px}
+.authUser{
+  font-size:12px;
+  color:var(--muted);
+  max-width:140px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  align-self:center;
+}display:flex; align-items:center; gap:10px}
 
 /* BUTTONS */
 .btn{

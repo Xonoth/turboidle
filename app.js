@@ -1139,60 +1139,236 @@ function tick(now){
 }
 
 // =====================
-// SAVE/LOAD
+// AUTH — Netlify Identity
 // =====================
-const SAVE_KEY = "garage_idle_save_v2";
-function save(){
-  localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+// Le widget Identity est chargé depuis index.html via le script CDN
+
+let netlifyIdentity = null;   // instance du widget
+let currentUser     = null;   // user connecté (ou null)
+let authToken       = null;   // JWT token pour les appels API
+
+// Appelé depuis index.html une fois le script Identity chargé
+function initIdentity(){
+  netlifyIdentity = window.netlifyIdentity;
+  if(!netlifyIdentity) return;
+
+  netlifyIdentity.on("init", (user) => {
+    currentUser = user;
+    if(user) authToken = user.token?.access_token;
+    updateAuthUI();
+  });
+
+  netlifyIdentity.on("login", (user) => {
+    currentUser = user;
+    authToken   = user.token?.access_token;
+    netlifyIdentity.close();
+    updateAuthUI();
+    cloudLoad(); // charge la partie depuis le cloud après login
+  });
+
+  netlifyIdentity.on("logout", () => {
+    currentUser = null;
+    authToken   = null;
+    updateAuthUI();
+  });
+
+  netlifyIdentity.init();
 }
-function load(){
-  const raw = localStorage.getItem(SAVE_KEY);
-  if(!raw) return;
-  try{
-    const data = JSON.parse(raw);
-    
-    // 1. On met de côté les upgrades du code source (qui contiennent tes nouveautés)
-    const baseUpgrades = JSON.parse(JSON.stringify(state.upgrades)); 
-    
-    // 2. On charge le reste des données
-    Object.assign(state, data);
 
-    // 3. FUSION INTELLIGENTE DES UPGRADES
-    if (data.upgrades) {
-      state.upgrades = baseUpgrades.map(baseItem => {
-        // Est-ce que cette amélioration existait dans la sauvegarde ?
-        const savedItem = data.upgrades.find(x => x.id === baseItem.id);
-        if (savedItem) {
-          // Si oui, on restaure son niveau et son coût !
-          baseItem.lvl = savedItem.lvl;
-          baseItem.cost = savedItem.cost;
-        }
-        return baseItem; // Si non (ex: le stagiaire), ça garde la version de base à 0
-      });
-    }
+function updateAuthUI(){
+  const authBtn = document.getElementById("btnAuth");
+  const authName= document.getElementById("authUserName");
+  if(!authBtn) return;
 
-    // Sécurités de base
-    if(typeof state.carsSold !== "number") state.carsSold = 0;
-    if(typeof state.talentPoints !== "number") state.talentPoints = 0;
-    if(typeof state.talents !== "object" || state.talents === null) state.talents = {};
-    if(typeof state.talentLevelGranted !== "number") state.talentLevelGranted = state.garageLevel ?? 1;
-    if(!state.activeTab) state.activeTab = "tools"; // S'assure qu'un onglet est actif
-    
-    if(!state.garageName) state.garageName = "Garage Turbo";
-    applyGarageName();
-    applyTalentEffects();
-    recalcRepairAuto();
-    updateGarageLevel();
-  }catch(e){
-    console.error("Erreur lors du chargement de la sauvegarde :", e);
+  if(currentUser){
+    authBtn.textContent  = "🚪 Déconnexion";
+    authBtn.title        = "Se déconnecter";
+    if(authName) authName.textContent = currentUser.email;
+  } else {
+    authBtn.textContent  = "🔐 Connexion";
+    authBtn.title        = "Se connecter / Créer un compte";
+    if(authName) authName.textContent = "";
   }
 }
 
+// Ouvre le widget Identity
+function openAuth(){
+  if(!netlifyIdentity) return;
+  if(currentUser){
+    netlifyIdentity.logout();
+  } else {
+    netlifyIdentity.open();
+  }
+}
+
+// Rafraîchit le token si expiré (Identity le gère automatiquement)
+async function getValidToken(){
+  if(!currentUser) return null;
+  try {
+    const user = await netlifyIdentity.currentUser();
+    const freshToken = user?.token?.access_token;
+    if(freshToken) authToken = freshToken;
+    return authToken;
+  } catch {
+    return authToken; // fallback
+  }
+}
+
+// =====================
+// SAVE / LOAD — Cloud + LocalStorage fallback
+// =====================
+const SAVE_KEY = "garage_idle_save_v2";
+
+// Données à sauvegarder (état complet sérialisable)
+function buildSavePayload(){
+  return {
+    garageLevel:        state.garageLevel,
+    garageCap:          state.garageCap,
+    garageName:         state.garageName,
+    money:              state.money,
+    moneyPerSec:        state.moneyPerSec,
+    rep:                state.rep,
+    carsSold:           state.carsSold,
+    diagReward:         state.diagReward,
+    repairClick:        state.repairClick,
+    repairAuto:         state.repairAuto,
+    speedMult:          state.speedMult,
+    saleBonusPct:       state.saleBonusPct,
+    talentPoints:       state.talentPoints,
+    talentLevelGranted: state.talentLevelGranted,
+    talents:            state.talents,
+    upgrades:           state.upgrades,
+    showroom:           state.showroom,
+    queue:              state.queue,
+    activeTab:          state.activeTab,
+    totalMoneyEarned:   state.totalMoneyEarned,
+    totalRepairs:       state.totalRepairs,
+    totalAnalyses:      state.totalAnalyses,
+    totalClickRepairs:  state.totalClickRepairs,
+    sessionStart:       state.sessionStart,
+  };
+}
+
+// Applique les données chargées dans le state
+function applySaveData(data){
+  const baseUpgrades = JSON.parse(JSON.stringify(state.upgrades));
+  Object.assign(state, data);
+
+  // Fusion intelligente des upgrades (préserve les nouvelles amélios)
+  if(data.upgrades){
+    state.upgrades = baseUpgrades.map(baseItem => {
+      const saved = data.upgrades.find(x => x.id === baseItem.id);
+      if(saved){ baseItem.lvl = saved.lvl; baseItem.cost = saved.cost; }
+      return baseItem;
+    });
+  }
+
+  // Sécurités
+  if(typeof state.carsSold !== "number")         state.carsSold = 0;
+  if(typeof state.talentPoints !== "number")     state.talentPoints = 0;
+  if(typeof state.talents !== "object" || !state.talents) state.talents = {};
+  if(typeof state.talentLevelGranted !== "number") state.talentLevelGranted = state.garageLevel ?? 1;
+  if(!state.activeTab)  state.activeTab  = "tools";
+  if(!state.garageName) state.garageName = "Garage Turbo";
+
+  applyGarageName();
+  applyTalentEffects();
+  recalcRepairAuto();
+  updateGarageLevel();
+}
+
+// --- Sauvegarde locale (toujours) ---
+function localSave(){
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(buildSavePayload())); } catch(e){}
+}
+function localLoad(){
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(raw) applySaveData(JSON.parse(raw));
+  } catch(e){ console.error("Erreur load local:", e); }
+}
+
+// --- Sauvegarde cloud ---
+let cloudSaving = false;
+async function cloudSave(){
+  if(!currentUser) return; // pas connecté = on sauvegarde seulement en local
+  if(cloudSaving) return;
+  cloudSaving = true;
+
+  try {
+    const token = await getValidToken();
+    const res = await fetch("/.netlify/functions/save-game", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify(buildSavePayload()),
+    });
+    if(res.ok){
+      showSaveIndicator("☁️ Sauvegardé");
+    } else {
+      console.error("Cloud save failed:", await res.text());
+      showSaveIndicator("⚠️ Erreur cloud");
+    }
+  } catch(e){
+    console.error("Cloud save error:", e);
+  } finally {
+    cloudSaving = false;
+  }
+}
+
+async function cloudLoad(){
+  if(!currentUser) return;
+  try {
+    const token = await getValidToken();
+    const res = await fetch("/.netlify/functions/load-game", {
+      headers: { "Authorization": `Bearer ${token}` },
+    });
+    if(!res.ok) throw new Error("Erreur HTTP " + res.status);
+
+    const { save } = await res.json();
+    if(save){
+      applySaveData(save);
+      localSave(); // synchronise aussi le localStorage
+      renderAll();
+      showSaveIndicator("☁️ Partie chargée");
+    }
+    // si save === null = nouvelle partie, on garde l'état courant
+  } catch(e){
+    console.error("Cloud load error:", e);
+  }
+}
+
+// Indicateur visuel de sauvegarde
+function showSaveIndicator(msg){
+  const btn = document.getElementById("btnSave");
+  if(!btn) return;
+  const orig = btn.textContent;
+  btn.textContent = msg;
+  setTimeout(() => btn.textContent = orig, 2000);
+}
+
+// Sauvegarde combinée : local + cloud
+function save(){
+  localSave();
+  cloudSave(); // async, non bloquant
+}
+
+// Chargement initial : local d'abord, cloud ensuite si connecté
+function load(){
+  localLoad();
+}
+
 btnSave.addEventListener("click", save);
+
+// Bouton auth (branché dans index.html)
+const btnAuth = document.getElementById("btnAuth");
+if(btnAuth) btnAuth.addEventListener("click", openAuth);
 
 // init
 load();
 tryStartNextRepair();
 renderAll();
 requestAnimationFrame(tick);
-setInterval(save, 5000);
+setInterval(save, 30000); // auto-save toutes les 30s (cloud moins fréquent)

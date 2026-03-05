@@ -8,6 +8,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
+  <!-- Netlify Identity Widget -->
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 </head>
 
 <!-- TALENTS MODAL -->
@@ -83,8 +85,10 @@
   </div>
 
   <div class="topbar__actions">
+    <span class="authUser" id="authUserName"></span>
+    <button class="btn btn--ghost" id="btnAuth">🔐 Connexion</button>
     <button class="btn btn--ghost" id="btnTalents">⭐ Talents</button>
-    <button class="btn btn--ghost">🏆 <span id="rep">0</span> REP</button>
+    <button class="iconbtn" title="Réputation">🏆 <span id="rep">0</span> REP</button>
     <button class="iconbtn" title="Sauvegarder" id="btnSave">💾</button>
     <button class="iconbtn" title="Statistiques" id="btnStats">📊</button>
     <button class="iconbtn" title="Options">⚙️</button>
@@ -199,5 +203,13 @@
   </main>
 
   <script src="app.js"></script>
+  <script>
+    // Initialise Netlify Identity une fois le DOM et app.js chargés
+    if(window.netlifyIdentity){
+      initIdentity();
+    } else {
+      document.addEventListener("DOMContentLoaded", initIdentity);
+    }
+  </script>
 </body>
 </html>
