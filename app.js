@@ -1173,6 +1173,14 @@ function initIdentity(){
     updateAuthUI();
   });
 
+  // Mettre à jour le token quand le widget le rafraîchit automatiquement
+  netlifyIdentity.on("token_refresh", (user) => {
+    if(user?.token?.access_token){
+      authToken   = user.token.access_token;
+      currentUser = user;
+    }
+  });
+
   netlifyIdentity.init();
 }
 
@@ -1203,14 +1211,30 @@ function openLogin(){  netlifyIdentity?.open("login");  }
 async function getValidToken(){
   if(!netlifyIdentity) return null;
   try {
-    // currentUser() est synchrone dans le widget Netlify Identity
+    // Forcer le rafraîchissement du token via le widget
     const user = netlifyIdentity.currentUser();
-    if(user?.token?.access_token){
-      authToken = user.token.access_token;
+    if(!user) return null;
+
+    // Vérifier si le token actuel expire dans moins de 60s
+    const token = user.token?.access_token;
+    const exp   = user.token?.expires_at; // timestamp ms
+    const needsRefresh = !token || !exp || (exp - Date.now() < 60000);
+
+    if(needsRefresh){
+      // refreshUser() renvoie une Promise avec l'user rafraîchi
+      const refreshed = await netlifyIdentity.refresh();
+      if(refreshed?.token?.access_token){
+        authToken = refreshed.token.access_token;
+        currentUser = refreshed;
+        return authToken;
+      }
     }
+
+    authToken = token;
     return authToken;
-  } catch {
-    return authToken;
+  } catch(e) {
+    console.warn("Token refresh failed:", e);
+    return authToken; // fallback sur l'ancien
   }
 }
 
