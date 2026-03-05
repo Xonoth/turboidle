@@ -8,186 +8,170 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
-  <!-- Netlify Identity Widget -->
-  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 </head>
-
-<!-- TALENTS MODAL -->
-<div class="modal" id="talentsModal" style="display:none;">
-  <div class="modal__backdrop" id="talentsBackdrop"></div>
-
-  <div class="modal__panel">
-    <div class="modal__head">
-      <div class="modal__title">⭐ Talents</div>
-      <button class="iconbtn" id="btnTalentsClose" title="Fermer">✖️</button>
-    </div>
-
-    <div class="modal__sub">
-      Points disponibles : <b><span id="talentPoints">0</span></b>
-    </div>
-
-    <div class="talentGrid" id="talentList">
-      <!-- injecté par JS -->
-    </div>
-
-    <div class="modal__foot">
-      <button class="btn" id="btnTalentsReset" title="Optionnel">↩ Reset (debug)</button>
-      <div class="modal__hint">Les talents s’achètent avec 1 point par rang. Certains demandent un prérequis.</div>
-    </div>
-  </div>
-</div>
-
-<!-- STATS MODAL -->
-<div class="modal" id="statsModal" style="display:none;">
-  <div class="modal__backdrop" id="statsBackdrop"></div>
-  <div class="modal__panel modal__panel--stats">
-    <div class="modal__head">
-      <div class="modal__title">📊 Statistiques</div>
-      <button class="iconbtn" id="btnStatsClose" title="Fermer">✖️</button>
-    </div>
-    <div class="statsGrid" id="statsGrid">
-      <!-- injecté par JS -->
-    </div>
-  </div>
-</div>
-
 <body>
+
+  <!-- MODALS (dans le body) -->
+
+  <div class="modal" id="talentsModal" style="display:none;">
+    <div class="modal__backdrop" id="talentsBackdrop"></div>
+    <div class="modal__panel">
+      <div class="modal__head">
+        <div class="modal__title">⭐ Talents</div>
+        <button class="iconbtn" id="btnTalentsClose" title="Fermer">✖️</button>
+      </div>
+      <div class="modal__sub">Points disponibles : <b><span id="talentPoints">0</span></b></div>
+      <div class="talentGrid" id="talentList"></div>
+      <div class="modal__foot">
+        <button class="btn" id="btnTalentsReset">↩ Reset (debug)</button>
+        <div class="modal__hint">Les talents s'achètent avec 1 point par rang. Certains demandent un prérequis.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="statsModal" style="display:none;">
+    <div class="modal__backdrop" id="statsBackdrop"></div>
+    <div class="modal__panel modal__panel--stats">
+      <div class="modal__head">
+        <div class="modal__title">📊 Statistiques</div>
+        <button class="iconbtn" id="btnStatsClose" title="Fermer">✖️</button>
+      </div>
+      <div class="statsGrid" id="statsGrid"></div>
+    </div>
+  </div>
+
   <!-- TOP BAR -->
-<header class="topbar">
-  <div class="brand">
-    <div class="brand__icon">🏆</div>
-    <div class="brand__txt">
-      <div class="brand__title" id="garageName" title="Cliquer pour renommer">Garage Turbo</div>
-      <div class="brand__sub">
-        Ventes <span id="carsSold">0</span>
+  <header class="topbar">
+
+    <div class="brand">
+      <div class="brand__icon">🏆</div>
+      <div class="brand__txt">
+        <div class="brand__title" id="garageName" title="Cliquer pour renommer">Garage Turbo</div>
+        <div class="brand__sub">Ventes <span id="carsSold">0</span></div>
       </div>
     </div>
-  </div>
 
-  <div class="topProgress">
-    <div class="topProgress__row">
-      <div class="topProgress__lvl">
-        Garage LVL <span id="garageLevel">1</span>
+    <div class="topProgress">
+      <div class="topProgress__row">
+        <div class="topProgress__lvl">Garage LVL <span id="garageLevel">1</span></div>
+        <div class="topProgress__txt" id="garageProgressText">0 / 10 ventes</div>
       </div>
-      <div class="topProgress__txt" id="garageProgressText">0 / 10 ventes</div>
+      <div class="topProgress__bar">
+        <div class="topProgress__fill" id="garageProgressFill"></div>
+      </div>
     </div>
 
-    <div class="topProgress__bar">
-      <div class="topProgress__fill" id="garageProgressFill"></div>
-    </div>
-  </div>
-
-  <div class="topbar__center">
-    <div class="money">
-      <div class="money__amount"><span id="money">2224</span> €</div>
-      <div class="money__rate">+<span id="moneyPerSec">0</span> €/s</div>
-    </div>
-  </div>
-
-  <div class="topbar__actions">
-    <!-- Auth : affiché selon l'état connecté/déconnecté -->
-    <div class="authBlock" id="authBlock--guest">
-      <button class="btn btn--ghost btn--signup" id="btnSignup">✉️ S'inscrire</button>
-      <button class="btn btn--ghost btn--login"  id="btnLogin">🔐 Connexion</button>
-    </div>
-    <div class="authBlock authBlock--user" id="authBlock--user" style="display:none">
-      <span class="authUser" id="authUserName"></span>
-      <button class="iconbtn" id="btnLogout" title="Se déconnecter">🚪</button>
+    <div class="topbar__center">
+      <div class="money">
+        <div class="money__amount"><span id="money">100</span> €</div>
+        <div class="money__rate">+<span id="moneyPerSec">0</span> €/s</div>
+      </div>
     </div>
 
-    <!-- Boutons originaux inchangés -->
-    <button class="btn btn--ghost" id="btnTalents">⭐ Talents</button>
-    <button class="iconbtn" title="Réputation">🏆 <span id="rep">0</span> REP</button>
-    <button class="iconbtn" title="Sauvegarder" id="btnSave">💾</button>
-    <button class="iconbtn" title="Statistiques" id="btnStats">📊</button>
-    <button class="iconbtn" title="Options">⚙️</button>
-  </div>
-</header>
+    <div class="topbar__actions">
+
+      <div class="authBlock" id="authBlock--guest">
+        <button class="iconbtn iconbtn--green" id="btnSignup" title="S'inscrire">✉️</button>
+        <button class="iconbtn" id="btnLogin" title="Se connecter">🔐</button>
+      </div>
+      <div class="authBlock" id="authBlock--user" style="display:none">
+        <span class="authUser" id="authUserName"></span>
+        <button class="iconbtn" id="btnLogout" title="Se déconnecter">🚪</button>
+      </div>
+
+      <button class="btn btn--ghost" id="btnTalents">⭐ Talents</button>
+      <button class="iconbtn" title="Réputation">🏆 <span id="rep">0</span> REP</button>
+      <button class="iconbtn" id="btnSave" title="Sauvegarder">💾</button>
+      <button class="iconbtn" id="btnStats" title="Statistiques">📊</button>
+
+    </div>
+
+  </header>
 
   <!-- MAIN GRID -->
   <main class="layout">
-    <!-- LEFT COLUMN -->
+
+    <!-- GAUCHE -->
     <section class="col col--left">
+
       <div class="panel">
         <div class="panel__head">
           <div class="panel__title">🔍 Diagnostic</div>
-          <div class="badge">0/2</div>
+          <div class="badge" id="diagCapBadge">0/1</div>
         </div>
-
         <div class="panel__sub">Capacité Garage</div>
-
         <button class="bigAction" id="btnAnalyze">
           <div class="bigAction__icon">🚗</div>
           <div class="bigAction__txt">
             <div class="bigAction__title">ANALYSER</div>
-            <div class="bigAction__meta">+<span id="diagReward">13</span>€ / analyse</div>
+            <div class="bigAction__meta">+<span id="diagReward">1</span>€ / analyse</div>
           </div>
         </button>
       </div>
 
-<div class="panel panel--showroom">
-  <div class="panel__head">
-    <div class="panel__title">💲 Showroom</div>
-  </div>
-
-  <div class="showroom">
-    <div id="showroomList" class="scroll-premium"></div>
-
-    <div class="empty" id="showroomEmpty">
-      <div class="empty__hint">Le showroom est vide…</div>
-    </div>
-  </div>
-</div>
+      <div class="panel panel--showroom">
+        <div class="panel__head">
+          <div class="panel__title">💲 Showroom</div>
+        </div>
+        <div class="showroom">
+          <div id="showroomList" class="scroll-premium"></div>
+          <div class="empty" id="showroomEmpty">
+            <div class="empty__hint">Le showroom est vide…</div>
+          </div>
+        </div>
       </div>
+
     </section>
 
-    <!-- CENTER COLUMN -->
+    <!-- CENTRE -->
     <section class="col col--center">
       <div class="panel panel--tall">
+
         <div class="panel__head">
           <div class="panel__title">🛠️ Atelier Réparation</div>
           <div class="panel__right">
-            <div class="tinyStat">⚡ <span id="repairAuto">0.0</span>/s auto</div>
-            <div class="tinyStat">🖱️ <span id="repairClick">55</span>/clic</div>
+            <div class="tinyStat">⚡ <span id="repairAuto">0.00</span>/s auto</div>
+            <div class="tinyStat">🖱️ <span id="repairClick">0.50</span>/clic</div>
           </div>
         </div>
 
         <div class="workzone" id="workzone">
-  <div class="workbox">
+          <div class="workbox">
 
-    <!-- Bouton réparer en haut centré -->
-    <div class="workbox__center">
-      <button id="btnRepairClick" class="btn btn--ghost btn--repair">
-        🔧 Réparer (clic)
-      </button>
-    </div>
+            <div class="workbox__center">
+              <button id="btnRepairClick" class="btn btn--ghost btn--repair">
+                🔧 Réparer (clic)
+              </button>
+            </div>
 
-    <!-- Emplacements garage ligne par ligne -->
-    <div class="queue">
-      <div class="queue__head">
-        🅿️ Emplacements Garage
-        <span class="queue__counter"><span id="queueCount">0</span> / <span id="garageCap">2</span> occupés</span>
-      </div>
-      <div class="garageSlots" id="garageSlots"></div>
-    </div>
+            <div class="queue">
+              <div class="queue__head">
+                🅿️ Emplacements Garage
+                <span class="queue__counter">
+                  <span id="queueCount">0</span> / <span id="garageCap">1</span> occupés
+                </span>
+              </div>
+              <div class="garageSlots" id="garageSlots"></div>
+            </div>
 
-    <!-- Champs cachés pour compatibilité renderActive -->
-    <span id="activeCarTitle" style="display:none"></span>
-    <span id="activeCarValue" style="display:none"></span>
-    <span id="activeCarTime"  style="display:none"></span>
-    <span id="activeCarTier"  style="display:none"></span>
-    <div  id="repairBar"      style="display:none"></div>
+            <span id="activeCarTitle" style="display:none"></span>
+            <span id="activeCarValue" style="display:none"></span>
+            <span id="activeCarTime"  style="display:none"></span>
+            <span id="activeCarTier"  style="display:none"></span>
+            <div  id="repairBar"      style="display:none"></div>
 
-  </div>
+          </div>
         </div>
+
       </div>
     </section>
 
-    <!-- RIGHT COLUMN -->
+    <!-- DROITE -->
     <section class="col col--right">
       <div class="panel panel--tall">
+
         <div class="panel__head">
-          <div class="panel__title">🧰 Bureau & Gestion</div>
+          <div class="panel__title">🧰 Bureau &amp; Gestion</div>
           <div class="moneyPill">+<span id="officeIncome">0</span> €/s</div>
         </div>
 
@@ -200,24 +184,22 @@
 
         <div class="panel__sectionHead">
           <div class="panel__sectionTitle">AMÉLIORATIONS ACTIVES</div>
-          <div class="badge"><span id="upgradeLevel">13</span> niv.</div>
+          <div class="badge"><span id="upgradeLevel">0</span> niv.</div>
         </div>
 
-        <div class="list" id="upgradeList">
-          <!-- items injectés en JS -->
-        </div>
+        <div class="list" id="upgradeList"></div>
+
       </div>
     </section>
+
   </main>
 
+  <!-- SCRIPTS en bas du body -->
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
   <script src="app.js"></script>
   <script>
-    // Initialise Netlify Identity une fois le DOM et app.js chargés
-    if(window.netlifyIdentity){
-      initIdentity();
-    } else {
-      document.addEventListener("DOMContentLoaded", initIdentity);
-    }
+    if (window.netlifyIdentity) { initIdentity(); }
   </script>
+
 </body>
 </html>

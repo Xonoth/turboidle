@@ -71,26 +71,17 @@ body{
 .authBlock{
   display:flex;
   align-items:center;
-  gap:6px;
+  gap:4px;
 }
-.authBlock--user{
-  gap:8px;
-}
-.btn--signup{
-  font-size:12px;
-  padding:6px 10px;
-  border-color: rgba(46,229,157,.25);
+.iconbtn--green{
   color: var(--green);
+  border-color: rgba(46,229,157,.2);
 }
-.btn--signup:hover{ border-color:rgba(46,229,157,.5); }
-.btn--login{
-  font-size:12px;
-  padding:6px 10px;
-}
+.iconbtn--green:hover{ border-color:rgba(46,229,157,.45); }
 .authUser{
   font-size:12px;
   color:var(--muted);
-  max-width:150px;
+  max-width:130px;
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
