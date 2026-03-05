@@ -105,8 +105,26 @@ box-shadow: 0 10px 25px rgba(0,0,0,.4);
   border: 1px solid rgba(255,255,255,.08);
   background: rgba(12,18,34,.55);
   cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  color: var(--text);
+  font-size:15px;
 }
 .iconbtn:hover{border-color: var(--border)}
+
+/* Bouton REP — largeur auto car contient du texte */
+.repbtn{
+  height:38px;
+  padding: 0 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,200,50,.15);
+  background: rgba(12,18,34,.55);
+  cursor:default;
+  display:flex; align-items:center; gap:6px;
+  color: #ffc83a;
+  font-size:13px;
+  font-weight:700;
+  white-space:nowrap;
+}
 
 /* LAYOUT */
 .layout{
