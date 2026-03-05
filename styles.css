@@ -131,7 +131,7 @@ box-shadow: 0 10px 25px rgba(0,0,0,.4);
   padding: 18px;
   display:grid;
   gap:18px;
-  grid-template-columns: 400px 1fr 440px;
+  grid-template-columns: 460px 1fr 500px;
   height: calc(100vh - 64px);
 }
 
@@ -994,31 +994,38 @@ box-shadow: 0 10px 25px rgba(0,0,0,.4);
   border-radius:16px;
   overflow:hidden;
   border:1px solid rgba(255,255,255,.08);
+  position:relative;
 }
 .profileCard__banner{
-  height:60px;
+  height:80px;
+  width:100%;
   background: linear-gradient(135deg, #1a2a4a, #0d1829);
   transition:background .3s;
+  display:block;
 }
 .profileCard__body{
   display:flex;
   align-items:center;
   gap:14px;
-  padding:14px 16px;
+  padding:10px 16px 14px 16px;
   background:rgba(8,12,22,.6);
+  margin-top:0;
 }
 .profileCard__avatar{
   font-size:36px;
   line-height:1;
-  width:52px;
-  height:52px;
+  width:56px;
+  height:56px;
   display:flex;
   align-items:center;
   justify-content:center;
-  background:rgba(255,255,255,.05);
+  background:rgba(15,22,40,1);
   border-radius:50%;
-  border:2px solid rgba(255,255,255,.08);
+  border:3px solid rgba(255,255,255,.15);
   flex-shrink:0;
+  margin-top:-28px; /* chevauche la bannière */
+  position:relative;
+  z-index:1;
 }
 .profileCard__pseudo{ font-size:16px; font-weight:800; }
 .profileCard__country{ font-size:13px; color:var(--muted); margin-top:3px; }
