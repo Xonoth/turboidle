@@ -910,15 +910,25 @@ function hasHeritageRequirements(perk){
 }
 
 function calcHeritagePoints(){
-  // Formule nerfée : chaque composante est plus dure à atteindre
-  // garageLevel/20 + carsSold/2000 + rep/25000
-  // Premier prestige minimum : floor(50/20) + floor(x/2000) + floor(50000/25000) = 2+0+2 = 4 pts
-  const base = Math.floor(state.garageLevel / 20)
-             + Math.floor((state.carsSold ?? 0) / 2000)
-             + Math.floor((state.rep ?? 0) / 25000);
-  // Le mult est calculé depuis les perks actuels (appliqués avant cet appel)
+  // Formule : 1 pt au seuil minimum (LVL50 + 50k REP), plus pour les runs poussées
+  // garageLevel/50 + carsSold/5000 + rep/50000
+  // Seuil minimum : floor(50/50) + floor(x/5000) + floor(50000/50000) = 1+0+1 = 2... on soustrait 1
+  const base = Math.floor(state.garageLevel / 50)
+             + Math.floor((state.carsSold ?? 0) / 5000)
+             + Math.floor((state.rep ?? 0) / 50000)
+             - 1; // soustrait 1 pour qu'au seuil strict on obtienne 1
   const mult = state.heritageBonuses?.prestigeGainMult ?? 1.0;
   return Math.max(1, Math.floor(base * mult));
+}
+
+// Applique les bonus héritage au state actif (appelé après achat d'un perk sans prestige)
+function applyHeritageBonusesToState(){
+  const b = state.heritageBonuses;
+  if(!b) return;
+  state.speedMult   = b.repSpeed;
+  state.saleBonusPct= b.saleBonus;
+  state.diagReward  = 1 + b.diagBonus;
+  state.moneyPerSec = (state.moneyPerSec ?? 0); // recalculé par applyTalentEffects
 }
 
 function canPrestige(){
@@ -1744,8 +1754,11 @@ function renderPrestigeModal(){
       state.heritageSpent  += cost;
       state.heritagePerks[id] = (state.heritagePerks[id] ?? 0) + 1;
       applyHeritageBonuses();
+      // Répercuter les bonus dans le state actif immédiatement
+      applyHeritageBonusesToState();
       applyTalentEffects();
       renderPrestigeModal();
+      renderAll();
       save();
     });
   });
