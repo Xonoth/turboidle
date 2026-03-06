@@ -1995,6 +1995,7 @@ let _authReady  = false; // empêche le tick de sauvegarder avant que la session
 
 // Unique point d'entrée pour toute la gestion de session
 _supa.auth.onAuthStateChange(async (event, session) => {
+  console.log("[auth] event:", event, "user:", session?.user?.id ?? "null");
   currentUser = session?.user ?? null;
   updateAuthUI();
 
@@ -2193,6 +2194,7 @@ let cloudSaving = false;
 async function cloudSave(){
   if(!currentUser || cloudSaving) return;
   cloudSaving = true;
+  console.log("[cloudSave] sauvegarde pour user:", currentUser.id);
   try {
     const { error } = await _supa
       .from("saves")
@@ -2201,32 +2203,37 @@ async function cloudSave(){
         { onConflict: "user_id" }
       );
     if(error) throw error;
+    console.log("[cloudSave] ✅ succès");
     showSaveIndicator("☁️ Sauvegardé");
   } catch(e){
-    console.error("Cloud save error:", e);
+    console.error("[cloudSave] ❌ erreur:", e);
     showSaveIndicator("⚠️ Erreur cloud");
   } finally { cloudSaving = false; }
 }
 
 async function cloudLoad(){
-  if(!currentUser) return;
+  if(!currentUser) { console.warn("[cloudLoad] pas de currentUser"); return; }
+  console.log("[cloudLoad] user:", currentUser.id);
   try {
     const { data, error } = await _supa
       .from("saves")
       .select("save_data")
       .eq("user_id", currentUser.id)
       .maybeSingle();
+    console.log("[cloudLoad] data:", data, "error:", error);
     if(error) throw error;
     if(data?.save_data){
+      console.log("[cloudLoad] save trouvée, application...");
       applySaveData(data.save_data);
       localSave();
       showSaveIndicator("☁️ Partie chargée");
+    } else {
+      console.warn("[cloudLoad] aucune save trouvée pour cet user");
     }
-    // Toujours renderAll, qu'il y ait une save ou non
     renderAll();
   } catch(e){
-    console.error("Cloud load error:", e);
-    renderAll(); // fallback : affiche au moins le state courant
+    console.error("[cloudLoad] erreur:", e);
+    renderAll();
   }
 }
 
