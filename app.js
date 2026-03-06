@@ -1991,27 +1991,35 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const _supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let currentUser = null;
+let _authReady  = false; // empêche le tick de sauvegarder avant que la session soit connue
 
-// Écoute les changements de session (login / logout / refresh)
+// Unique point d'entrée pour toute la gestion de session
 _supa.auth.onAuthStateChange(async (event, session) => {
   currentUser = session?.user ?? null;
   updateAuthUI();
+
+  if(event === "INITIAL_SESSION"){
+    // Premier chargement de la page
+    if(currentUser){
+      await cloudLoad();   // connecté → charge depuis Supabase
+    } else {
+      localLoad();         // déconnecté → charge depuis localStorage
+      renderAll();
+    }
+    _authReady = true;
+    tryStartNextRepair();
+  }
+
   if(event === "SIGNED_IN"){
+    // Connexion manuelle (pas un refresh)
     localStorage.removeItem(SAVE_KEY);
     await cloudLoad();
   }
-  if(event === "SIGNED_OUT") localSave();
-});
 
-// Vérifie s'il y a déjà une session active au chargement
-_supa.auth.getSession().then(({ data }) => {
-  currentUser = data.session?.user ?? null;
-  updateAuthUI();
-  if(currentUser){
-    cloudLoad(); // cloudLoad fait renderAll() en interne si save trouvée
-  } else {
-    localLoad();
-    renderAll(); // pas de cloud = on render direct après le localLoad
+  if(event === "SIGNED_OUT"){
+    localSave();
+    updateAuthUI();
+    renderAll();
   }
 });
 
@@ -2231,6 +2239,7 @@ function showSaveIndicator(msg){
 }
 
 function save(){
+  if(!_authReady) return; // ne pas sauvegarder avant que la session soit connue
   state._hasSaved = true;
   localSave();
   if(currentUser) cloudSave();
@@ -2658,8 +2667,6 @@ if(btnAchievementsClose) btnAchievementsClose.addEventListener("click", closeAch
 const achievementsBackdrop = document.getElementById("achievementsBackdrop");
 if(achievementsBackdrop) achievementsBackdrop.addEventListener("click", closeAchievementsModal);
 
-// init — chargement géré par _supa.auth.getSession() dans le bloc auth
-// renderAll() est appelé après le load (cloudLoad/localLoad) pour ne pas afficher un state vide
-tryStartNextRepair();
+// init — tout le chargement est géré par onAuthStateChange (event INITIAL_SESSION)
 requestAnimationFrame(tick);
 setInterval(save, 30000);
