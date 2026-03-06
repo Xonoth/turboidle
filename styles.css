@@ -1378,14 +1378,16 @@ body{
   display:flex;
   flex-direction:column;
   gap:18px;
+  padding-top: 4px; /* évite que le scroll coupe le haut de la carte */
 }
 
 /* Carte aperçu */
 .profileCard{
   border-radius:16px;
-  overflow:hidden;
+  overflow:visible; /* permet à l'avatar de déborder sur la bannière */
   border:1px solid rgba(255,255,255,.08);
   position:relative;
+  margin-top:4px;
 }
 .profileCard__banner{
   height:80px;
@@ -1393,6 +1395,7 @@ body{
   background: linear-gradient(135deg, #1a2a4a, #0d1829);
   transition:background .3s;
   display:block;
+  border-radius:16px 16px 0 0;
 }
 .profileCard__body{
   display:flex;
@@ -1401,6 +1404,8 @@ body{
   padding:10px 16px 14px 16px;
   background:rgba(8,12,22,.6);
   margin-top:0;
+  border-radius:0 0 16px 16px;
+  border-top:1px solid rgba(255,255,255,.06);
 }
 .profileCard__avatar{
   font-size:36px;
@@ -1778,7 +1783,7 @@ body{
 ══════════════════════════════════════ */
 .achievementPopup{
   position:fixed;
-  top:50%;
+  top:75%;
   left:50%;
   transform:translate(-50%, -50%) scale(.7);
   z-index:99999;

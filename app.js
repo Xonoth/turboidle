@@ -910,11 +910,13 @@ function hasHeritageRequirements(perk){
 }
 
 function calcHeritagePoints(){
-  // Formule : floor(garageLevel/10) + floor(carsSold/500) + floor(rep/5000)
-  // Multiplié par le bonus héritage
-  const base = Math.floor(state.garageLevel / 10)
-             + Math.floor(state.carsSold / 500)
-             + Math.floor(state.rep / 5000);
+  // Formule nerfée : chaque composante est plus dure à atteindre
+  // garageLevel/20 + carsSold/2000 + rep/25000
+  // Premier prestige minimum : floor(50/20) + floor(x/2000) + floor(50000/25000) = 2+0+2 = 4 pts
+  const base = Math.floor(state.garageLevel / 20)
+             + Math.floor((state.carsSold ?? 0) / 2000)
+             + Math.floor((state.rep ?? 0) / 25000);
+  // Le mult est calculé depuis les perks actuels (appliqués avant cet appel)
   const mult = state.heritageBonuses?.prestigeGainMult ?? 1.0;
   return Math.max(1, Math.floor(base * mult));
 }
@@ -968,6 +970,8 @@ function applyHeritageBonuses(){
 }
 
 function doPrestige(){
+  // Applique les bonuses héritage EN PREMIER pour que calcHeritagePoints les prenne en compte
+  applyHeritageBonuses();
   const pts = calcHeritagePoints();
 
   // Sauvegarder ce qui persiste
@@ -988,8 +992,7 @@ function doPrestige(){
     state.upgrades.map(u => ({ ...u, lvl:0, cost: getBaseUpgradeCost(u.id) }))
   ));
 
-  // Applique les bonus héritage calculés
-  applyHeritageBonuses();
+  // Les bonuses sont déjà appliqués en début de fonction
   const b = state.heritageBonuses;
 
   // Points talent bonus dès le départ
@@ -1828,10 +1831,22 @@ function applyRepairTime(seconds){
 // =====================
 // ACTIONS
 // =====================
+// =====================
+// ANTI-AUTOCLICK
+// =====================
+// Cooldown minimum entre deux clics : 150ms (~6-7 clics/s max)
+// Un humain rapide fait 8-10 clics/s max, on laisse de la marge
+const CLICK_COOLDOWN_MS = 50;
+let _lastRepairClick  = 0;
+let _lastAnalyzeClick = 0;
+
 btnAnalyze.addEventListener("click", () => {
-  // Occupés = voiture en atelier + file d'attente
+  const now = Date.now();
+  if(now - _lastAnalyzeClick < CLICK_COOLDOWN_MS) return; // trop rapide = ignoré
+  _lastAnalyzeClick = now;
+
   const occupied = (state.active ? 1 : 0) + state.queue.length;
-  if (occupied >= state.garageCap) return; // garage plein
+  if (occupied >= state.garageCap) return;
 
   state.money += state.diagReward + (state.talentDiagBonus ?? 0);
   state.totalAnalyses = (state.totalAnalyses ?? 0) + 1;
@@ -1841,6 +1856,10 @@ btnAnalyze.addEventListener("click", () => {
 });
 
 btnRepairClick.addEventListener("click", () => {
+  const now = Date.now();
+  if(now - _lastRepairClick < CLICK_COOLDOWN_MS) return; // trop rapide = ignoré
+  _lastRepairClick = now;
+
   const mult = (state.speedMult ?? 1) * (state.talentSpeedMult ?? 1);
   const clickAmt = (state.repairClick + (state.talentClickBonus ?? 0)) * mult;
   applyRepairTime(clickAmt);
@@ -1848,7 +1867,12 @@ btnRepairClick.addEventListener("click", () => {
   renderActive();
 });
 
+let _lastSellClick = 0;
 showroomListEl.addEventListener("click", (e) => {
+  const now = Date.now();
+  if(now - _lastSellClick < CLICK_COOLDOWN_MS) return;
+  _lastSellClick = now;
+
   const btn = e.target.closest("[data-sell]");
   if(!btn) return;
 
@@ -2281,14 +2305,20 @@ const BANNERS = [
 ];
 
 const COUNTRIES = [
-  {code:"FR",name:"🇫🇷 France"},{code:"BE",name:"🇧🇪 Belgique"},{code:"CH",name:"🇨🇭 Suisse"},
-  {code:"CA",name:"🇨🇦 Canada"},{code:"DE",name:"🇩🇪 Allemagne"},{code:"ES",name:"🇪🇸 Espagne"},
-  {code:"IT",name:"🇮🇹 Italie"},{code:"PT",name:"🇵🇹 Portugal"},{code:"GB",name:"🇬🇧 Royaume-Uni"},
-  {code:"US",name:"🇺🇸 États-Unis"},{code:"JP",name:"🇯🇵 Japon"},{code:"BR",name:"🇧🇷 Brésil"},
-  {code:"MX",name:"🇲🇽 Mexique"},{code:"AU",name:"🇦🇺 Australie"},{code:"NL",name:"🇳🇱 Pays-Bas"},
-  {code:"PL",name:"🇵🇱 Pologne"},{code:"RU",name:"🇷🇺 Russie"},{code:"MA",name:"🇲🇦 Maroc"},
-  {code:"DZ",name:"🇩🇿 Algérie"},{code:"TN",name:"🇹🇳 Tunisie"},{code:"OTHER",name:"🌍 Autre"},
+  {code:"FR",name:"France"},{code:"BE",name:"Belgique"},{code:"CH",name:"Suisse"},
+  {code:"CA",name:"Canada"},{code:"DE",name:"Allemagne"},{code:"ES",name:"Espagne"},
+  {code:"IT",name:"Italie"},{code:"PT",name:"Portugal"},{code:"GB",name:"Royaume-Uni"},
+  {code:"US",name:"États-Unis"},{code:"JP",name:"Japon"},{code:"BR",name:"Brésil"},
+  {code:"MX",name:"Mexique"},{code:"AU",name:"Australie"},{code:"NL",name:"Pays-Bas"},
+  {code:"PL",name:"Pologne"},{code:"RU",name:"Russie"},{code:"MA",name:"Maroc"},
+  {code:"DZ",name:"Algérie"},{code:"TN",name:"Tunisie"},{code:"OTHER",name:"Autre"},
 ];
+
+// Génère une image drapeau via flagcdn.com (compatible tous navigateurs/OS)
+function flagImg(code){
+  if(code === "OTHER") return `<span style="font-size:14px;">🌍</span>`;
+  return `<img src="https://flagcdn.com/16x12/${code.toLowerCase()}.png" width="16" height="12" style="border-radius:2px;vertical-align:middle;margin-right:6px;" alt="${code}">`;
+}
 
 let selectedAvatar = null;
 let selectedBanner = null;
@@ -2304,7 +2334,7 @@ function openProfileModal(){
 
   document.getElementById("profilePseudo").value = p.pseudo || "";
 
-  // Remplir pays
+  // Remplir pays — le select natif ne supporte pas le HTML, on utilise un select custom simple
   const sel = document.getElementById("profileCountry");
   sel.innerHTML = COUNTRIES.map(c =>
     `<option value="${c.code}" ${c.code === (p.country||"FR") ? "selected" : ""}>${c.name}</option>`
@@ -2352,7 +2382,12 @@ function updateProfilePreview(){
   document.getElementById("previewBanner").style.background = selectedBanner || "#1a2a4a";
   document.getElementById("previewAvatar").textContent = selectedAvatar || "🔧";
   document.getElementById("previewPseudo").textContent  = pseudo || "Mécanicien";
-  document.getElementById("previewCountry").textContent = countryData?.name || "";
+  const previewCountryEl = document.getElementById("previewCountry");
+  if(previewCountryEl){
+    previewCountryEl.innerHTML = countryData
+      ? `${flagImg(countryData.code)}${countryData.name}`
+      : "";
+  }
 }
 
 function saveProfile(){
@@ -2514,8 +2549,32 @@ if(!state._hasSaved)    state._hasSaved    = false;
 if(!state._wasBroke)    state._wasBroke    = false;
 if(!state._lastRepairedTier) state._lastRepairedTier = "";
 
-let _achPopupQueue = [];
+let _achPopupQueue   = [];
 let _achPopupShowing = false;
+let _achNotifsEnabled = localStorage.getItem("garage_ach_notifs") !== "false"; // true par défaut
+
+function updateAchNotifBtn(){
+  const btn = document.getElementById("btnToggleAchNotif");
+  if(!btn) return;
+  if(_achNotifsEnabled){
+    btn.textContent = "🔔 Notifs";
+    btn.style.opacity = "0.8";
+    btn.style.borderColor = "rgba(49,214,255,.25)";
+  } else {
+    btn.textContent = "🔕 Notifs";
+    btn.style.opacity = "0.45";
+    btn.style.borderColor = "rgba(255,90,90,.25)";
+  }
+}
+
+document.getElementById("btnToggleAchNotif")?.addEventListener("click", () => {
+  _achNotifsEnabled = !_achNotifsEnabled;
+  localStorage.setItem("garage_ach_notifs", _achNotifsEnabled);
+  updateAchNotifBtn();
+});
+
+// Init bouton au chargement
+updateAchNotifBtn();
 
 function checkAchievements(){
   // Mise à jour flags spéciaux
@@ -2535,9 +2594,11 @@ function checkAchievements(){
     if(ach.reward.money)  state.money  += ach.reward.money;
     if(ach.reward.talent) state.talentPoints += ach.reward.talent;
 
-    // Ajouter à la queue de popup
-    _achPopupQueue.push(ach);
-    showNextAchievementPopup();
+    // Ajouter à la queue de popup seulement si notifs activées
+    if(_achNotifsEnabled){
+      _achPopupQueue.push(ach);
+      showNextAchievementPopup();
+    }
   }
 }
 
