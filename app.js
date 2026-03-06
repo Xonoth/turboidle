@@ -2001,7 +2001,9 @@ _supa.auth.onAuthStateChange(async (event, session) => {
 
   if(event === "INITIAL_SESSION" || event === "SIGNED_IN"){
     if(currentUser){
-      await cloudLoad(); // charge depuis Supabase
+      // Petit délai pour laisser le token JWT se stabiliser
+      await new Promise(r => setTimeout(r, 300));
+      await cloudLoad();
     } else {
       localLoad();
       renderAll();
