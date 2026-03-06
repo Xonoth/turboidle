@@ -6,7 +6,7 @@
   <title>Garage Turbo — Idle</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -15,28 +15,178 @@
 
   <div class="modal" id="talentsModal" style="display:none;">
     <div class="modal__backdrop" id="talentsBackdrop"></div>
-    <div class="modal__panel">
-      <div class="modal__head">
-        <div class="modal__title">⭐ Talents</div>
-        <button class="iconbtn" id="btnTalentsClose" title="Fermer">✖️</button>
+    <div class="modal__panel modal__panel--talents">
+      <div class="achModal__head">
+        <div class="achModal__title">
+          <div class="achModal__titleMain">⭐ Talents</div>
+          <div class="achModal__titleSub">Points disponibles : <span id="talentPoints">0</span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <button class="btn btn--sm" id="btnTalentsReset">↩ Reset</button>
+          <button class="iconbtn" id="btnTalentsClose" title="Fermer">✖️</button>
+        </div>
       </div>
-      <div class="modal__sub">Points disponibles : <b><span id="talentPoints">0</span></b></div>
+      <div class="talentFilters" id="talentFilters"></div>
       <div class="talentGrid" id="talentList"></div>
-      <div class="modal__foot">
-        <button class="btn" id="btnTalentsReset">↩ Reset (debug)</button>
-        <div class="modal__hint">Les talents s'achètent avec 1 point par rang. Certains demandent un prérequis.</div>
-      </div>
+      <div class="talentModal__hint">Les talents s'achètent avec 1 point par rang. Certains nécessitent un prérequis.</div>
     </div>
   </div>
 
   <div class="modal" id="statsModal" style="display:none;">
     <div class="modal__backdrop" id="statsBackdrop"></div>
     <div class="modal__panel modal__panel--stats">
-      <div class="modal__head">
-        <div class="modal__title">📊 Statistiques</div>
+      <div class="achModal__head">
+        <div class="achModal__title">
+          <div class="achModal__titleMain">📊 Statistiques</div>
+          <div class="achModal__titleSub" id="statsSubtitle">Session en cours</div>
+        </div>
         <button class="iconbtn" id="btnStatsClose" title="Fermer">✖️</button>
       </div>
       <div class="statsGrid" id="statsGrid"></div>
+    </div>
+  </div>
+
+  <!-- PRESTIGE MODAL -->
+  <div class="modal" id="prestigeModal" style="display:none;">
+    <div class="modal__backdrop" id="prestigeBackdrop"></div>
+    <div class="modal__panel modal__panel--prestige">
+      <div class="achModal__head">
+        <div class="achModal__title">
+          <div class="achModal__titleMain">🔥 Prestige</div>
+          <div class="achModal__titleSub" id="heritagePointsDisplay">Points disponibles : 0</div>
+        </div>
+        <button class="iconbtn" id="btnPrestigeClose" title="Fermer">✖️</button>
+      </div>
+      <!-- Info + bouton prestige -->
+      <div id="prestigeInfo"></div>
+      <!-- Filtres branches -->
+      <div class="heritageFilters" id="heritageFilters"></div>
+      <!-- Grille perks -->
+      <div class="heritageGrid" id="heritageGrid"></div>
+    </div>
+  </div>
+
+  <!-- CONFIRMATION PRESTIGE -->
+  <div class="modal" id="prestigeConfirmModal" style="display:none;z-index:200;">
+    <div class="modal__backdrop" id="prestigeConfirmBackdrop"></div>
+    <div class="modal__panel modal__panel--confirm" style="border-color:rgba(255,140,64,.3);box-shadow:0 0 60px rgba(255,140,64,.15)">
+      <div class="confirmModal__icon">🔥</div>
+      <div class="confirmModal__title">Lancer le Prestige ?</div>
+      <div class="confirmModal__desc">
+        Ton garage repart de zéro.<br>
+        Upgrades, argent, REP, voitures perdus.<br>
+        <span id="prestigeConfirmGain" style="color:#ffc83a;font-weight:900;font-size:15px;display:block;margin-top:8px"></span>
+      </div>
+      <div class="confirmModal__actions">
+        <button class="btn" id="prestigeConfirmCancel">Annuler</button>
+        <button class="btn" id="prestigeConfirmOk" style="background:rgba(255,140,64,.12);border-color:rgba(255,140,64,.3);color:#ff8c40;font-weight:800;">🔥 Confirmer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- POPUP PRESTIGE -->
+  <div id="prestigePopup" class="prestigePopup" style="display:none;">
+    <div class="prestigePopup__inner">
+      <div class="prestigePopup__icon">🔥</div>
+      <div class="prestigePopup__txt">
+        <div class="prestigePopup__label">✦ PRESTIGE ACCOMPLI ✦</div>
+        <div class="prestigePopup__count" id="prestigePopupCount">Prestige #1</div>
+        <div class="prestigePopup__pts" id="prestigePopupPts">+0 points Héritage</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONFIRMATION RESET TALENTS -->
+  <div class="modal" id="talentResetModal" style="display:none;z-index:200;">
+    <div class="modal__backdrop" id="talentResetBackdrop"></div>
+    <div class="modal__panel modal__panel--confirm">
+      <div class="confirmModal__icon">⚠️</div>
+      <div class="confirmModal__title">Réinitialiser les Talents ?</div>
+      <div class="confirmModal__desc">Tous tes rangs seront remboursés en points.<br>Coût : <span id="resetCostDisplay" style="color:#a78bfa;font-weight:900;">0 €</span></div>
+      <div class="confirmModal__actions">
+        <button class="btn" id="btnResetCancel">Annuler</button>
+        <button class="btn btn--danger" id="btnResetConfirm">Confirmer le Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUCCÈS MODAL -->
+  <div class="modal" id="achievementsModal" style="display:none;">
+    <div class="modal__backdrop" id="achievementsBackdrop"></div>
+    <div class="modal__panel modal__panel--achievements">
+      <div class="achModal__head">
+        <div class="achModal__title">
+          <div class="achModal__titleMain">🎖️ Succès</div>
+          <div class="achModal__titleSub" id="achievementCount">0 / 0 débloqués</div>
+        </div>
+        <div class="achModal__counter">
+          <div class="achModal__bar"><div class="achModal__barFill" id="achProgressBar" style="width:0%"></div></div>
+          <div class="achModal__fraction" id="achFraction">0%</div>
+          <button class="iconbtn" id="btnAchievementsClose" title="Fermer">✖️</button>
+        </div>
+      </div>
+      <div class="achievementFilters" id="achievementFilters"></div>
+      <div class="achievementGrid" id="achievementGrid"></div>
+    </div>
+  </div>
+
+  <!-- POPUP SUCCÈS DÉBLOQUÉ -->
+  <div id="achievementPopup" class="achievementPopup" style="display:none;">
+    <div class="achievementPopup__inner">
+      <div class="achievementPopup__sweep"></div>
+      <div class="achievementPopup__content">
+        <div class="achievementPopup__iconWrap" id="popupIcon">🏆</div>
+        <div class="achievementPopup__txt">
+          <div class="achievementPopup__label">✦ Succès Débloqué ✦</div>
+          <div class="achievementPopup__name" id="popupName">—</div>
+          <div class="achievementPopup__rewards" id="popupReward"></div>
+        </div>
+      </div>
+      <div class="achievementPopup__progress">
+        <div class="achievementPopup__progressFill" id="popupProgressFill"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROFIL MODAL -->
+  <div class="modal" id="profileModal" style="display:none;">
+    <div class="modal__backdrop" id="profileBackdrop"></div>
+    <div class="modal__panel modal__panel--profile">
+      <div class="modal__head">
+        <div class="modal__title">👤 Mon Profil</div>
+        <button class="iconbtn" id="btnProfileClose" title="Fermer">✖️</button>
+      </div>
+      <div class="profileCard" id="profilePreview">
+        <div class="profileCard__banner" id="previewBanner"></div>
+        <div class="profileCard__body">
+          <div class="profileCard__avatar" id="previewAvatar">🔧</div>
+          <div class="profileCard__info">
+            <div class="profileCard__pseudo" id="previewPseudo">Mécanicien</div>
+            <div class="profileCard__country" id="previewCountry"></div>
+          </div>
+        </div>
+      </div>
+      <div class="profileForm">
+        <div class="profileField">
+          <label class="profileField__label">Pseudo</label>
+          <input class="profileField__input" id="profilePseudo" type="text" maxlength="20" placeholder="Ton pseudo..." />
+        </div>
+        <div class="profileField">
+          <label class="profileField__label">Avatar</label>
+          <div class="avatarGrid" id="avatarGrid"></div>
+        </div>
+        <div class="profileField">
+          <label class="profileField__label">Pays / Région</label>
+          <select class="profileField__select" id="profileCountry"></select>
+        </div>
+        <div class="profileField">
+          <label class="profileField__label">Couleur de bannière</label>
+          <div class="bannerPicker" id="bannerPicker"></div>
+        </div>
+      </div>
+      <div class="modal__foot">
+        <button class="btn btn--primary" id="btnProfileSave">💾 Sauvegarder le profil</button>
+      </div>
     </div>
   </div>
 
@@ -63,19 +213,26 @@
 
     <div class="topbar__center">
       <div class="money">
-        <div class="money__amount"><span id="money">100</span> €</div>
-        <div class="money__rate">+<span id="moneyPerSec">0</span> €/s</div>
+        <div class="money__amount"><span id="money">100 €</span></div>
+        <div class="money__rate">+<span id="moneyPerSec">0 €/s</span></div>
       </div>
     </div>
 
     <div class="topbar__actions">
 
-      <!-- Bouton auth unique -->
+      <!-- Auth : déconnecté -->
       <button class="iconbtn" id="btnAuth" title="Connexion / Inscription">🔐</button>
-      <span class="authUser" id="authUserName"></span>
 
-      <button class="btn btn--ghost" id="btnTalents">⭐ Talents</button>
+      <!-- Profil : connecté (masqué par défaut) -->
+      <button class="profileBtn" id="btnProfile" style="display:none" title="Mon profil">
+        <span class="profileBtn__avatar" id="topbarAvatar">🔧</span>
+        <span class="profileBtn__pseudo" id="topbarPseudo">Mécanicien</span>
+      </button>
+
+      <button class="btn btn--ghost btn--notif btn--prestige" id="btnPrestige">🔥 Prestige<span class="notifDot notifDot--gold" id="prestigeNotifDot" style="display:none"></span></button>
+      <button class="btn btn--ghost btn--notif" id="btnTalents">⭐ Talents<span class="notifDot" id="talentNotifDot" style="display:none"></span></button>
       <button class="repbtn">🏆 <span id="rep">0</span> REP</button>
+      <button class="iconbtn" id="btnAchievements" title="Succès">🎖️</button>
       <button class="iconbtn" id="btnSave" title="Sauvegarder">💾</button>
       <button class="iconbtn" id="btnStats" title="Statistiques">📊</button>
 
@@ -92,15 +249,10 @@
       <div class="panel">
         <div class="panel__head">
           <div class="panel__title">🔍 Diagnostic</div>
-          <div class="badge" id="diagCapBadge">0/1</div>
         </div>
         <div class="panel__sub">Capacité Garage</div>
         <button class="bigAction" id="btnAnalyze">
-          <div class="bigAction__icon">🚗</div>
-          <div class="bigAction__txt">
-            <div class="bigAction__title">ANALYSER</div>
-            <div class="bigAction__meta">+<span id="diagReward">1</span>€ / analyse</div>
-          </div>
+          <div class="bigAction__meta">+<span id="diagReward">1</span>€ / analyse</div>
         </button>
       </div>
 
@@ -167,7 +319,6 @@
 
         <div class="panel__head">
           <div class="panel__title">🧰 Bureau &amp; Gestion</div>
-          <div class="moneyPill">+<span id="officeIncome">0</span> €/s</div>
         </div>
 
         <div class="tabs">
