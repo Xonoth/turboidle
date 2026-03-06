@@ -2007,8 +2007,12 @@ _supa.auth.onAuthStateChange(async (event, session) => {
 _supa.auth.getSession().then(({ data }) => {
   currentUser = data.session?.user ?? null;
   updateAuthUI();
-  if(currentUser) cloudLoad();
-  else            localLoad();
+  if(currentUser){
+    cloudLoad(); // cloudLoad fait renderAll() en interne si save trouvée
+  } else {
+    localLoad();
+    renderAll(); // pas de cloud = on render direct après le localLoad
+  }
 });
 
 function updateAuthUI(){
@@ -2208,10 +2212,14 @@ async function cloudLoad(){
     if(data?.save_data){
       applySaveData(data.save_data);
       localSave();
-      renderAll();
       showSaveIndicator("☁️ Partie chargée");
     }
-  } catch(e){ console.error("Cloud load error:", e); }
+    // Toujours renderAll, qu'il y ait une save ou non
+    renderAll();
+  } catch(e){
+    console.error("Cloud load error:", e);
+    renderAll(); // fallback : affiche au moins le state courant
+  }
 }
 
 function showSaveIndicator(msg){
@@ -2651,7 +2659,7 @@ const achievementsBackdrop = document.getElementById("achievementsBackdrop");
 if(achievementsBackdrop) achievementsBackdrop.addEventListener("click", closeAchievementsModal);
 
 // init — chargement géré par _supa.auth.getSession() dans le bloc auth
+// renderAll() est appelé après le load (cloudLoad/localLoad) pour ne pas afficher un state vide
 tryStartNextRepair();
-renderAll();
 requestAnimationFrame(tick);
 setInterval(save, 30000);
