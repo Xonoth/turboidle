@@ -2083,6 +2083,90 @@ document.getElementById("supaAuthPwd")?.addEventListener("keydown", (e) => {
 // =====================
 const SAVE_KEY = "garage_idle_save_v2";
 
+// Données à sauvegarder
+function buildSavePayload(){
+  return {
+    garageLevel:        state.garageLevel,
+    garageCap:          state.garageCap,
+    garageName:         state.garageName,
+    money:              state.money,
+    moneyPerSec:        state.moneyPerSec,
+    rep:                state.rep,
+    carsSold:           state.carsSold,
+    diagReward:         state.diagReward,
+    repairClick:        state.repairClick,
+    repairAuto:         state.repairAuto,
+    speedMult:          state.speedMult,
+    saleBonusPct:       state.saleBonusPct,
+    talentPoints:       state.talentPoints,
+    talentLevelGranted: state.talentLevelGranted,
+    talents:            state.talents,
+    upgrades:           state.upgrades,
+    showroom:           state.showroom,
+    queue:              state.queue,
+    activeTab:          state.activeTab,
+    totalMoneyEarned:   state.totalMoneyEarned,
+    totalRepairs:       state.totalRepairs,
+    totalAnalyses:      state.totalAnalyses,
+    totalClickRepairs:  state.totalClickRepairs,
+    sessionStart:       state.sessionStart,
+    profile:            state.profile,
+    achievements:       state.achievements,
+    prestigeCount:      state.prestigeCount,
+    heritagePoints:     state.heritagePoints,
+    heritageSpent:      state.heritageSpent,
+    heritagePerks:      state.heritagePerks,
+    heritageBonuses:    state.heritageBonuses,
+    _hasSaved:          state._hasSaved,
+    _wasBroke:          state._wasBroke,
+    _lastRepairedTier:  state._lastRepairedTier,
+  };
+}
+
+// Applique les données chargées dans le state
+function applySaveData(data){
+  const baseUpgrades = JSON.parse(JSON.stringify(state.upgrades));
+  Object.assign(state, data);
+
+  // Fusion intelligente des upgrades (préserve les nouvelles amélis)
+  if(data.upgrades){
+    state.upgrades = baseUpgrades.map(baseItem => {
+      const saved = data.upgrades.find(x => x.id === baseItem.id);
+      if(saved){ baseItem.lvl = saved.lvl; baseItem.cost = saved.cost; }
+      return baseItem;
+    });
+  }
+
+  // Sécurités
+  if(typeof state.carsSold !== "number")          state.carsSold = 0;
+  if(typeof state.talentPoints !== "number")      state.talentPoints = 0;
+  if(typeof state.talents !== "object" || !state.talents) state.talents = {};
+  if(typeof state.talentLevelGranted !== "number") state.talentLevelGranted = state.garageLevel ?? 1;
+  if(!state.activeTab)  state.activeTab  = "tools";
+  if(!state.garageName) state.garageName = "Garage Turbo";
+  if(!state.profile || typeof state.profile !== "object") state.profile = { pseudo:"Mécanicien", avatar:"🔧", country:"FR", banner:"#1a2a4a" };
+  else {
+    state.profile.pseudo  = state.profile.pseudo  || "Mécanicien";
+    state.profile.avatar  = state.profile.avatar  || "🔧";
+    state.profile.country = state.profile.country || "FR";
+    state.profile.banner  = state.profile.banner  || "#1a2a4a";
+  }
+  if(!state.achievements || typeof state.achievements !== "object") state.achievements = {};
+  if(typeof state.prestigeCount  !== "number") state.prestigeCount  = 0;
+  if(typeof state.heritagePoints !== "number") state.heritagePoints = 0;
+  if(typeof state.heritageSpent  !== "number") state.heritageSpent  = 0;
+  if(!state.heritagePerks   || typeof state.heritagePerks   !== "object") state.heritagePerks   = {};
+  if(!state.heritageBonuses || typeof state.heritageBonuses !== "object") state.heritageBonuses = { startMoney:0, repSpeed:1.0, saleBonus:0, passiveBonus:0, repGainMult:1.0, talentBonus:0, diagBonus:0, prestigeGainMult:1.0 };
+  if(!state._hasSaved)         state._hasSaved         = false;
+  if(!state._wasBroke)         state._wasBroke         = false;
+  if(!state._lastRepairedTier) state._lastRepairedTier = "";
+
+  applyGarageName();
+  applyTalentEffects();
+  recalcRepairAuto();
+  updateGarageLevel();
+  updateTopbarProfile();
+}
 function localSave(){
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(buildSavePayload())); } catch(e){}
 }
@@ -2566,9 +2650,8 @@ if(btnAchievementsClose) btnAchievementsClose.addEventListener("click", closeAch
 const achievementsBackdrop = document.getElementById("achievementsBackdrop");
 if(achievementsBackdrop) achievementsBackdrop.addEventListener("click", closeAchievementsModal);
 
-// init
-load();
+// init — chargement géré par _supa.auth.getSession() dans le bloc auth
 tryStartNextRepair();
 renderAll();
 requestAnimationFrame(tick);
-setInterval(save, 30000); // auto-save toutes les 30s (cloud moins fréquent)
+setInterval(save, 30000);
