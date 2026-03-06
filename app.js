@@ -2210,20 +2210,18 @@ async function cloudLoad(){
   if(!currentUser) { console.warn("[cloudLoad] pas de currentUser"); return; }
   console.log("[cloudLoad] user:", currentUser.id);
   try {
-    // Force un refresh du token pour s'assurer qu'il est valide
-    const { data: sessionData, error: sessionError } = await _supa.auth.getSession();
-    console.log("[cloudLoad] session refresh:", sessionData?.session?.user?.id ?? "null", sessionError);
-    if(sessionError || !sessionData?.session) {
-      console.error("[cloudLoad] session invalide, abandon");
-      renderAll();
-      return;
-    }
-
-    const { data, error } = await _supa
+    // Timeout de sécurité 8s pour éviter le freeze
+    const fetchPromise = _supa
       .from("saves")
       .select("save_data")
       .eq("user_id", currentUser.id)
       .maybeSingle();
+
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("timeout")), 8000)
+    );
+
+    const { data, error } = await Promise.race([fetchPromise, timeoutPromise]);
     console.log("[cloudLoad] data:", data, "error:", error);
     if(error) throw error;
     if(data?.save_data){
@@ -2236,7 +2234,10 @@ async function cloudLoad(){
     }
     renderAll();
   } catch(e){
-    console.error("[cloudLoad] erreur:", e);
+    console.error("[cloudLoad] erreur:", e.message);
+    // Fallback sur le localStorage si le cloud ne répond pas
+    console.warn("[cloudLoad] fallback localStorage");
+    localLoad();
     renderAll();
   }
 }
@@ -2678,6 +2679,17 @@ if(btnAchievementsClose) btnAchievementsClose.addEventListener("click", closeAch
 const achievementsBackdrop = document.getElementById("achievementsBackdrop");
 if(achievementsBackdrop) achievementsBackdrop.addEventListener("click", closeAchievementsModal);
 
-// init — tout le chargement est géré par onAuthStateChange (event INITIAL_SESSION)
+// init
 requestAnimationFrame(tick);
 setInterval(save, 30000);
+
+// Fallback : si onAuthStateChange ne répond pas dans les 5s, on charge quand même depuis localStorage
+setTimeout(() => {
+  if(!_authReady){
+    console.warn("[init] auth timeout — fallback localStorage");
+    localLoad();
+    renderAll();
+    tryStartNextRepair();
+    _authReady = true;
+  }
+}, 5000);
