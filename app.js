@@ -1999,22 +1999,15 @@ _supa.auth.onAuthStateChange(async (event, session) => {
   currentUser = session?.user ?? null;
   updateAuthUI();
 
-  if(event === "INITIAL_SESSION"){
-    // Premier chargement de la page
+  if(event === "INITIAL_SESSION" || event === "SIGNED_IN"){
     if(currentUser){
-      await cloudLoad();   // connecté → charge depuis Supabase
+      await cloudLoad(); // charge depuis Supabase
     } else {
-      localLoad();         // déconnecté → charge depuis localStorage
+      localLoad();
       renderAll();
     }
     _authReady = true;
     tryStartNextRepair();
-  }
-
-  if(event === "SIGNED_IN"){
-    // Connexion manuelle (pas un refresh)
-    localStorage.removeItem(SAVE_KEY);
-    await cloudLoad();
   }
 
   if(event === "SIGNED_OUT"){
