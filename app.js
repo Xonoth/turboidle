@@ -1980,64 +1980,47 @@ function tick(now){
 }
 
 // =====================
-// AUTH — Netlify Identity
+// SUPABASE AUTH + CLOUD SAVE
 // =====================
-// Le widget Identity est chargé depuis index.html via le script CDN
 
-let netlifyIdentity = null;   // instance du widget
-let currentUser     = null;   // user connecté (ou null)
-let authToken       = null;   // JWT token pour les appels API
+// ⚠️  Remplace ces deux valeurs par tes vraies clés Supabase
+//     Dashboard Supabase → Project Settings → API
+const SUPABASE_URL      = "https://ydruyvfusnrekfllocqq.supabase.co";
+const SUPABASE_ANON_KEY = "sb_secret_9y4U5dWPanY0sEzVnFZQ3w_pQP42Q2m";
 
-// Appelé depuis index.html une fois le script Identity chargé
-function initIdentity(){
-  netlifyIdentity = window.netlifyIdentity;
-  if(!netlifyIdentity) return;
+const _supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  netlifyIdentity.on("init", (user) => {
-    currentUser = user;
-    if(user) authToken = user.token?.access_token;
-    updateAuthUI();
-  });
+let currentUser = null;
 
-  netlifyIdentity.on("login", (user) => {
-    currentUser = user;
-    authToken   = user.token?.access_token;
-    netlifyIdentity.close();
-    updateAuthUI();
-    localStorage.removeItem(SAVE_KEY); // on efface le local, le cloud fait foi
-    cloudLoad();
-  });
+// Écoute les changements de session (login / logout / refresh)
+_supa.auth.onAuthStateChange(async (event, session) => {
+  currentUser = session?.user ?? null;
+  updateAuthUI();
+  if(event === "SIGNED_IN"){
+    localStorage.removeItem(SAVE_KEY);
+    await cloudLoad();
+  }
+  if(event === "SIGNED_OUT") localSave();
+});
 
-  netlifyIdentity.on("logout", () => {
-    currentUser = null;
-    authToken   = null;
-    updateAuthUI();
-    // Sauvegarder l'état courant en local pour ne pas perdre la partie
-    localSave();
-  });
-
-  // Mettre à jour le token quand le widget le rafraîchit automatiquement
-  netlifyIdentity.on("token_refresh", (user) => {
-    if(user?.token?.access_token){
-      authToken   = user.token.access_token;
-      currentUser = user;
-    }
-  });
-
-  netlifyIdentity.init();
-}
+// Vérifie s'il y a déjà une session active au chargement
+_supa.auth.getSession().then(({ data }) => {
+  currentUser = data.session?.user ?? null;
+  updateAuthUI();
+  if(currentUser) cloudLoad();
+  else            localLoad();
+});
 
 function updateAuthUI(){
   const btnAuth    = document.getElementById("btnAuth");
   const btnProfile = document.getElementById("btnProfile");
   if(!btnAuth) return;
-
   if(currentUser){
-    btnAuth.style.display    = "none";
+    btnAuth.style.display = "none";
     if(btnProfile) btnProfile.style.display = "flex";
     updateTopbarProfile();
   } else {
-    btnAuth.style.display    = "flex";
+    btnAuth.style.display = "flex";
     if(btnProfile) btnProfile.style.display = "none";
   }
 }
@@ -2045,145 +2028,61 @@ function updateAuthUI(){
 function updateTopbarProfile(){
   const avatarEl = document.getElementById("topbarAvatar");
   const pseudoEl = document.getElementById("topbarPseudo");
-  if(avatarEl) avatarEl.textContent = state.profile?.avatar  || "🔧";
+  if(avatarEl) avatarEl.textContent = state.profile?.avatar || "🔧";
   if(pseudoEl) pseudoEl.textContent = state.profile?.pseudo || "Mécanicien";
 }
 
 function openAuth(){
-  if(!netlifyIdentity) return;
-  if(currentUser) netlifyIdentity.logout();
-  else netlifyIdentity.open(); // widget avec onglets Login + Signup intégrés
+  if(currentUser){ _supa.auth.signOut(); return; }
+  const modal = document.getElementById("supaAuthModal");
+  if(modal){ modal.style.display = "block"; document.getElementById("supaAuthEmail")?.focus(); }
 }
-function openSignup(){ netlifyIdentity?.open("signup"); }
-function openLogin(){  netlifyIdentity?.open("login");  }
 
-// Rafraîchit le token si expiré (Identity le gère automatiquement)
-async function getValidToken(){
-  if(!netlifyIdentity) return null;
-  try {
-    // Forcer le rafraîchissement du token via le widget
-    const user = netlifyIdentity.currentUser();
-    if(!user) return null;
-
-    // Vérifier si le token actuel expire dans moins de 60s
-    const token = user.token?.access_token;
-    const exp   = user.token?.expires_at; // timestamp ms
-    const needsRefresh = !token || !exp || (exp - Date.now() < 60000);
-
-    if(needsRefresh){
-      // refreshUser() renvoie une Promise avec l'user rafraîchi
-      const refreshed = await netlifyIdentity.refresh();
-      if(refreshed?.token?.access_token){
-        authToken = refreshed.token.access_token;
-        currentUser = refreshed;
-        return authToken;
-      }
-    }
-
-    authToken = token;
-    return authToken;
-  } catch(e) {
-    console.warn("Token refresh failed:", e);
-    return authToken; // fallback sur l'ancien
+async function supaAuthSubmit(mode){
+  const email = document.getElementById("supaAuthEmail")?.value?.trim();
+  const pwd   = document.getElementById("supaAuthPwd")?.value;
+  const msgEl = document.getElementById("supaAuthMsg");
+  if(!email || !pwd){ if(msgEl) msgEl.textContent = "Email et mot de passe requis."; return; }
+  if(msgEl) msgEl.textContent = "⏳...";
+  let error;
+  if(mode === "signup"){
+    const r = await _supa.auth.signUp({ email, password: pwd });
+    error = r.error;
+    if(!error && msgEl) msgEl.textContent = "✅ Vérifie ton email pour confirmer !";
+  } else {
+    const r = await _supa.auth.signInWithPassword({ email, password: pwd });
+    error = r.error;
+    if(!error) document.getElementById("supaAuthModal").style.display = "none";
   }
+  if(error && msgEl) msgEl.textContent = "❌ " + error.message;
 }
+
+async function supaResetPassword(){
+  const email = document.getElementById("supaAuthEmail")?.value?.trim();
+  const msgEl = document.getElementById("supaAuthMsg");
+  if(!email){ if(msgEl) msgEl.textContent = "Entre ton email d'abord."; return; }
+  await _supa.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
+  if(msgEl) msgEl.textContent = "✅ Email de réinitialisation envoyé !";
+}
+
+document.getElementById("supaAuthClose")?.addEventListener("click", () => {
+  document.getElementById("supaAuthModal").style.display = "none";
+});
+document.getElementById("supaAuthBackdrop")?.addEventListener("click", () => {
+  document.getElementById("supaAuthModal").style.display = "none";
+});
+document.getElementById("supaAuthBtnLogin")?.addEventListener("click",  () => supaAuthSubmit("login"));
+document.getElementById("supaAuthBtnSignup")?.addEventListener("click", () => supaAuthSubmit("signup"));
+document.getElementById("supaAuthBtnReset")?.addEventListener("click",  supaResetPassword);
+document.getElementById("supaAuthPwd")?.addEventListener("keydown", (e) => {
+  if(e.key === "Enter") supaAuthSubmit("login");
+});
 
 // =====================
-// SAVE / LOAD — Cloud + LocalStorage fallback
+// SAVE / LOAD — Supabase direct + LocalStorage fallback
 // =====================
 const SAVE_KEY = "garage_idle_save_v2";
 
-// Données à sauvegarder (état complet sérialisable)
-function buildSavePayload(){
-  return {
-    garageLevel:        state.garageLevel,
-    garageCap:          state.garageCap,
-    garageName:         state.garageName,
-    money:              state.money,
-    moneyPerSec:        state.moneyPerSec,
-    rep:                state.rep,
-    carsSold:           state.carsSold,
-    diagReward:         state.diagReward,
-    repairClick:        state.repairClick,
-    repairAuto:         state.repairAuto,
-    speedMult:          state.speedMult,
-    saleBonusPct:       state.saleBonusPct,
-    talentPoints:       state.talentPoints,
-    talentLevelGranted: state.talentLevelGranted,
-    talents:            state.talents,
-    upgrades:           state.upgrades,
-    showroom:           state.showroom,
-    queue:              state.queue,
-    activeTab:          state.activeTab,
-    totalMoneyEarned:   state.totalMoneyEarned,
-    totalRepairs:       state.totalRepairs,
-    totalAnalyses:      state.totalAnalyses,
-    totalClickRepairs:  state.totalClickRepairs,
-    sessionStart:       state.sessionStart,
-    profile:            state.profile,
-    achievements:       state.achievements,
-    _hasSaved:          state._hasSaved,
-    _wasBroke:          state._wasBroke,
-    _lastRepairedTier:  state._lastRepairedTier,
-    // Prestige
-    prestigeCount:      state.prestigeCount,
-    heritagePoints:     state.heritagePoints,
-    heritageSpent:      state.heritageSpent,
-    heritagePerks:      state.heritagePerks,
-    heritageBonuses:    state.heritageBonuses,
-  };
-}
-
-// Applique les données chargées dans le state
-function applySaveData(data){
-  const baseUpgrades = JSON.parse(JSON.stringify(state.upgrades));
-  Object.assign(state, data);
-
-  // Fusion intelligente des upgrades (préserve les nouvelles amélios)
-  if(data.upgrades){
-    state.upgrades = baseUpgrades.map(baseItem => {
-      const saved = data.upgrades.find(x => x.id === baseItem.id);
-      if(saved){ baseItem.lvl = saved.lvl; baseItem.cost = saved.cost; }
-      return baseItem;
-    });
-  }
-
-  // Sécurités
-  if(typeof state.carsSold !== "number")         state.carsSold = 0;
-  if(typeof state.talentPoints !== "number")     state.talentPoints = 0;
-  if(typeof state.talents !== "object" || !state.talents) state.talents = {};
-  if(typeof state.talentLevelGranted !== "number") state.talentLevelGranted = state.garageLevel ?? 1;
-  if(!state.activeTab)  state.activeTab  = "tools";
-  if(!state.garageName) state.garageName = "Garage Turbo";
-  if(!state.profile || typeof state.profile !== "object") state.profile = { pseudo:"Mécanicien", avatar:"🔧", country:"FR", banner:"#1a2a4a" };
-  else {
-    state.profile.pseudo  = state.profile.pseudo  || "Mécanicien";
-    state.profile.avatar  = state.profile.avatar  || "🔧";
-    state.profile.country = state.profile.country || "FR";
-    state.profile.banner  = state.profile.banner  || "#1a2a4a";
-  }
-
-  if(!state.achievements || typeof state.achievements !== "object") state.achievements = {};
-  if(!state._hasSaved)         state._hasSaved         = false;
-  if(!state._wasBroke)         state._wasBroke         = false;
-  if(!state._lastRepairedTier) state._lastRepairedTier = "";
-
-  // Prestige safety
-  if(typeof state.prestigeCount  !== "number") state.prestigeCount  = 0;
-  if(typeof state.heritagePoints !== "number") state.heritagePoints = 0;
-  if(typeof state.heritageSpent  !== "number") state.heritageSpent  = 0;
-  if(!state.heritagePerks || typeof state.heritagePerks !== "object") state.heritagePerks = {};
-  if(!state.heritageBonuses || typeof state.heritageBonuses !== "object"){
-    state.heritageBonuses = { startMoney:0, repSpeed:1.0, saleBonus:0, passiveBonus:0, repGainMult:1.0, talentBonus:0, diagBonus:0, prestigeGainMult:1.0 };
-  }
-  applyHeritageBonuses();
-
-  applyGarageName();
-  applyTalentEffects();
-  recalcRepairAuto();
-  updateGarageLevel();
-  updateTopbarProfile();
-}
 function localSave(){
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(buildSavePayload())); } catch(e){}
 }
@@ -2194,59 +2093,43 @@ function localLoad(){
   } catch(e){ console.error("Erreur load local:", e); }
 }
 
-// --- Sauvegarde cloud ---
 let cloudSaving = false;
 async function cloudSave(){
-  if(!currentUser) return; // pas connecté = on sauvegarde seulement en local
-  if(cloudSaving) return;
+  if(!currentUser || cloudSaving) return;
   cloudSaving = true;
-
   try {
-    const token = await getValidToken();
-    const res = await fetch("/.netlify/functions/save-game", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
-      },
-      body: JSON.stringify(buildSavePayload()),
-    });
-    if(res.ok){
-      showSaveIndicator("☁️ Sauvegardé");
-    } else {
-      console.error("Cloud save failed:", await res.text());
-      showSaveIndicator("⚠️ Erreur cloud");
-    }
+    const { error } = await _supa
+      .from("saves")
+      .upsert(
+        { user_id: currentUser.id, save_data: buildSavePayload(), updated_at: new Date().toISOString() },
+        { onConflict: "user_id" }
+      );
+    if(error) throw error;
+    showSaveIndicator("☁️ Sauvegardé");
   } catch(e){
     console.error("Cloud save error:", e);
-  } finally {
-    cloudSaving = false;
-  }
+    showSaveIndicator("⚠️ Erreur cloud");
+  } finally { cloudSaving = false; }
 }
 
 async function cloudLoad(){
   if(!currentUser) return;
   try {
-    const token = await getValidToken();
-    const res = await fetch("/.netlify/functions/load-game", {
-      headers: { "Authorization": `Bearer ${token}` },
-    });
-    if(!res.ok) throw new Error("Erreur HTTP " + res.status);
-
-    const { save } = await res.json();
-    if(save){
-      applySaveData(save);
-      localSave(); // synchronise aussi le localStorage
+    const { data, error } = await _supa
+      .from("saves")
+      .select("save_data")
+      .eq("user_id", currentUser.id)
+      .maybeSingle();
+    if(error) throw error;
+    if(data?.save_data){
+      applySaveData(data.save_data);
+      localSave();
       renderAll();
       showSaveIndicator("☁️ Partie chargée");
     }
-    // si save === null = nouvelle partie, on garde l'état courant
-  } catch(e){
-    console.error("Cloud load error:", e);
-  }
+  } catch(e){ console.error("Cloud load error:", e); }
 }
 
-// Indicateur visuel de sauvegarde
 function showSaveIndicator(msg){
   const btn = document.getElementById("btnSave");
   if(!btn) return;
@@ -2255,25 +2138,13 @@ function showSaveIndicator(msg){
   setTimeout(() => btn.textContent = orig, 2000);
 }
 
-// Sauvegarde combinée : cloud si connecté, local sinon
 function save(){
   state._hasSaved = true;
-  if(currentUser){
-    cloudSave();
-  } else {
-    localSave();
-  }
-}
-
-// Chargement initial : cloud si connecté, local sinon
-function load(){
-  if(!currentUser) localLoad();
-  // Si connecté, cloudLoad() sera appelé après le login event
+  localSave();
+  if(currentUser) cloudSave();
 }
 
 btnSave.addEventListener("click", save);
-
-// Bouton auth unique
 const btnAuth = document.getElementById("btnAuth");
 if(btnAuth) btnAuth.addEventListener("click", openAuth);
 
