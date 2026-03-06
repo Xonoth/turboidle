@@ -1986,7 +1986,7 @@ function tick(now){
 // ⚠️  Remplace ces deux valeurs par tes vraies clés Supabase
 //     Dashboard Supabase → Project Settings → API
 const SUPABASE_URL      = "https://ydruyvfusnrekfllocqq.supabase.co";
-const SUPABASE_ANON_KEY = "sb_secret_9y4U5dWPanY0sEzVnFZQ3w_pQP42Q2m";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlkcnV5dmZ1c25yZWtmbGxvY3FxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2ODE3MDIsImV4cCI6MjA4ODI1NzcwMn0.dgwUXXNHzg0oyQdcnaJNkrIo6S63d6Dw-BDmWqhwS7w";
 
 const _supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
