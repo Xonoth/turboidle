@@ -2210,6 +2210,15 @@ async function cloudLoad(){
   if(!currentUser) { console.warn("[cloudLoad] pas de currentUser"); return; }
   console.log("[cloudLoad] user:", currentUser.id);
   try {
+    // Force un refresh du token pour s'assurer qu'il est valide
+    const { data: sessionData, error: sessionError } = await _supa.auth.getSession();
+    console.log("[cloudLoad] session refresh:", sessionData?.session?.user?.id ?? "null", sessionError);
+    if(sessionError || !sessionData?.session) {
+      console.error("[cloudLoad] session invalide, abandon");
+      renderAll();
+      return;
+    }
+
     const { data, error } = await _supa
       .from("saves")
       .select("save_data")
