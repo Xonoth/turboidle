@@ -4,6 +4,7 @@
 const state = {
   garageLevel: 1,
   garageCap: 1,
+  showroomCap: 3,        // 3 emplacements showroom par défaut
   garageName: "Garage Turbo",
 
   // Profil joueur
@@ -57,20 +58,20 @@ const state = {
   activeTab: "tools",
   upgrades: [
     { id:"manual",  tab:"tools", icon:"📘", name:"Manuel de Réparation", lvl:0, desc:"+1€ par diag", cost:94 },
-    { id:"toolbox", tab:"tools", icon:"🧰", name:"Caisse à Outils",      lvl:0, desc:"+0.10 Puissance Répa. Clic", cost:268 },
+    { id:"toolbox", tab:"tools", icon:"🧰", name:"Caisse à Outils",      lvl:0, desc:"+0.05 Puissance Répa. Clic", cost:268 },
     { id:"obd",     tab:"tools", icon:"🔎", name:"Scanner OBD Basique",   lvl:0, desc:"+5€ par diag", cost:337 },
-    { id:"impact",  tab:"tools", icon:"⚡", name:"Perceuse Pneumatique",  lvl:0, desc:"+0.15 Puissance Répa. Clic", cost:800 },
+    { id:"impact",  tab:"tools", icon:"⚡", name:"Perceuse Pneumatique",  lvl:0, desc:"+0.08 Puissance Répa. Clic", cost:800 },
     { id:"nego",    tab:"deals", icon:"🧾", name:"Formation Négociation", lvl:0, desc:"+5% valeur de vente", cost:1000 },
     { id:"comp",    tab:"tools", icon:"🌀", name:"Compresseur Pro",       lvl:0, desc:"+10% Vitesse Réparation", cost:3500 },
     { id:"lift",    tab:"deals", icon:"🅿️", name:"Agrandissement Garage", lvl:0, desc:"+1 Emplacement de garage", cost:5000, maxLvl:5 },
-    { id:"impact2", tab:"tools", icon:"🔧", name:"Pistolet à Choc",       lvl:0, desc:"+0.25 Puissance Répa. Clic", cost:7500 },
+    { id:"impact2", tab:"tools", icon:"🔧", name:"Pistolet à Choc",       lvl:0, desc:"+0.12 Puissance Répa. Clic", cost:7500 },
     { id:"diagpro", tab:"tools", icon:"🧠", name:"Station Diag Pro",      lvl:0, desc:"+20€ par diag", cost:12000 },
 
     // ÉQUIPE
     { id:"stagiaire",  tab:"team", icon:"🧑‍🔧", name:"Stagiaire Accueil",  lvl:0, desc:"Diagnostique auto toutes les 12s (min 6s au niv.max)", cost: 2500, maxLvl:10 },
     { id:"vendeur",    tab:"team", icon:"👔",    name:"Vendeur Junior",     lvl:0, desc:"Vend auto toutes les 15s (min 8s au niv.max)",          cost: 6000, maxLvl:10 },
-    { id:"apprenti",   tab:"team", icon:"🔩",    name:"Apprenti Mécanicien",lvl:0, desc:"+0.3s/s de réparation auto par rang",                   cost: 4000 },
-    { id:"mecanicien", tab:"team", icon:"🛠️",   name:"Mécanicien",         lvl:0, desc:"+1.0s/s de réparation auto par rang",                   cost: 15000 },
+    { id:"apprenti",   tab:"team", icon:"🔩",    name:"Apprenti Mécanicien",lvl:0, desc:"+0.15s/s de réparation auto par rang",                   cost: 4000 },
+    { id:"mecanicien", tab:"team", icon:"🛠️",   name:"Mécanicien",         lvl:0, desc:"+0.5s/s de réparation auto par rang",                    cost: 15000 },
 
     // AFFAIRES — revenus passifs
     { id:"loc_outils",   tab:"deals", icon:"🔑",  name:"Location d'Outils",      lvl:0, desc:"+2 €/s de revenu passif",   cost: 3000 },
@@ -78,6 +79,7 @@ const state = {
     { id:"assurance",    tab:"deals", icon:"📋",  name:"Partenariat Assurance",   lvl:0, desc:"+10 €/s de revenu passif",  cost: 20000 },
     { id:"atelier_nuit", tab:"deals", icon:"🌙",  name:"Atelier de Nuit",         lvl:0, desc:"+20 €/s de revenu passif",  cost: 50000 },
     { id:"franchise",    tab:"deals", icon:"🏢",  name:"Franchise Régionale",     lvl:0, desc:"+50 €/s de revenu passif",  cost: 150000 },
+    { id:"showroom_slot", tab:"deals", icon:"🖼️", name:"Extension Showroom",      lvl:0, desc:"+2 emplacements showroom (max 4 achats → 11 max)", cost: 8000, maxLvl:4 },
   ],
 };
 
@@ -148,16 +150,16 @@ function updateGarageLevel(){
 // =====================
 // Tiers par lettre, du plus commun au plus rare
 const TIERS = {
-  F:    { label:"F",    color:"#8ca8c0", bg:"rgba(140,168,192,.12)", border:"rgba(140,168,192,.22)", desc:"Épave",      repReq:0,      repGain:1   },
-  E:    { label:"E",    color:"#a0b890", bg:"rgba(160,184,144,.12)", border:"rgba(160,184,144,.22)", desc:"Populaire",  repReq:0,      repGain:1   },
-  D:    { label:"D",    color:"#c4b870", bg:"rgba(196,184,112,.12)", border:"rgba(196,184,112,.22)", desc:"Commune",    repReq:80,     repGain:2   },
-  C:    { label:"C",    color:"#4dff9a", bg:"rgba(77,255,154,.10)",  border:"rgba(77,255,154,.22)",  desc:"Correcte",   repReq:300,    repGain:4   },
-  B:    { label:"B",    color:"#7ab0ff", bg:"rgba(80,140,255,.10)",  border:"rgba(80,140,255,.22)",  desc:"Sportive",   repReq:1500,   repGain:8   },
-  A:    { label:"A",    color:"#a07aff", bg:"rgba(120,80,255,.10)",  border:"rgba(120,80,255,.22)",  desc:"Rare",       repReq:6000,   repGain:15  },
-  S:    { label:"S",    color:"#ffc83a", bg:"rgba(255,200,50,.10)",  border:"rgba(255,200,50,.22)",  desc:"Prestige",   repReq:20000,  repGain:30  },
-  SS:   { label:"SS",   color:"#ff8c40", bg:"rgba(255,140,64,.12)",  border:"rgba(255,140,64,.28)",  desc:"Collection", repReq:70000,  repGain:60  },
-  SSS:  { label:"SSS",  color:"#ff4d70", bg:"rgba(255,77,112,.12)",  border:"rgba(255,77,112,.28)",  desc:"Légendaire", repReq:200000, repGain:120 },
-  "SSS+":{ label:"SSS+",color:"#ffffff", bg:"rgba(255,255,255,.08)", border:"rgba(255,255,255,.35)", desc:"Mythique",   repReq:600000, repGain:250 },
+  F:    { label:"F",    color:"#8ca8c0", bg:"rgba(140,168,192,.12)", border:"rgba(140,168,192,.22)", desc:"Épave",      repReq:0,       repGain:1   },
+  E:    { label:"E",    color:"#a0b890", bg:"rgba(160,184,144,.12)", border:"rgba(160,184,144,.22)", desc:"Populaire",  repReq:0,       repGain:2   },
+  D:    { label:"D",    color:"#c4b870", bg:"rgba(196,184,112,.12)", border:"rgba(196,184,112,.22)", desc:"Commune",    repReq:150,     repGain:3   },
+  C:    { label:"C",    color:"#4dff9a", bg:"rgba(77,255,154,.10)",  border:"rgba(77,255,154,.22)",  desc:"Correcte",   repReq:600,     repGain:6   },
+  B:    { label:"B",    color:"#7ab0ff", bg:"rgba(80,140,255,.10)",  border:"rgba(80,140,255,.22)",  desc:"Sportive",   repReq:2500,    repGain:12  },
+  A:    { label:"A",    color:"#a07aff", bg:"rgba(120,80,255,.10)",  border:"rgba(120,80,255,.22)",  desc:"Rare",       repReq:8000,    repGain:20  },
+  S:    { label:"S",    color:"#ffc83a", bg:"rgba(255,200,50,.10)",  border:"rgba(255,200,50,.22)",  desc:"Prestige",   repReq:25000,   repGain:40  },
+  SS:   { label:"SS",   color:"#ff8c40", bg:"rgba(255,140,64,.12)",  border:"rgba(255,140,64,.28)",  desc:"Collection", repReq:70000,   repGain:80  },
+  SSS:  { label:"SSS",  color:"#ff4d70", bg:"rgba(255,77,112,.12)",  border:"rgba(255,77,112,.28)",  desc:"Légendaire", repReq:180000,  repGain:160 },
+  "SSS+":{ label:"SSS+",color:"#ffffff", bg:"rgba(255,255,255,.08)", border:"rgba(255,255,255,.35)", desc:"Mythique",   repReq:450000,  repGain:350 },
 };
 
 // Poids de probabilité d'apparition par tier selon la réputation
@@ -199,368 +201,368 @@ function weightedPickTier(rep){
 const CAR_CATALOG = [
 
   // ── TIER F — Épaves & guimbardes (80–200€, 5–12s) ──────────────────
-  { tier:"F", name:"Renno Twinko",        baseValue:80,  repairTime:5  }, // Renault Twingo
-  { tier:"F", name:"Pijot 10six",         baseValue:100, repairTime:6  }, // Peugeot 106
-  { tier:"F", name:"Fiato Pantôme",       baseValue:90,  repairTime:5  }, // Fiat Punto
-  { tier:"F", name:"Citron Saxôh VTS",    baseValue:130, repairTime:7  }, // Citroën Saxo VTS
-  { tier:"F", name:"Opal Corsa B",        baseValue:110, repairTime:6  }, // Opel Corsa
-  { tier:"F", name:"Fjord Kaa",           baseValue:95,  repairTime:6  }, // Ford Ka
-  { tier:"F", name:"Renno Clioz 2",       baseValue:150, repairTime:8  }, // Renault Clio 2
-  { tier:"F", name:"Daïhatsou Curoule",   baseValue:85,  repairTime:5  }, // Daihatsu Cuore
-  { tier:"F", name:"Lada Niiivah",        baseValue:70,  repairTime:5  }, // Lada Niva
-  { tier:"F", name:"Citron Axia",         baseValue:105, repairTime:6  }, // Citroën Xsara
-  { tier:"F", name:"Pijot 206i",          baseValue:140, repairTime:8  }, // Peugeot 206
-  { tier:"F", name:"Kia Prido",           baseValue:88,  repairTime:5  }, // Kia Pride
-  { tier:"F", name:"Séat Malaga Poussah", baseValue:75,  repairTime:5  }, // Seat Malaga
-  { tier:"F", name:"Trabounet 601 Plastoc",baseValue:60, repairTime:4  }, // Trabant 601
-  { tier:"F", name:"Yugo Zastava Bravo",  baseValue:55,  repairTime:4  }, // Yugo
-  { tier:"F", name:"Roveur Minousse",     baseValue:165, repairTime:9  }, // Rover Mini
-  { tier:"F", name:"Renno 4L Cahotante",  baseValue:95,  repairTime:6  }, // Renault 4L
-  { tier:"F", name:"Fjord Esquorte Mk5",  baseValue:120, repairTime:7  }, // Ford Escort
-  { tier:"F", name:"Pijot 104 Choupinette",baseValue:72, repairTime:5  }, // Peugeot 104
-  { tier:"F", name:"Citron BX Brisquette",baseValue:88,  repairTime:6  }, // Citroën BX
-  { tier:"F", name:"Fiato Séitchento",    baseValue:96,  repairTime:6  }, // Fiat Seicento
-  { tier:"F", name:"Opal Kâdette Sieste", baseValue:82,  repairTime:5  }, // Opel Kadett
-  { tier:"F", name:"Zaporoj 966 Tartinette",baseValue:45,repairTime:4  }, // Zaporozhets
-  { tier:"F", name:"Skoda Félisha Flouze",baseValue:115, repairTime:7  }, // Skoda Felicia
-  { tier:"F", name:"Renno Twingo 2 Boudeur",baseValue:155,repairTime:8 }, // Renault Twingo 2
+  { tier:"F", name:"Renno Twinko",        baseValue:80,  repairTime:10  }, // Renault Twingo
+  { tier:"F", name:"Pijot 10six",         baseValue:100, repairTime:12  }, // Peugeot 106
+  { tier:"F", name:"Fiato Pantôme",       baseValue:90,  repairTime:10  }, // Fiat Punto
+  { tier:"F", name:"Citron Saxôh VTS",    baseValue:130, repairTime:14  }, // Citroën Saxo VTS
+  { tier:"F", name:"Opal Corsa B",        baseValue:110, repairTime:12  }, // Opel Corsa
+  { tier:"F", name:"Fjord Kaa",           baseValue:95,  repairTime:12  }, // Ford Ka
+  { tier:"F", name:"Renno Clioz 2",       baseValue:150, repairTime:16  }, // Renault Clio 2
+  { tier:"F", name:"Daïhatsou Curoule",   baseValue:85,  repairTime:10  }, // Daihatsu Cuore
+  { tier:"F", name:"Lada Niiivah",        baseValue:70,  repairTime:10  }, // Lada Niva
+  { tier:"F", name:"Citron Axia",         baseValue:105, repairTime:12  }, // Citroën Xsara
+  { tier:"F", name:"Pijot 206i",          baseValue:140, repairTime:16  }, // Peugeot 206
+  { tier:"F", name:"Kia Prido",           baseValue:88,  repairTime:10  }, // Kia Pride
+  { tier:"F", name:"Séat Malaga Poussah", baseValue:75,  repairTime:10  }, // Seat Malaga
+  { tier:"F", name:"Trabounet 601 Plastoc",baseValue:60, repairTime:8  }, // Trabant 601
+  { tier:"F", name:"Yugo Zastava Bravo",  baseValue:55,  repairTime:8  }, // Yugo
+  { tier:"F", name:"Roveur Minousse",     baseValue:165, repairTime:18  }, // Rover Mini
+  { tier:"F", name:"Renno 4L Cahotante",  baseValue:95,  repairTime:12  }, // Renault 4L
+  { tier:"F", name:"Fjord Esquorte Mk5",  baseValue:120, repairTime:14  }, // Ford Escort
+  { tier:"F", name:"Pijot 104 Choupinette",baseValue:72, repairTime:10  }, // Peugeot 104
+  { tier:"F", name:"Citron BX Brisquette",baseValue:88,  repairTime:12  }, // Citroën BX
+  { tier:"F", name:"Fiato Séitchento",    baseValue:96,  repairTime:12  }, // Fiat Seicento
+  { tier:"F", name:"Opal Kâdette Sieste", baseValue:82,  repairTime:10  }, // Opel Kadett
+  { tier:"F", name:"Zaporoj 966 Tartinette",baseValue:45,repairTime:8  }, // Zaporozhets
+  { tier:"F", name:"Skoda Félisha Flouze",baseValue:115, repairTime:14  }, // Skoda Felicia
+  { tier:"F", name:"Renno Twingo 2 Boudeur",baseValue:155,repairTime:16 }, // Renault Twingo 2
 
   // ── TIER E — Citadines basiques (200–450€, 12–22s) ─────────────────
-  { tier:"E", name:"Volkz Pôlo III",      baseValue:220, repairTime:14 }, // VW Polo
-  { tier:"E", name:"Fjord Fiestôt",       baseValue:200, repairTime:13 }, // Ford Fiesta
-  { tier:"E", name:"Opèl Astrâ G",        baseValue:250, repairTime:15 }, // Opel Astra
-  { tier:"E", name:"Renno Mégânon",       baseValue:280, repairTime:16 }, // Renault Mégane
-  { tier:"E", name:"Citron C3 Plurya",    baseValue:230, repairTime:14 }, // Citroën C3 Pluriel
-  { tier:"E", name:"Hyundra Getzzi",      baseValue:210, repairTime:13 }, // Hyundai Getz
-  { tier:"E", name:"Kia Riyo",            baseValue:240, repairTime:15 }, // Kia Rio
-  { tier:"E", name:"Nissin Micra K12",    baseValue:195, repairTime:12 }, // Nissan Micra
-  { tier:"E", name:"Toyo Yarriz",         baseValue:260, repairTime:16 }, // Toyota Yaris
-  { tier:"E", name:"Seet Ibizzôh",        baseValue:270, repairTime:16 }, // Seat Ibiza
-  { tier:"E", name:"Suzuka Swyft",        baseValue:235, repairTime:14 }, // Suzuki Swift
-  { tier:"E", name:"Pijot 207i",          baseValue:290, repairTime:17 }, // Peugeot 207
-  { tier:"E", name:"Renno Kangourou",     baseValue:300, repairTime:18 }, // Renault Kangoo
-  { tier:"E", name:"Citron Berllingot",   baseValue:245, repairTime:15 }, // Citroën Berlingo
-  { tier:"E", name:"Pijot Partenaire Bizz",baseValue:225,repairTime:14 }, // Peugeot Partner
-  { tier:"E", name:"Mitsubish Colto",     baseValue:215, repairTime:13 }, // Mitsubishi Colt
-  { tier:"E", name:"Chevro Sparcouille",  baseValue:205, repairTime:13 }, // Chevrolet Spark
-  { tier:"E", name:"Fiato Pâllio Frotti", baseValue:220, repairTime:14 }, // Fiat Palio
-  { tier:"E", name:"Skodda Fâbia Plouc",  baseValue:255, repairTime:15 }, // Skoda Fabia
-  { tier:"E", name:"Toyo iQ Nanoïde",     baseValue:285, repairTime:17 }, // Toyota iQ
-  { tier:"E", name:"Smaart Fortouze",     baseValue:310, repairTime:18 }, // Smart Fortwo
-  { tier:"E", name:"Hyundra i10 Minot",   baseValue:230, repairTime:14 }, // Hyundai i10
-  { tier:"E", name:"Kia Picantoune",      baseValue:195, repairTime:12 }, // Kia Picanto
-  { tier:"E", name:"Fiato 500 Popotin",   baseValue:340, repairTime:19 }, // Fiat 500
+  { tier:"E", name:"Volkz Pôlo III",      baseValue:220, repairTime:35 }, // VW Polo
+  { tier:"E", name:"Fjord Fiestôt",       baseValue:200, repairTime:32 }, // Ford Fiesta
+  { tier:"E", name:"Opèl Astrâ G",        baseValue:250, repairTime:38 }, // Opel Astra
+  { tier:"E", name:"Renno Mégânon",       baseValue:280, repairTime:40 }, // Renault Mégane
+  { tier:"E", name:"Citron C3 Plurya",    baseValue:230, repairTime:35 }, // Citroën C3 Pluriel
+  { tier:"E", name:"Hyundra Getzzi",      baseValue:210, repairTime:32 }, // Hyundai Getz
+  { tier:"E", name:"Kia Riyo",            baseValue:240, repairTime:38 }, // Kia Rio
+  { tier:"E", name:"Nissin Micra K12",    baseValue:195, repairTime:30 }, // Nissan Micra
+  { tier:"E", name:"Toyo Yarriz",         baseValue:260, repairTime:40 }, // Toyota Yaris
+  { tier:"E", name:"Seet Ibizzôh",        baseValue:270, repairTime:40 }, // Seat Ibiza
+  { tier:"E", name:"Suzuka Swyft",        baseValue:235, repairTime:35 }, // Suzuki Swift
+  { tier:"E", name:"Pijot 207i",          baseValue:290, repairTime:42 }, // Peugeot 207
+  { tier:"E", name:"Renno Kangourou",     baseValue:300, repairTime:45 }, // Renault Kangoo
+  { tier:"E", name:"Citron Berllingot",   baseValue:245, repairTime:38 }, // Citroën Berlingo
+  { tier:"E", name:"Pijot Partenaire Bizz",baseValue:225,repairTime:35 }, // Peugeot Partner
+  { tier:"E", name:"Mitsubish Colto",     baseValue:215, repairTime:32 }, // Mitsubishi Colt
+  { tier:"E", name:"Chevro Sparcouille",  baseValue:205, repairTime:32 }, // Chevrolet Spark
+  { tier:"E", name:"Fiato Pâllio Frotti", baseValue:220, repairTime:35 }, // Fiat Palio
+  { tier:"E", name:"Skodda Fâbia Plouc",  baseValue:255, repairTime:38 }, // Skoda Fabia
+  { tier:"E", name:"Toyo iQ Nanoïde",     baseValue:285, repairTime:42 }, // Toyota iQ
+  { tier:"E", name:"Smaart Fortouze",     baseValue:310, repairTime:45 }, // Smart Fortwo
+  { tier:"E", name:"Hyundra i10 Minot",   baseValue:230, repairTime:35 }, // Hyundai i10
+  { tier:"E", name:"Kia Picantoune",      baseValue:195, repairTime:30 }, // Kia Picanto
+  { tier:"E", name:"Fiato 500 Popotin",   baseValue:340, repairTime:48 }, // Fiat 500
 
   // ── TIER D — Compactes & familiales (500–1000€, 25–40s) ────────────
-  { tier:"D", name:"Volkz Golph IV",      baseValue:550, repairTime:28 }, // VW Golf 4
-  { tier:"D", name:"Odi A-Tri",           baseValue:600, repairTime:30 }, // Audi A3
-  { tier:"D", name:"BimV Série Oon",      baseValue:700, repairTime:34 }, // BMW Série 1
-  { tier:"D", name:"Fjord Foucos",        baseValue:520, repairTime:27 }, // Ford Focus
-  { tier:"D", name:"Renno Lagouna",       baseValue:580, repairTime:29 }, // Renault Laguna
-  { tier:"D", name:"Pijot 406 Coupâl",    baseValue:650, repairTime:31 }, // Peugeot 406 Coupé
-  { tier:"D", name:"Merko Classa A",      baseValue:630, repairTime:30 }, // Mercedes Classe A
-  { tier:"D", name:"Saab 9-Troi",         baseValue:720, repairTime:35 }, // Saab 9-3
-  { tier:"D", name:"Volvo V40 Soixante",  baseValue:680, repairTime:33 }, // Volvo V40
-  { tier:"D", name:"Odi A-Four B6",       baseValue:800, repairTime:38 }, // Audi A4 B6
-  { tier:"D", name:"Hyundra Elantrouze",  baseValue:530, repairTime:27 }, // Hyundai Elantra
-  { tier:"D", name:"Toyo Corrola",        baseValue:560, repairTime:28 }, // Toyota Corolla
-  { tier:"D", name:"Pijot 307 Brouillon", baseValue:570, repairTime:28 }, // Peugeot 307
-  { tier:"D", name:"Renno Scénik Picnic", baseValue:610, repairTime:30 }, // Renault Scenic
-  { tier:"D", name:"Citron Eczéma C5",    baseValue:640, repairTime:31 }, // Citroën C5
-  { tier:"D", name:"Hinda Accordéon",     baseValue:760, repairTime:36 }, // Honda Accord
-  { tier:"D", name:"Toyo Rây",            baseValue:690, repairTime:33 }, // Toyota RAV4
-  { tier:"D", name:"Nissou Almîra",       baseValue:505, repairTime:26 }, // Nissan Almera
-  { tier:"D", name:"Mazda Sikss Bi-Tourné",baseValue:730,repairTime:35 }, // Mazda 6
-  { tier:"D", name:"Volkz Tournhalle",    baseValue:810, repairTime:38 }, // VW Touran
-  { tier:"D", name:"Seet Léonne Tigr",    baseValue:545, repairTime:27 }, // Seat Leon
-  { tier:"D", name:"Kia Cîid Tartinette", baseValue:520, repairTime:26 }, // Kia Ceed
+  { tier:"D", name:"Volkz Golph IV",      baseValue:550, repairTime:84 }, // VW Golf 4
+  { tier:"D", name:"Odi A-Tri",           baseValue:600, repairTime:90 }, // Audi A3
+  { tier:"D", name:"BimV Série Oon",      baseValue:700, repairTime:102 }, // BMW Série 1
+  { tier:"D", name:"Fjord Foucos",        baseValue:520, repairTime:81 }, // Ford Focus
+  { tier:"D", name:"Renno Lagouna",       baseValue:580, repairTime:87 }, // Renault Laguna
+  { tier:"D", name:"Pijot 406 Coupâl",    baseValue:650, repairTime:93 }, // Peugeot 406 Coupé
+  { tier:"D", name:"Merko Classa A",      baseValue:630, repairTime:90 }, // Mercedes Classe A
+  { tier:"D", name:"Saab 9-Troi",         baseValue:720, repairTime:105 }, // Saab 9-3
+  { tier:"D", name:"Volvo V40 Soixante",  baseValue:680, repairTime:99 }, // Volvo V40
+  { tier:"D", name:"Odi A-Four B6",       baseValue:800, repairTime:114 }, // Audi A4 B6
+  { tier:"D", name:"Hyundra Elantrouze",  baseValue:530, repairTime:81 }, // Hyundai Elantra
+  { tier:"D", name:"Toyo Corrola",        baseValue:560, repairTime:84 }, // Toyota Corolla
+  { tier:"D", name:"Pijot 307 Brouillon", baseValue:570, repairTime:84 }, // Peugeot 307
+  { tier:"D", name:"Renno Scénik Picnic", baseValue:610, repairTime:90 }, // Renault Scenic
+  { tier:"D", name:"Citron Eczéma C5",    baseValue:640, repairTime:93 }, // Citroën C5
+  { tier:"D", name:"Hinda Accordéon",     baseValue:760, repairTime:108 }, // Honda Accord
+  { tier:"D", name:"Toyo Rây",            baseValue:690, repairTime:99 }, // Toyota RAV4
+  { tier:"D", name:"Nissou Almîra",       baseValue:505, repairTime:78 }, // Nissan Almera
+  { tier:"D", name:"Mazda Sikss Bi-Tourné",baseValue:730,repairTime:105 }, // Mazda 6
+  { tier:"D", name:"Volkz Tournhalle",    baseValue:810, repairTime:114 }, // VW Touran
+  { tier:"D", name:"Seet Léonne Tigr",    baseValue:545, repairTime:81 }, // Seat Leon
+  { tier:"D", name:"Kia Cîid Tartinette", baseValue:520, repairTime:78 }, // Kia Ceed
 
   // ── TIER C — Berlines & compactes sportives (1000–3000€, 45–70s) ───
-  { tier:"C", name:"BimV M3 E-trente",    baseValue:1800, repairTime:60 }, // BMW M3 E30
-  { tier:"C", name:"Volkz Golph GTI Mk3", baseValue:1200, repairTime:48 }, // VW Golf GTI
-  { tier:"C", name:"Merko C200 Kompô",    baseValue:1500, repairTime:54 }, // Mercedes C200
-  { tier:"C", name:"Odi A4 Quâtro",       baseValue:1600, repairTime:56 }, // Audi A4 Quattro
-  { tier:"C", name:"Alfa Roméa 156",      baseValue:1100, repairTime:46 }, // Alfa Romeo 156
-  { tier:"C", name:"Renno Spasso V6",     baseValue:2000, repairTime:64 }, // Renault Espace V6
-  { tier:"C", name:"Pijot 306 S16",       baseValue:1400, repairTime:52 }, // Peugeot 306 S16
-  { tier:"C", name:"Hinda Civique Type-S",baseValue:1300, repairTime:50 }, // Honda Civic Type-S
-  { tier:"C", name:"Toyo Avénsis",        baseValue:1050, repairTime:45 }, // Toyota Avensis
-  { tier:"C", name:"Volkz Passoa",        baseValue:1150, repairTime:47 }, // VW Passat
-  { tier:"C", name:"Fjord MondeoXL",      baseValue:1000, repairTime:45 }, // Ford Mondeo
-  { tier:"C", name:"Minni Coupairre",     baseValue:2200, repairTime:68 }, // Mini Cooper
-  { tier:"C", name:"Renno Mégânon RS",    baseValue:2400, repairTime:70 }, // Renault Megane RS
-  { tier:"C", name:"Odi TT Coupounet",    baseValue:2600, repairTime:72 }, // Audi TT
-  { tier:"C", name:"BimV 3-Série E46 Chic",baseValue:1700,repairTime:58 }, // BMW E46
-  { tier:"C", name:"Merko Classa C W203", baseValue:1350, repairTime:51 }, // Mercedes C W203
-  { tier:"C", name:"Toyo Célica Caramel", baseValue:1900, repairTime:62 }, // Toyota Celica
-  { tier:"C", name:"Hinda Préloud",       baseValue:1450, repairTime:53 }, // Honda Prelude
-  { tier:"C", name:"Alfa Roméa GTV Pâtisserie",baseValue:1600,repairTime:56}, // Alfa GTV
-  { tier:"C", name:"Pijot RCZ Ragueneau", baseValue:2800, repairTime:74 }, // Peugeot RCZ
-  { tier:"C", name:"Renno Mégânon Coupwé",baseValue:1300, repairTime:50 }, // Renault Mégane Coupé
-  { tier:"C", name:"Seet Léonne Cupra",   baseValue:2100, repairTime:65 }, // Seat Leon Cupra
+  { tier:"C", name:"BimV M3 E-trente",    baseValue:1800, repairTime:210 }, // BMW M3 E30
+  { tier:"C", name:"Volkz Golph GTI Mk3", baseValue:1200, repairTime:168 }, // VW Golf GTI
+  { tier:"C", name:"Merko C200 Kompô",    baseValue:1500, repairTime:189 }, // Mercedes C200
+  { tier:"C", name:"Odi A4 Quâtro",       baseValue:1600, repairTime:196 }, // Audi A4 Quattro
+  { tier:"C", name:"Alfa Roméa 156",      baseValue:1100, repairTime:161 }, // Alfa Romeo 156
+  { tier:"C", name:"Renno Spasso V6",     baseValue:2000, repairTime:224 }, // Renault Espace V6
+  { tier:"C", name:"Pijot 306 S16",       baseValue:1400, repairTime:182 }, // Peugeot 306 S16
+  { tier:"C", name:"Hinda Civique Type-S",baseValue:1300, repairTime:175 }, // Honda Civic Type-S
+  { tier:"C", name:"Toyo Avénsis",        baseValue:1050, repairTime:158 }, // Toyota Avensis
+  { tier:"C", name:"Volkz Passoa",        baseValue:1150, repairTime:164 }, // VW Passat
+  { tier:"C", name:"Fjord MondeoXL",      baseValue:1000, repairTime:158 }, // Ford Mondeo
+  { tier:"C", name:"Minni Coupairre",     baseValue:2200, repairTime:238 }, // Mini Cooper
+  { tier:"C", name:"Renno Mégânon RS",    baseValue:2400, repairTime:245 }, // Renault Megane RS
+  { tier:"C", name:"Odi TT Coupounet",    baseValue:2600, repairTime:252 }, // Audi TT
+  { tier:"C", name:"BimV 3-Série E46 Chic",baseValue:1700,repairTime:203 }, // BMW E46
+  { tier:"C", name:"Merko Classa C W203", baseValue:1350, repairTime:178 }, // Mercedes C W203
+  { tier:"C", name:"Toyo Célica Caramel", baseValue:1900, repairTime:217 }, // Toyota Celica
+  { tier:"C", name:"Hinda Préloud",       baseValue:1450, repairTime:186 }, // Honda Prelude
+  { tier:"C", name:"Alfa Roméa GTV Pâtisserie",baseValue:1600,repairTime:196}, // Alfa GTV
+  { tier:"C", name:"Pijot RCZ Ragueneau", baseValue:2800, repairTime:259 }, // Peugeot RCZ
+  { tier:"C", name:"Renno Mégânon Coupwé",baseValue:1300, repairTime:175 }, // Renault Mégane Coupé
+  { tier:"C", name:"Seet Léonne Cupra",   baseValue:2100, repairTime:228 }, // Seat Leon Cupra
 
   // ── TIER B — Sportives & youngtimers (3000–8000€, 80–110s) ─────────
-  { tier:"B", name:"Subaro Imprézah WRX", baseValue:3500, repairTime:85 }, // Subaru Impreza WRX
-  { tier:"B", name:"Nissou 350-Zed",      baseValue:4000, repairTime:90 }, // Nissan 350Z
-  { tier:"B", name:"Mazda Mx-5 Miaaata",  baseValue:3200, repairTime:82 }, // Mazda MX-5 Miata
-  { tier:"B", name:"Hinda S2Mille",       baseValue:4500, repairTime:94 }, // Honda S2000
-  { tier:"B", name:"Toyo Souprà MkIV",    baseValue:5500, repairTime:100}, // Toyota Supra MkIV
-  { tier:"B", name:"Pijot 205 Gti 1.9",   baseValue:3800, repairTime:88 }, // Peugeot 205 GTI
-  { tier:"B", name:"Lancia Deltâ Intégr", baseValue:5000, repairTime:96 }, // Lancia Delta Integrale
-  { tier:"B", name:"Mitsubish Ekliipse",  baseValue:3600, repairTime:86 }, // Mitsubishi Eclipse
-  { tier:"B", name:"Hinda Integra Type-R",baseValue:4200, repairTime:91 }, // Honda Integra Type-R
-  { tier:"B", name:"Porsha Boxstarr 986", baseValue:6000, repairTime:104}, // Porsche Boxster 986
-  { tier:"B", name:"Renno Spasse F1",     baseValue:4800, repairTime:95 }, // Renault Espace F1 (joke)
-  { tier:"B", name:"BimV M3 E36",         baseValue:4000, repairTime:90 }, // BMW M3 E36
-  { tier:"B", name:"Mitsubish Lanciâ Evo7",baseValue:5200,repairTime:98 }, // Mitsubishi Lancer Evo
-  { tier:"B", name:"Subaro Légassie BH5", baseValue:3400, repairTime:84 }, // Subaru Legacy
-  { tier:"B", name:"Toyo MR2 Spydouille", baseValue:3700, repairTime:87 }, // Toyota MR2
-  { tier:"B", name:"Nissou Sîlvia S15",   baseValue:4600, repairTime:93 }, // Nissan Silvia S15
-  { tier:"B", name:"Fjord Puma Rugissant", baseValue:3300, repairTime:83 }, // Ford Puma
-  { tier:"B", name:"Alfa Roméa 147 GTA",  baseValue:4900, repairTime:96 }, // Alfa 147 GTA
-  { tier:"B", name:"Renno Clioz V6 Folasse",baseValue:5800,repairTime:102}, // Renault Clio V6
-  { tier:"B", name:"Mazda RX-Septe Wânkel",baseValue:4100,repairTime:91 }, // Mazda RX-7
-  { tier:"B", name:"BimV Z3 Décapoté",    baseValue:3900, repairTime:89 }, // BMW Z3
-  { tier:"B", name:"VW Corraïdo Vent",    baseValue:3600, repairTime:86 }, // VW Corrado
-  { tier:"B", name:"Mitsubish 3000GT Brouaha",baseValue:4700,repairTime:94}, // Mitsubishi 3000GT
+  { tier:"B", name:"Subaro Imprézah WRX", baseValue:3500, repairTime:340 }, // Subaru Impreza WRX
+  { tier:"B", name:"Nissou 350-Zed",      baseValue:4000, repairTime:360 }, // Nissan 350Z
+  { tier:"B", name:"Mazda Mx-5 Miaaata",  baseValue:3200, repairTime:328 }, // Mazda MX-5 Miata
+  { tier:"B", name:"Hinda S2Mille",       baseValue:4500, repairTime:376 }, // Honda S2000
+  { tier:"B", name:"Toyo Souprà MkIV",    baseValue:5500, repairTime:400}, // Toyota Supra MkIV
+  { tier:"B", name:"Pijot 205 Gti 1.9",   baseValue:3800, repairTime:352 }, // Peugeot 205 GTI
+  { tier:"B", name:"Lancia Deltâ Intégr", baseValue:5000, repairTime:384 }, // Lancia Delta Integrale
+  { tier:"B", name:"Mitsubish Ekliipse",  baseValue:3600, repairTime:344 }, // Mitsubishi Eclipse
+  { tier:"B", name:"Hinda Integra Type-R",baseValue:4200, repairTime:364 }, // Honda Integra Type-R
+  { tier:"B", name:"Porsha Boxstarr 986", baseValue:6000, repairTime:416}, // Porsche Boxster 986
+  { tier:"B", name:"Renno Spasse F1",     baseValue:4800, repairTime:380 }, // Renault Espace F1 (joke)
+  { tier:"B", name:"BimV M3 E36",         baseValue:4000, repairTime:360 }, // BMW M3 E36
+  { tier:"B", name:"Mitsubish Lanciâ Evo7",baseValue:5200,repairTime:392 }, // Mitsubishi Lancer Evo
+  { tier:"B", name:"Subaro Légassie BH5", baseValue:3400, repairTime:336 }, // Subaru Legacy
+  { tier:"B", name:"Toyo MR2 Spydouille", baseValue:3700, repairTime:348 }, // Toyota MR2
+  { tier:"B", name:"Nissou Sîlvia S15",   baseValue:4600, repairTime:372 }, // Nissan Silvia S15
+  { tier:"B", name:"Fjord Puma Rugissant", baseValue:3300, repairTime:332 }, // Ford Puma
+  { tier:"B", name:"Alfa Roméa 147 GTA",  baseValue:4900, repairTime:384 }, // Alfa 147 GTA
+  { tier:"B", name:"Renno Clioz V6 Folasse",baseValue:5800,repairTime:408}, // Renault Clio V6
+  { tier:"B", name:"Mazda RX-Septe Wânkel",baseValue:4100,repairTime:364 }, // Mazda RX-7
+  { tier:"B", name:"BimV Z3 Décapoté",    baseValue:3900, repairTime:356 }, // BMW Z3
+  { tier:"B", name:"VW Corraïdo Vent",    baseValue:3600, repairTime:344 }, // VW Corrado
+  { tier:"B", name:"Mitsubish 3000GT Brouaha",baseValue:4700,repairTime:376}, // Mitsubishi 3000GT
 
   // ── TIER A — Luxe & SUV premium (8000–20000€, 120–170s) ────────────
-  { tier:"A", name:"Porsha Cayennard",    baseValue:9000,  repairTime:130}, // Porsche Cayenne
-  { tier:"A", name:"Odi Q7 Quâtroc",      baseValue:10000, repairTime:140}, // Audi Q7
-  { tier:"A", name:"Cadillak Escalâde",   baseValue:12000, repairTime:150}, // Cadillac Escalade
-  { tier:"A", name:"Teslla Modèl Ès",     baseValue:15000, repairTime:160}, // Tesla Model S
-  { tier:"A", name:"Merko G63 AMGueule",  baseValue:18000, repairTime:170}, // Mercedes G63 AMG
-  { tier:"A", name:"BimV X5 Emmm",        baseValue:11000, repairTime:145}, // BMW X5 M
-  { tier:"A", name:"Hummur H2 Bouzin",    baseValue:9500,  repairTime:135}, // Hummer H2
-  { tier:"A", name:"Bentlaï Continentâl", baseValue:20000, repairTime:175}, // Bentley Continental
-  { tier:"A", name:"Lexys LX570",         baseValue:14000, repairTime:158}, // Lexus LX570
-  { tier:"A", name:"Ranjet Roupie",       baseValue:16000, repairTime:165}, // Range Rover
-  { tier:"A", name:"Maybach 57 Blingbling",baseValue:19000,repairTime:172}, // Maybach
-  { tier:"A", name:"Merko AMG GT4 Pattes",baseValue:17000, repairTime:168}, // Mercedes AMG GT
-  { tier:"A", name:"Odi RS6 Avanguarde",  baseValue:16500, repairTime:166}, // Audi RS6
-  { tier:"A", name:"BimV M5 E39 Bombasse",baseValue:13000, repairTime:153}, // BMW M5 E39
-  { tier:"A", name:"Mézarâti Quattropattes",baseValue:18500,repairTime:171}, // Maserati Quattroporte
-  { tier:"A", name:"Porsha Panâméra Ventru",baseValue:17500,repairTime:169}, // Porsche Panamera
-  { tier:"A", name:"Lambô Urus Pachyderme",baseValue:19500,repairTime:174}, // Lamborghini Urus
-  { tier:"A", name:"Teslla Modèl X Porte",baseValue:14500, repairTime:159}, // Tesla Model X
-  { tier:"A", name:"Infinitii FX45 Grosse",baseValue:9800, repairTime:136}, // Infiniti FX45
-  { tier:"A", name:"Toyo Landcruzer Boss", baseValue:12500, repairTime:151}, // Toyota Land Cruiser
-  { tier:"A", name:"Merko Klass E W212",  baseValue:10500, repairTime:142}, // Mercedes Classe E
-  { tier:"A", name:"Rollz Royce Champô",  baseValue:20000, repairTime:176}, // Rolls Royce
+  { tier:"A", name:"Porsha Cayennard",    baseValue:9000,  repairTime:585}, // Porsche Cayenne
+  { tier:"A", name:"Odi Q7 Quâtroc",      baseValue:10000, repairTime:630}, // Audi Q7
+  { tier:"A", name:"Cadillak Escalâde",   baseValue:12000, repairTime:675}, // Cadillac Escalade
+  { tier:"A", name:"Teslla Modèl Ès",     baseValue:15000, repairTime:720}, // Tesla Model S
+  { tier:"A", name:"Merko G63 AMGueule",  baseValue:18000, repairTime:765}, // Mercedes G63 AMG
+  { tier:"A", name:"BimV X5 Emmm",        baseValue:11000, repairTime:652}, // BMW X5 M
+  { tier:"A", name:"Hummur H2 Bouzin",    baseValue:9500,  repairTime:608}, // Hummer H2
+  { tier:"A", name:"Bentlaï Continentâl", baseValue:20000, repairTime:788}, // Bentley Continental
+  { tier:"A", name:"Lexys LX570",         baseValue:14000, repairTime:711}, // Lexus LX570
+  { tier:"A", name:"Ranjet Roupie",       baseValue:16000, repairTime:742}, // Range Rover
+  { tier:"A", name:"Maybach 57 Blingbling",baseValue:19000,repairTime:774}, // Maybach
+  { tier:"A", name:"Merko AMG GT4 Pattes",baseValue:17000, repairTime:756}, // Mercedes AMG GT
+  { tier:"A", name:"Odi RS6 Avanguarde",  baseValue:16500, repairTime:747}, // Audi RS6
+  { tier:"A", name:"BimV M5 E39 Bombasse",baseValue:13000, repairTime:688}, // BMW M5 E39
+  { tier:"A", name:"Mézarâti Quattropattes",baseValue:18500,repairTime:770}, // Maserati Quattroporte
+  { tier:"A", name:"Porsha Panâméra Ventru",baseValue:17500,repairTime:760}, // Porsche Panamera
+  { tier:"A", name:"Lambô Urus Pachyderme",baseValue:19500,repairTime:783}, // Lamborghini Urus
+  { tier:"A", name:"Teslla Modèl X Porte",baseValue:14500, repairTime:716}, // Tesla Model X
+  { tier:"A", name:"Infinitii FX45 Grosse",baseValue:9800, repairTime:612}, // Infiniti FX45
+  { tier:"A", name:"Toyo Landcruzer Boss", baseValue:12500, repairTime:680}, // Toyota Land Cruiser
+  { tier:"A", name:"Merko Klass E W212",  baseValue:10500, repairTime:639}, // Mercedes Classe E
+  { tier:"A", name:"Rollz Royce Champô",  baseValue:20000, repairTime:792}, // Rolls Royce
 
   // ── TIER S — Sportives prestige (25000–60000€, 200–280s) ────────────
-  { tier:"S", name:"Porsha 911 NeufNeuf", baseValue:28000, repairTime:210}, // Porsche 911
-  { tier:"S", name:"Jagwa F-Type Câlin",  baseValue:32000, repairTime:220}, // Jaguar F-Type
-  { tier:"S", name:"Fjord Mustângu GT500",baseValue:30000, repairTime:215}, // Ford Mustang GT500
-  { tier:"S", name:"Chevrolèt Corvette C7",baseValue:38000,repairTime:235}, // Chevrolet Corvette C7
-  { tier:"S", name:"Ferrero TestaRôssa",  baseValue:45000, repairTime:255}, // Ferrari Testarossa
-  { tier:"S", name:"Dodje Viperouille",   baseValue:35000, repairTime:228}, // Dodge Viper
-  { tier:"S", name:"A-C Cobra 427 Bête",  baseValue:29000, repairTime:212}, // AC Cobra 427
-  { tier:"S", name:"Aston Marten DB7",    baseValue:34000, repairTime:224}, // Aston Martin DB7
-  { tier:"S", name:"De Tomâso Pantère",   baseValue:31000, repairTime:218}, // De Tomaso Pantera
-  { tier:"S", name:"Lambo Diâboulet",     baseValue:50000, repairTime:268}, // Lamborghini Diablo
-  { tier:"S", name:"Ferrarro F355 Moâh",  baseValue:42000, repairTime:248}, // Ferrari F355
-  { tier:"S", name:"BimV M1 Ancestral",   baseValue:55000, repairTime:275}, // BMW M1
-  { tier:"S", name:"Merko SLK Saucisson", baseValue:27000, repairTime:208}, // Mercedes SLK
-  { tier:"S", name:"Odi R8 Spidrou",      baseValue:48000, repairTime:262}, // Audi R8
-  { tier:"S", name:"Nissou GT-R R34 Légendzo",baseValue:52000,repairTime:272}, // Nissan GTR R34
-  { tier:"S", name:"BimV M6 E63 Bravo",   baseValue:36000, repairTime:230}, // BMW M6
-  { tier:"S", name:"Ferrero 348 Coucouzi", baseValue:40000,repairTime:242}, // Ferrari 348
-  { tier:"S", name:"Porsha 944 Turbo Souf",baseValue:26500,repairTime:206}, // Porsche 944 Turbo
-  { tier:"S", name:"Aston Marten Vantâje", baseValue:44000,repairTime:253}, // Aston Martin Vantage
-  { tier:"S", name:"Mézarâti GranTurismo", baseValue:33000,repairTime:222}, // Maserati GranTurismo
-  { tier:"S", name:"Lambo Gallardeau",    baseValue:46000, repairTime:258}, // Lamborghini Gallardo
-  { tier:"S", name:"Chevrolèt Camarôh ZL1",baseValue:29500,repairTime:213}, // Chevrolet Camaro ZL1
+  { tier:"S", name:"Porsha 911 NeufNeuf", baseValue:28000, repairTime:1050}, // Porsche 911
+  { tier:"S", name:"Jagwa F-Type Câlin",  baseValue:32000, repairTime:1100}, // Jaguar F-Type
+  { tier:"S", name:"Fjord Mustângu GT500",baseValue:30000, repairTime:1075}, // Ford Mustang GT500
+  { tier:"S", name:"Chevrolèt Corvette C7",baseValue:38000,repairTime:1175}, // Chevrolet Corvette C7
+  { tier:"S", name:"Ferrero TestaRôssa",  baseValue:45000, repairTime:1275}, // Ferrari Testarossa
+  { tier:"S", name:"Dodje Viperouille",   baseValue:35000, repairTime:1140}, // Dodge Viper
+  { tier:"S", name:"A-C Cobra 427 Bête",  baseValue:29000, repairTime:1060}, // AC Cobra 427
+  { tier:"S", name:"Aston Marten DB7",    baseValue:34000, repairTime:1120}, // Aston Martin DB7
+  { tier:"S", name:"De Tomâso Pantère",   baseValue:31000, repairTime:1090}, // De Tomaso Pantera
+  { tier:"S", name:"Lambo Diâboulet",     baseValue:50000, repairTime:1340}, // Lamborghini Diablo
+  { tier:"S", name:"Ferrarro F355 Moâh",  baseValue:42000, repairTime:1240}, // Ferrari F355
+  { tier:"S", name:"BimV M1 Ancestral",   baseValue:55000, repairTime:1375}, // BMW M1
+  { tier:"S", name:"Merko SLK Saucisson", baseValue:27000, repairTime:1040}, // Mercedes SLK
+  { tier:"S", name:"Odi R8 Spidrou",      baseValue:48000, repairTime:1310}, // Audi R8
+  { tier:"S", name:"Nissou GT-R R34 Légendzo",baseValue:52000,repairTime:1360}, // Nissan GTR R34
+  { tier:"S", name:"BimV M6 E63 Bravo",   baseValue:36000, repairTime:1150}, // BMW M6
+  { tier:"S", name:"Ferrero 348 Coucouzi", baseValue:40000,repairTime:1210}, // Ferrari 348
+  { tier:"S", name:"Porsha 944 Turbo Souf",baseValue:26500,repairTime:1030}, // Porsche 944 Turbo
+  { tier:"S", name:"Aston Marten Vantâje", baseValue:44000,repairTime:1265}, // Aston Martin Vantage
+  { tier:"S", name:"Mézarâti GranTurismo", baseValue:33000,repairTime:1110}, // Maserati GranTurismo
+  { tier:"S", name:"Lambo Gallardeau",    baseValue:46000, repairTime:1290}, // Lamborghini Gallardo
+  { tier:"S", name:"Chevrolèt Camarôh ZL1",baseValue:29500,repairTime:1065}, // Chevrolet Camaro ZL1
 
   // ── TIER SS — Supercars (70000–200000€, 320–480s) ───────────────────
-  { tier:"SS", name:"Ferrero F40 Quarante",baseValue:90000, repairTime:360}, // Ferrari F40
-  { tier:"SS", name:"Lambo Murcîelago",    baseValue:110000,repairTime:400}, // Lamborghini Murciélago
-  { tier:"SS", name:"Porsha Carrera GT Fô",baseValue:130000,repairTime:430}, // Porsche Carrera GT
-  { tier:"SS", name:"Lexys LF-Âh",         baseValue:95000, repairTime:375}, // Lexus LFA
-  { tier:"SS", name:"Aston Marten DBS Glo",baseValue:105000,repairTime:390}, // Aston Martin DBS
-  { tier:"SS", name:"McLoren MP4-12C",      baseValue:140000,repairTime:440}, // McLaren MP4-12C
-  { tier:"SS", name:"Nissou GT-R R35 Godzl",baseValue:85000,repairTime:355}, // Nissan GT-R R35
-  { tier:"SS", name:"Mézarâti MC12 Vroom",  baseValue:175000,repairTime:470}, // Maserati MC12
-  { tier:"SS", name:"Ferrarro Enzô Boûff",  baseValue:200000,repairTime:480}, // Ferrari Enzo
-  { tier:"SS", name:"Zonda Paganizone",      baseValue:160000,repairTime:460}, // Pagani Zonda
-  { tier:"SS", name:"Ferrero 599 GTO Pouet", baseValue:120000,repairTime:420}, // Ferrari 599 GTO
-  { tier:"SS", name:"Lambo Huracannable",   baseValue:100000,repairTime:385}, // Lamborghini Huracan
-  { tier:"SS", name:"Porsha GT3 RS Puncheur",baseValue:115000,repairTime:410}, // Porsche GT3 RS
-  { tier:"SS", name:"McLoren 675LT Longtoi", baseValue:145000,repairTime:445}, // McLaren 675LT
-  { tier:"SS", name:"Aston Marten One-77 Bling",baseValue:185000,repairTime:475}, // Aston One-77
-  { tier:"SS", name:"Rollz Royce Phàntôme Roi",baseValue:195000,repairTime:479}, // Rolls Ghost
-  { tier:"SS", name:"BimV M8 GTS Furioso",  baseValue:80000, repairTime:352}, // BMW M8 GTS
-  { tier:"SS", name:"Merko SLS AMG Aiglette",baseValue:92000,repairTime:365}, // Mercedes SLS AMG
+  { tier:"SS", name:"Ferrero F40 Quarante",baseValue:90000, repairTime:1980}, // Ferrari F40
+  { tier:"SS", name:"Lambo Murcîelago",    baseValue:110000,repairTime:2200}, // Lamborghini Murciélago
+  { tier:"SS", name:"Porsha Carrera GT Fô",baseValue:130000,repairTime:2365}, // Porsche Carrera GT
+  { tier:"SS", name:"Lexys LF-Âh",         baseValue:95000, repairTime:2062}, // Lexus LFA
+  { tier:"SS", name:"Aston Marten DBS Glo",baseValue:105000,repairTime:2145}, // Aston Martin DBS
+  { tier:"SS", name:"McLoren MP4-12C",      baseValue:140000,repairTime:2420}, // McLaren MP4-12C
+  { tier:"SS", name:"Nissou GT-R R35 Godzl",baseValue:85000,repairTime:1952}, // Nissan GT-R R35
+  { tier:"SS", name:"Mézarâti MC12 Vroom",  baseValue:175000,repairTime:2585}, // Maserati MC12
+  { tier:"SS", name:"Ferrarro Enzô Boûff",  baseValue:200000,repairTime:2640}, // Ferrari Enzo
+  { tier:"SS", name:"Zonda Paganizone",      baseValue:160000,repairTime:2530}, // Pagani Zonda
+  { tier:"SS", name:"Ferrero 599 GTO Pouet", baseValue:120000,repairTime:2310}, // Ferrari 599 GTO
+  { tier:"SS", name:"Lambo Huracannable",   baseValue:100000,repairTime:2118}, // Lamborghini Huracan
+  { tier:"SS", name:"Porsha GT3 RS Puncheur",baseValue:115000,repairTime:2255}, // Porsche GT3 RS
+  { tier:"SS", name:"McLoren 675LT Longtoi", baseValue:145000,repairTime:2448}, // McLaren 675LT
+  { tier:"SS", name:"Aston Marten One-77 Bling",baseValue:185000,repairTime:2612}, // Aston One-77
+  { tier:"SS", name:"Rollz Royce Phàntôme Roi",baseValue:195000,repairTime:2634}, // Rolls Ghost
+  { tier:"SS", name:"BimV M8 GTS Furioso",  baseValue:80000, repairTime:1936}, // BMW M8 GTS
+  { tier:"SS", name:"Merko SLS AMG Aiglette",baseValue:92000,repairTime:2008}, // Mercedes SLS AMG
 
   // ── TIER SSS — Hypercars rares (300000–800000€, 600–900s) ───────────
-  { tier:"SSS", name:"Bugatti Vaiyronne",   baseValue:350000,repairTime:650}, // Bugatti Veyron
-  { tier:"SSS", name:"Pagânì Huayrra Brr",  baseValue:500000,repairTime:750}, // Pagani Huayra
-  { tier:"SSS", name:"Koenigsmeg Agéra RS", baseValue:450000,repairTime:720}, // Koenigsegg Agera RS
-  { tier:"SSS", name:"McLoren P1 PleurÔ",   baseValue:600000,repairTime:820}, // McLaren P1
-  { tier:"SSS", name:"Porsha 918 Spidrou",  baseValue:550000,repairTime:780}, // Porsche 918 Spyder
-  { tier:"SSS", name:"Ferrarro LaFerrarî",  baseValue:700000,repairTime:880}, // Ferrari LaFerrari
-  { tier:"SSS", name:"Lambo Aventadôr SVJ", baseValue:400000,repairTime:700}, // Lamborghini Aventador SVJ
-  { tier:"SSS", name:"Ferrero FXX-K Démon", baseValue:750000,repairTime:890}, // Ferrari FXX-K
-  { tier:"SSS", name:"McLoren Sènnne Ouf",  baseValue:650000,repairTime:840}, // McLaren Senna
-  { tier:"SSS", name:"Rimac Nevéra Électrik",baseValue:580000,repairTime:800}, // Rimac Nevera
-  { tier:"SSS", name:"Koenigsmeg Regéra Svp",baseValue:480000,repairTime:740}, // Koenigsegg Regera
-  { tier:"SSS", name:"Lambo Venéno Dinguo", baseValue:800000,repairTime:900}, // Lamborghini Veneno
-  { tier:"SSS", name:"Aston Marten Vulcaîne",baseValue:420000,repairTime:710}, // Aston Martin Vulcan
-  { tier:"SSS", name:"Porsha GT1 Ancêtre",  baseValue:460000,repairTime:730}, // Porsche GT1
-  { tier:"SSS", name:"Bugatti EB110 Ancétral",baseValue:380000,repairTime:680}, // Bugatti EB110
+  { tier:"SSS", name:"Bugatti Vaiyronne",   baseValue:350000,repairTime:3900}, // Bugatti Veyron
+  { tier:"SSS", name:"Pagânì Huayrra Brr",  baseValue:500000,repairTime:4500}, // Pagani Huayra
+  { tier:"SSS", name:"Koenigsmeg Agéra RS", baseValue:450000,repairTime:4320}, // Koenigsegg Agera RS
+  { tier:"SSS", name:"McLoren P1 PleurÔ",   baseValue:600000,repairTime:4920}, // McLaren P1
+  { tier:"SSS", name:"Porsha 918 Spidrou",  baseValue:550000,repairTime:4680}, // Porsche 918 Spyder
+  { tier:"SSS", name:"Ferrarro LaFerrarî",  baseValue:700000,repairTime:5280}, // Ferrari LaFerrari
+  { tier:"SSS", name:"Lambo Aventadôr SVJ", baseValue:400000,repairTime:4200}, // Lamborghini Aventador SVJ
+  { tier:"SSS", name:"Ferrero FXX-K Démon", baseValue:750000,repairTime:5340}, // Ferrari FXX-K
+  { tier:"SSS", name:"McLoren Sènnne Ouf",  baseValue:650000,repairTime:5040}, // McLaren Senna
+  { tier:"SSS", name:"Rimac Nevéra Électrik",baseValue:580000,repairTime:4800}, // Rimac Nevera
+  { tier:"SSS", name:"Koenigsmeg Regéra Svp",baseValue:480000,repairTime:4440}, // Koenigsegg Regera
+  { tier:"SSS", name:"Lambo Venéno Dinguo", baseValue:800000,repairTime:5400}, // Lamborghini Veneno
+  { tier:"SSS", name:"Aston Marten Vulcaîne",baseValue:420000,repairTime:4260}, // Aston Martin Vulcan
+  { tier:"SSS", name:"Porsha GT1 Ancêtre",  baseValue:460000,repairTime:4380}, // Porsche GT1
+  { tier:"SSS", name:"Bugatti EB110 Ancétral",baseValue:380000,repairTime:4080}, // Bugatti EB110
 
   // ── TIER SSS+ — Legendary (1M€+, 1200–2000s) ───────────────────────
-  { tier:"SSS+", name:"Bugatti Shironisé",    baseValue:1500000,repairTime:1500}, // Bugatti Chiron
-  { tier:"SSS+", name:"Koenigsmeg Jeskô Fls", baseValue:1200000,repairTime:1300}, // Koenigsegg Jesko
-  { tier:"SSS+", name:"McLoren F1 Légendâre", baseValue:2000000,repairTime:1800}, // McLaren F1
-  { tier:"SSS+", name:"Pagânì Zondà R Ultime",baseValue:1800000,repairTime:1700}, // Pagani Zonda R
-  { tier:"SSS+", name:"Bugatti Divo Divinité",baseValue:1600000,repairTime:1600}, // Bugatti Divo
-  { tier:"SSS+", name:"Lambo Sîan Mythique",  baseValue:1400000,repairTime:1450}, // Lamborghini Sian
-  { tier:"SSS+", name:"Merko AMG ONE F1Street",baseValue:1350000,repairTime:1420}, // Mercedes AMG One
-  { tier:"SSS+", name:"Ferrero Monza SP1 Dieu",baseValue:1700000,repairTime:1650}, // Ferrari Monza SP1
-  { tier:"SSS+", name:"Gordon Murray T50 GraalO",baseValue:2200000,repairTime:1900}, // Gordon Murray T50
-  { tier:"SSS+", name:"Koenigsmeg CC850 Absolu",baseValue:1900000,repairTime:1750}, // Koenigsegg CC850
-  { tier:"SSS+", name:"Rollz Royce Boat-Tail Oups",baseValue:2500000,repairTime:2000}, // Rolls Boat Tail
+  { tier:"SSS+", name:"Bugatti Shironisé",    baseValue:1500000,repairTime:9750}, // Bugatti Chiron
+  { tier:"SSS+", name:"Koenigsmeg Jeskô Fls", baseValue:1200000,repairTime:8450}, // Koenigsegg Jesko
+  { tier:"SSS+", name:"McLoren F1 Légendâre", baseValue:2000000,repairTime:11700}, // McLaren F1
+  { tier:"SSS+", name:"Pagânì Zondà R Ultime",baseValue:1800000,repairTime:11050}, // Pagani Zonda R
+  { tier:"SSS+", name:"Bugatti Divo Divinité",baseValue:1600000,repairTime:10400}, // Bugatti Divo
+  { tier:"SSS+", name:"Lambo Sîan Mythique",  baseValue:1400000,repairTime:9425}, // Lamborghini Sian
+  { tier:"SSS+", name:"Merko AMG ONE F1Street",baseValue:1350000,repairTime:9230}, // Mercedes AMG One
+  { tier:"SSS+", name:"Ferrero Monza SP1 Dieu",baseValue:1700000,repairTime:10725}, // Ferrari Monza SP1
+  { tier:"SSS+", name:"Gordon Murray T50 GraalO",baseValue:2200000,repairTime:12350}, // Gordon Murray T50
+  { tier:"SSS+", name:"Koenigsmeg CC850 Absolu",baseValue:1900000,repairTime:11375}, // Koenigsegg CC850
+  { tier:"SSS+", name:"Rollz Royce Boat-Tail Oups",baseValue:2500000,repairTime:13000}, // Rolls Boat Tail
 
   // ── TIER F — Nouvelles épaves ──────────────────────────────────────
-  { tier:"F", name:"Talbot Horizonne Fantôme",  baseValue:65,  repairTime:4  }, // Talbot Horizon
-  { tier:"F", name:"Simca 1100 Rouillarde",     baseValue:68,  repairTime:4  }, // Simca 1100
-  { tier:"F", name:"Renno 5 Supercinq",         baseValue:78,  repairTime:5  }, // Renault 5
-  { tier:"F", name:"Renno 11 Onzième",          baseValue:74,  repairTime:5  }, // Renault 11
-  { tier:"F", name:"Pijot 104 ZS Zézette",      baseValue:82,  repairTime:5  }, // Peugeot 104 ZS
-  { tier:"F", name:"Citron 2CV Deudeuche",      baseValue:90,  repairTime:6  }, // Citroën 2CV
-  { tier:"F", name:"Citron GSA Grenouillard",   baseValue:72,  repairTime:5  }, // Citroën GSA
-  { tier:"F", name:"Fjord Sierrap Bêlante",     baseValue:86,  repairTime:5  }, // Ford Sierra
-  { tier:"F", name:"Fiato Pândola Pendouille",  baseValue:79,  repairTime:5  }, // Fiat Pandina
-  { tier:"F", name:"Mazda 323 Trozième",        baseValue:83,  repairTime:5  }, // Mazda 323
-  { tier:"F", name:"Opal Monzah Ronflette",     baseValue:91,  repairTime:6  }, // Opel Monza
-  { tier:"F", name:"Hinda Lôgique CX",          baseValue:97,  repairTime:6  }, // Honda Logic
-  { tier:"F", name:"Mitsubish Celérité",        baseValue:93,  repairTime:6  }, // Mitsubishi Celerio
-  { tier:"F", name:"Daiwo Matiz Mignonouille",  baseValue:66,  repairTime:4  }, // Daewoo Matiz
-  { tier:"F", name:"Lada Samarô Stoïk",         baseValue:62,  repairTime:4  }, // Lada Samara
+  { tier:"F", name:"Talbot Horizonne Fantôme",  baseValue:65,  repairTime:8  }, // Talbot Horizon
+  { tier:"F", name:"Simca 1100 Rouillarde",     baseValue:68,  repairTime:8  }, // Simca 1100
+  { tier:"F", name:"Renno 5 Supercinq",         baseValue:78,  repairTime:10  }, // Renault 5
+  { tier:"F", name:"Renno 11 Onzième",          baseValue:74,  repairTime:10  }, // Renault 11
+  { tier:"F", name:"Pijot 104 ZS Zézette",      baseValue:82,  repairTime:10  }, // Peugeot 104 ZS
+  { tier:"F", name:"Citron 2CV Deudeuche",      baseValue:90,  repairTime:12  }, // Citroën 2CV
+  { tier:"F", name:"Citron GSA Grenouillard",   baseValue:72,  repairTime:10  }, // Citroën GSA
+  { tier:"F", name:"Fjord Sierrap Bêlante",     baseValue:86,  repairTime:10  }, // Ford Sierra
+  { tier:"F", name:"Fiato Pândola Pendouille",  baseValue:79,  repairTime:10  }, // Fiat Pandina
+  { tier:"F", name:"Mazda 323 Trozième",        baseValue:83,  repairTime:10  }, // Mazda 323
+  { tier:"F", name:"Opal Monzah Ronflette",     baseValue:91,  repairTime:12  }, // Opel Monza
+  { tier:"F", name:"Hinda Lôgique CX",          baseValue:97,  repairTime:12  }, // Honda Logic
+  { tier:"F", name:"Mitsubish Celérité",        baseValue:93,  repairTime:12  }, // Mitsubishi Celerio
+  { tier:"F", name:"Daiwo Matiz Mignonouille",  baseValue:66,  repairTime:8  }, // Daewoo Matiz
+  { tier:"F", name:"Lada Samarô Stoïk",         baseValue:62,  repairTime:8  }, // Lada Samara
 
   // ── TIER E — Nouvelles citadines ──────────────────────────────────
-  { tier:"E", name:"Renno Twîngoo 2 Ronchon",  baseValue:310, repairTime:18 }, // Renault Twingo 2
-  { tier:"E", name:"Pijot 208 Deux-zérouit",   baseValue:320, repairTime:18 }, // Peugeot 208
-  { tier:"E", name:"Citron C1 Bichette",        baseValue:195, repairTime:12 }, // Citroën C1
-  { tier:"E", name:"Toyo Âïgo Nanard",          baseValue:200, repairTime:13 }, // Toyota Aygo
-  { tier:"E", name:"Pijot 107 CentSept",        baseValue:198, repairTime:12 }, // Peugeot 107
-  { tier:"E", name:"Volkz Loupine",             baseValue:330, repairTime:19 }, // VW Lupo
-  { tier:"E", name:"Seet Ârmosa Joliette",      baseValue:225, repairTime:14 }, // Seat Arosa
-  { tier:"E", name:"Renno Zoé Électricouille",  baseValue:355, repairTime:20 }, // Renault Zoe
-  { tier:"E", name:"Hyundra Accent Zézayeur",   baseValue:240, repairTime:15 }, // Hyundai Accent
-  { tier:"E", name:"Kia Soulmate",              baseValue:275, repairTime:16 }, // Kia Soul
-  { tier:"E", name:"Nissin Notche Cubique",     baseValue:260, repairTime:16 }, // Nissan Note
-  { tier:"E", name:"Hinda Jazza Jazzy",         baseValue:295, repairTime:17 }, // Honda Jazz
-  { tier:"E", name:"Mazda Deuxième Deuz",       baseValue:270, repairTime:16 }, // Mazda 2
-  { tier:"E", name:"Chevro Avéo Pépiette",      baseValue:215, repairTime:13 }, // Chevrolet Aveo
-  { tier:"E", name:"Fiato Grânde Pounto",       baseValue:305, repairTime:18 }, // Fiat Grande Punto
+  { tier:"E", name:"Renno Twîngoo 2 Ronchon",  baseValue:310, repairTime:45 }, // Renault Twingo 2
+  { tier:"E", name:"Pijot 208 Deux-zérouit",   baseValue:320, repairTime:45 }, // Peugeot 208
+  { tier:"E", name:"Citron C1 Bichette",        baseValue:195, repairTime:30 }, // Citroën C1
+  { tier:"E", name:"Toyo Âïgo Nanard",          baseValue:200, repairTime:32 }, // Toyota Aygo
+  { tier:"E", name:"Pijot 107 CentSept",        baseValue:198, repairTime:30 }, // Peugeot 107
+  { tier:"E", name:"Volkz Loupine",             baseValue:330, repairTime:48 }, // VW Lupo
+  { tier:"E", name:"Seet Ârmosa Joliette",      baseValue:225, repairTime:35 }, // Seat Arosa
+  { tier:"E", name:"Renno Zoé Électricouille",  baseValue:355, repairTime:50 }, // Renault Zoe
+  { tier:"E", name:"Hyundra Accent Zézayeur",   baseValue:240, repairTime:38 }, // Hyundai Accent
+  { tier:"E", name:"Kia Soulmate",              baseValue:275, repairTime:40 }, // Kia Soul
+  { tier:"E", name:"Nissin Notche Cubique",     baseValue:260, repairTime:40 }, // Nissan Note
+  { tier:"E", name:"Hinda Jazza Jazzy",         baseValue:295, repairTime:42 }, // Honda Jazz
+  { tier:"E", name:"Mazda Deuxième Deuz",       baseValue:270, repairTime:40 }, // Mazda 2
+  { tier:"E", name:"Chevro Avéo Pépiette",      baseValue:215, repairTime:32 }, // Chevrolet Aveo
+  { tier:"E", name:"Fiato Grânde Pounto",       baseValue:305, repairTime:45 }, // Fiat Grande Punto
 
   // ── TIER D — Nouvelles compactes ──────────────────────────────────
-  { tier:"D", name:"Renno Flûence Sifflette",   baseValue:525, repairTime:27 }, // Renault Fluence
-  { tier:"D", name:"Pijot 308 Troiscenthuit",   baseValue:575, repairTime:29 }, // Peugeot 308
-  { tier:"D", name:"Citron C4 Quatrième",       baseValue:555, repairTime:28 }, // Citroën C4
-  { tier:"D", name:"Fjord Foucos C-Max Boxon",  baseValue:540, repairTime:27 }, // Ford C-Max
-  { tier:"D", name:"Volkz Jêta Jétable",        baseValue:590, repairTime:29 }, // VW Jetta
-  { tier:"D", name:"Skodda Octavia Octopusse",  baseValue:610, repairTime:30 }, // Skoda Octavia
-  { tier:"D", name:"Toyo Austurès",             baseValue:635, repairTime:31 }, // Toyota Auris
-  { tier:"D", name:"Hyundra i30 Trentième",     baseValue:545, repairTime:27 }, // Hyundai i30
-  { tier:"D", name:"Kia Céed Cédille",          baseValue:530, repairTime:27 }, // Kia Ceed
-  { tier:"D", name:"Nissou Première P12",       baseValue:515, repairTime:26 }, // Nissan Primera
-  { tier:"D", name:"Hinda Civique Mk7",         baseValue:660, repairTime:32 }, // Honda Civic Mk7
-  { tier:"D", name:"Odi A3 Sportbakc Ados",     baseValue:695, repairTime:33 }, // Audi A3 Sportback
-  { tier:"D", name:"Merko Classa B Deub",       baseValue:650, repairTime:31 }, // Mercedes Classe B
-  { tier:"D", name:"Volkz Tigrouan",            baseValue:780, repairTime:37 }, // VW Tiguan
-  { tier:"D", name:"Renno Kôléos Colosse",      baseValue:740, repairTime:35 }, // Renault Koleos
+  { tier:"D", name:"Renno Flûence Sifflette",   baseValue:525, repairTime:81 }, // Renault Fluence
+  { tier:"D", name:"Pijot 308 Troiscenthuit",   baseValue:575, repairTime:87 }, // Peugeot 308
+  { tier:"D", name:"Citron C4 Quatrième",       baseValue:555, repairTime:84 }, // Citroën C4
+  { tier:"D", name:"Fjord Foucos C-Max Boxon",  baseValue:540, repairTime:81 }, // Ford C-Max
+  { tier:"D", name:"Volkz Jêta Jétable",        baseValue:590, repairTime:87 }, // VW Jetta
+  { tier:"D", name:"Skodda Octavia Octopusse",  baseValue:610, repairTime:90 }, // Skoda Octavia
+  { tier:"D", name:"Toyo Austurès",             baseValue:635, repairTime:93 }, // Toyota Auris
+  { tier:"D", name:"Hyundra i30 Trentième",     baseValue:545, repairTime:81 }, // Hyundai i30
+  { tier:"D", name:"Kia Céed Cédille",          baseValue:530, repairTime:81 }, // Kia Ceed
+  { tier:"D", name:"Nissou Première P12",       baseValue:515, repairTime:78 }, // Nissan Primera
+  { tier:"D", name:"Hinda Civique Mk7",         baseValue:660, repairTime:96 }, // Honda Civic Mk7
+  { tier:"D", name:"Odi A3 Sportbakc Ados",     baseValue:695, repairTime:99 }, // Audi A3 Sportback
+  { tier:"D", name:"Merko Classa B Deub",       baseValue:650, repairTime:93 }, // Mercedes Classe B
+  { tier:"D", name:"Volkz Tigrouan",            baseValue:780, repairTime:111 }, // VW Tiguan
+  { tier:"D", name:"Renno Kôléos Colosse",      baseValue:740, repairTime:105 }, // Renault Koleos
 
   // ── TIER C — Nouvelles berlines sportives ─────────────────────────
-  { tier:"C", name:"Renno Clioz RS Mk3 Saucette",baseValue:2300,repairTime:69}, // Renault Clio RS
-  { tier:"C", name:"Hinda Civique Type-R FK8",  baseValue:2900, repairTime:75 }, // Honda Civic Type-R
-  { tier:"C", name:"Volkz Golph R Mk6",         baseValue:2100, repairTime:65 }, // VW Golf R
-  { tier:"C", name:"Odi S3 Sportbaguette",      baseValue:2400, repairTime:70 }, // Audi S3
-  { tier:"C", name:"Merko A45 AMG Agité",       baseValue:2700, repairTime:73 }, // Mercedes A45 AMG
-  { tier:"C", name:"BimV M135i Ventilateur",    baseValue:2200, repairTime:67 }, // BMW M135i
-  { tier:"C", name:"Seet Léonne Cupra 290",     baseValue:2000, repairTime:63 }, // Seat Leon Cupra 290
-  { tier:"C", name:"Volkz Sîroco Tourbillon",   baseValue:1850, repairTime:61 }, // VW Scirocco
-  { tier:"C", name:"Pijot 308 GTi Gustatif",    baseValue:2500, repairTime:71 }, // Peugeot 308 GTi
-  { tier:"C", name:"Renno Mégânon 4 RS Trophée",baseValue:2800, repairTime:74}, // Renault Megane 4 RS
-  { tier:"C", name:"Alfa Roméa Giuliettah",     baseValue:1750, repairTime:59 }, // Alfa Romeo Giulietta
-  { tier:"C", name:"Toyo GT86 Katanouille",     baseValue:2350, repairTime:69 }, // Toyota GT86
-  { tier:"C", name:"Subaro BRZ Brisouille",     baseValue:2300, repairTime:68 }, // Subaru BRZ
-  { tier:"C", name:"Mazda MX-5 RF Toit Fou",    baseValue:2600, repairTime:72 }, // Mazda MX-5 RF
+  { tier:"C", name:"Renno Clioz RS Mk3 Saucette",baseValue:2300,repairTime:242}, // Renault Clio RS
+  { tier:"C", name:"Hinda Civique Type-R FK8",  baseValue:2900, repairTime:262 }, // Honda Civic Type-R
+  { tier:"C", name:"Volkz Golph R Mk6",         baseValue:2100, repairTime:228 }, // VW Golf R
+  { tier:"C", name:"Odi S3 Sportbaguette",      baseValue:2400, repairTime:245 }, // Audi S3
+  { tier:"C", name:"Merko A45 AMG Agité",       baseValue:2700, repairTime:256 }, // Mercedes A45 AMG
+  { tier:"C", name:"BimV M135i Ventilateur",    baseValue:2200, repairTime:234 }, // BMW M135i
+  { tier:"C", name:"Seet Léonne Cupra 290",     baseValue:2000, repairTime:220 }, // Seat Leon Cupra 290
+  { tier:"C", name:"Volkz Sîroco Tourbillon",   baseValue:1850, repairTime:214 }, // VW Scirocco
+  { tier:"C", name:"Pijot 308 GTi Gustatif",    baseValue:2500, repairTime:248 }, // Peugeot 308 GTi
+  { tier:"C", name:"Renno Mégânon 4 RS Trophée",baseValue:2800, repairTime:259}, // Renault Megane 4 RS
+  { tier:"C", name:"Alfa Roméa Giuliettah",     baseValue:1750, repairTime:206 }, // Alfa Romeo Giulietta
+  { tier:"C", name:"Toyo GT86 Katanouille",     baseValue:2350, repairTime:242 }, // Toyota GT86
+  { tier:"C", name:"Subaro BRZ Brisouille",     baseValue:2300, repairTime:238 }, // Subaru BRZ
+  { tier:"C", name:"Mazda MX-5 RF Toit Fou",    baseValue:2600, repairTime:252 }, // Mazda MX-5 RF
 
   // ── TIER B — Nouvelles sportives ──────────────────────────────────
-  { tier:"B", name:"Odi TT RS Toutaticouille",  baseValue:5400, repairTime:99 }, // Audi TT RS
-  { tier:"B", name:"Merko C63 AMG Bagarreur",   baseValue:6200, repairTime:105}, // Mercedes C63 AMG
-  { tier:"B", name:"BimV M4 F82 Déchaîné",      baseValue:5800, repairTime:102}, // BMW M4
-  { tier:"B", name:"Porsha Cây S Turbote",      baseValue:5500, repairTime:100}, // Porsche Cayman S
-  { tier:"B", name:"Alfa Roméa 4C Carbonifère", baseValue:4800, repairTime:95 }, // Alfa Romeo 4C
-  { tier:"B", name:"Fjord Mustângu GT350R",     baseValue:5200, repairTime:98 }, // Ford Mustang GT350R
-  { tier:"B", name:"Chevro Camâro SS Boucan",   baseValue:4600, repairTime:93 }, // Chevrolet Camaro SS
-  { tier:"B", name:"Odi RS3 Sportbatailleur",   baseValue:5600, repairTime:101}, // Audi RS3
-  { tier:"B", name:"BimV M2 F87 Rascal",        baseValue:4900, repairTime:96 }, // BMW M2
-  { tier:"B", name:"Merko CLA 45 AMG Turbine",  baseValue:4400, repairTime:92 }, // Mercedes CLA 45
-  { tier:"B", name:"Renno Mégânon RS Trophy",   baseValue:4200, repairTime:91 }, // Renault Megane RS Trophy
-  { tier:"B", name:"Hinda NSX Mk1 Niponaise",   baseValue:6500, repairTime:107}, // Honda NSX Mk1
-  { tier:"B", name:"Toyo Souprà Mk5 Reborn",    baseValue:6000, repairTime:104}, // Toyota Supra Mk5
-  { tier:"B", name:"Subaro WRX STI Spec C",     baseValue:4300, repairTime:91 }, // Subaru WRX STI
+  { tier:"B", name:"Odi TT RS Toutaticouille",  baseValue:5400, repairTime:396 }, // Audi TT RS
+  { tier:"B", name:"Merko C63 AMG Bagarreur",   baseValue:6200, repairTime:420}, // Mercedes C63 AMG
+  { tier:"B", name:"BimV M4 F82 Déchaîné",      baseValue:5800, repairTime:408}, // BMW M4
+  { tier:"B", name:"Porsha Cây S Turbote",      baseValue:5500, repairTime:400}, // Porsche Cayman S
+  { tier:"B", name:"Alfa Roméa 4C Carbonifère", baseValue:4800, repairTime:380 }, // Alfa Romeo 4C
+  { tier:"B", name:"Fjord Mustângu GT350R",     baseValue:5200, repairTime:392 }, // Ford Mustang GT350R
+  { tier:"B", name:"Chevro Camâro SS Boucan",   baseValue:4600, repairTime:372 }, // Chevrolet Camaro SS
+  { tier:"B", name:"Odi RS3 Sportbatailleur",   baseValue:5600, repairTime:404}, // Audi RS3
+  { tier:"B", name:"BimV M2 F87 Rascal",        baseValue:4900, repairTime:384 }, // BMW M2
+  { tier:"B", name:"Merko CLA 45 AMG Turbine",  baseValue:4400, repairTime:368 }, // Mercedes CLA 45
+  { tier:"B", name:"Renno Mégânon RS Trophy",   baseValue:4200, repairTime:364 }, // Renault Megane RS Trophy
+  { tier:"B", name:"Hinda NSX Mk1 Niponaise",   baseValue:6500, repairTime:428}, // Honda NSX Mk1
+  { tier:"B", name:"Toyo Souprà Mk5 Reborn",    baseValue:6000, repairTime:416}, // Toyota Supra Mk5
+  { tier:"B", name:"Subaro WRX STI Spec C",     baseValue:4300, repairTime:364 }, // Subaru WRX STI
 
   // ── TIER A — Nouveau luxe & GT ─────────────────────────────────────
-  { tier:"A", name:"Odi RS7 Sportbahut",        baseValue:17800,repairTime:169}, // Audi RS7
-  { tier:"A", name:"BimV M8 Coupé Costaud",     baseValue:19000,repairTime:173}, // BMW M8
-  { tier:"A", name:"Merko E63 AMG Sergent",     baseValue:16000,repairTime:164}, // Mercedes E63 AMG
-  { tier:"A", name:"Porsha Taycan Voltique",    baseValue:15500,repairTime:162}, // Porsche Taycan
-  { tier:"A", name:"Odi e-tron GT Ampère",      baseValue:14800,repairTime:160}, // Audi e-tron GT
-  { tier:"A", name:"BimV M5 F90 Conducteur",   baseValue:18000,repairTime:170}, // BMW M5 F90
-  { tier:"A", name:"Merko GT 63 AMG Rugit",    baseValue:19500,repairTime:174}, // Mercedes AMG GT 63
-  { tier:"A", name:"Lambo Huracan Evo Fissa",  baseValue:18500,repairTime:171}, // Lamborghini Huracan Evo
-  { tier:"A", name:"Ferrero Roma Romantique",  baseValue:17000,repairTime:167}, // Ferrari Roma
-  { tier:"A", name:"Mézarâti Grécal Crêpe",   baseValue:12000,repairTime:149}, // Maserati Grecale
-  { tier:"A", name:"Bentlaï Bentaïga Costaud", baseValue:19800,repairTime:175}, // Bentley Bentayga
-  { tier:"A", name:"Rollz Ghost Spectral",     baseValue:19900,repairTime:175}, // Rolls Royce Ghost
+  { tier:"A", name:"Odi RS7 Sportbahut",        baseValue:17800,repairTime:760}, // Audi RS7
+  { tier:"A", name:"BimV M8 Coupé Costaud",     baseValue:19000,repairTime:778}, // BMW M8
+  { tier:"A", name:"Merko E63 AMG Sergent",     baseValue:16000,repairTime:738}, // Mercedes E63 AMG
+  { tier:"A", name:"Porsha Taycan Voltique",    baseValue:15500,repairTime:729}, // Porsche Taycan
+  { tier:"A", name:"Odi e-tron GT Ampère",      baseValue:14800,repairTime:720}, // Audi e-tron GT
+  { tier:"A", name:"BimV M5 F90 Conducteur",   baseValue:18000,repairTime:765}, // BMW M5 F90
+  { tier:"A", name:"Merko GT 63 AMG Rugit",    baseValue:19500,repairTime:783}, // Mercedes AMG GT 63
+  { tier:"A", name:"Lambo Huracan Evo Fissa",  baseValue:18500,repairTime:770}, // Lamborghini Huracan Evo
+  { tier:"A", name:"Ferrero Roma Romantique",  baseValue:17000,repairTime:752}, // Ferrari Roma
+  { tier:"A", name:"Mézarâti Grécal Crêpe",   baseValue:12000,repairTime:670}, // Maserati Grecale
+  { tier:"A", name:"Bentlaï Bentaïga Costaud", baseValue:19800,repairTime:788}, // Bentley Bentayga
+  { tier:"A", name:"Rollz Ghost Spectral",     baseValue:19900,repairTime:788}, // Rolls Royce Ghost
 
   // ── TIER S — Nouvelles GT prestige ────────────────────────────────
-  { tier:"S", name:"Ferrero F8 Tributaire",    baseValue:26000,repairTime:205}, // Ferrari F8 Tributo
-  { tier:"S", name:"Lambo Urus Pérformante",   baseValue:30000,repairTime:215}, // Lamborghini Urus Perf
-  { tier:"S", name:"McLoren Artoura Sculptée", baseValue:35000,repairTime:227}, // McLaren Artura
-  { tier:"S", name:"Porsha GT4 Piquant",       baseValue:28500,repairTime:211}, // Porsche GT4
-  { tier:"S", name:"Odi R8 V10 Plus Glouton",  baseValue:47000,repairTime:260}, // Audi R8 V10 Plus
-  { tier:"S", name:"BimV M8 Compé Rondouil",   baseValue:32000,repairTime:221}, // BMW M8 Competition
-  { tier:"S", name:"Merko SL63 AMG Cabriouge", baseValue:38500,repairTime:237}, // Mercedes SL63 AMG
-  { tier:"S", name:"Aston Marten DBX Boxer",   baseValue:27500,repairTime:209}, // Aston Martin DBX
-  { tier:"S", name:"Ferrero Portofino Caillou", baseValue:33000,repairTime:222}, // Ferrari Portofino
-  { tier:"S", name:"Mézarâti MC20 Tornade",    baseValue:44000,repairTime:253}, // Maserati MC20
-  { tier:"S", name:"Nissou GT-R Nismo Ninja",  baseValue:48000,repairTime:263}, // Nissan GT-R Nismo
+  { tier:"S", name:"Ferrero F8 Tributaire",    baseValue:26000,repairTime:1025}, // Ferrari F8 Tributo
+  { tier:"S", name:"Lambo Urus Pérformante",   baseValue:30000,repairTime:1075}, // Lamborghini Urus Perf
+  { tier:"S", name:"McLoren Artoura Sculptée", baseValue:35000,repairTime:1135}, // McLaren Artura
+  { tier:"S", name:"Porsha GT4 Piquant",       baseValue:28500,repairTime:1055}, // Porsche GT4
+  { tier:"S", name:"Odi R8 V10 Plus Glouton",  baseValue:47000,repairTime:1300}, // Audi R8 V10 Plus
+  { tier:"S", name:"BimV M8 Compé Rondouil",   baseValue:32000,repairTime:1105}, // BMW M8 Competition
+  { tier:"S", name:"Merko SL63 AMG Cabriouge", baseValue:38500,repairTime:1185}, // Mercedes SL63 AMG
+  { tier:"S", name:"Aston Marten DBX Boxer",   baseValue:27500,repairTime:1045}, // Aston Martin DBX
+  { tier:"S", name:"Ferrero Portofino Caillou", baseValue:33000,repairTime:1110}, // Ferrari Portofino
+  { tier:"S", name:"Mézarâti MC20 Tornade",    baseValue:44000,repairTime:1265}, // Maserati MC20
+  { tier:"S", name:"Nissou GT-R Nismo Ninja",  baseValue:48000,repairTime:1315}, // Nissan GT-R Nismo
 
   // ── TIER SS — Nouvelles supercars ─────────────────────────────────
-  { tier:"SS", name:"Ferrero SF90 Stradaoulette",baseValue:98000,repairTime:380}, // Ferrari SF90
-  { tier:"SS", name:"McLoren 765LT Soufflant",  baseValue:120000,repairTime:418}, // McLaren 765LT
-  { tier:"SS", name:"Lambo SVJ 63 Monstre",     baseValue:135000,repairTime:435}, // Lamborghini SVJ 63
-  { tier:"SS", name:"Porsha GT2 RS Perforate",  baseValue:125000,repairTime:425}, // Porsche GT2 RS
-  { tier:"SS", name:"Odi R8 GT Ultime Dorée",   baseValue:115000,repairTime:408}, // Audi R8 GT
-  { tier:"SS", name:"BimV M4 GT3 Piste Pure",   baseValue:105000,repairTime:392}, // BMW M4 GT3
-  { tier:"SS", name:"Merko AMG GT Black Série",  baseValue:145000,repairTime:445}, // AMG GT Black Series
-  { tier:"SS", name:"Ferrero 812 Superfelice",  baseValue:108000,repairTime:396}, // Ferrari 812 Superfast
-  { tier:"SS", name:"McLoren Elva Vent Capote",  baseValue:165000,repairTime:462}, // McLaren Elva
+  { tier:"SS", name:"Ferrero SF90 Stradaoulette",baseValue:98000,repairTime:2090}, // Ferrari SF90
+  { tier:"SS", name:"McLoren 765LT Soufflant",  baseValue:120000,repairTime:2299}, // McLaren 765LT
+  { tier:"SS", name:"Lambo SVJ 63 Monstre",     baseValue:135000,repairTime:2392}, // Lamborghini SVJ 63
+  { tier:"SS", name:"Porsha GT2 RS Perforate",  baseValue:125000,repairTime:2338}, // Porsche GT2 RS
+  { tier:"SS", name:"Odi R8 GT Ultime Dorée",   baseValue:115000,repairTime:2244}, // Audi R8 GT
+  { tier:"SS", name:"BimV M4 GT3 Piste Pure",   baseValue:105000,repairTime:2156}, // BMW M4 GT3
+  { tier:"SS", name:"Merko AMG GT Black Série",  baseValue:145000,repairTime:2448}, // AMG GT Black Series
+  { tier:"SS", name:"Ferrero 812 Superfelice",  baseValue:108000,repairTime:2178}, // Ferrari 812 Superfast
+  { tier:"SS", name:"McLoren Elva Vent Capote",  baseValue:165000,repairTime:2541}, // McLaren Elva
 
   // ── TIER SSS — Nouveaux hypercars ─────────────────────────────────
-  { tier:"SSS", name:"Rimac C_Deux Électrosaur",baseValue:430000,repairTime:712}, // Rimac C_Two
-  { tier:"SSS", name:"Koenigsmeg Gemêra Fameux", baseValue:495000,repairTime:748}, // Koenigsegg Gemera
-  { tier:"SSS", name:"McLoren Spèdtail Caudal",  baseValue:520000,repairTime:758}, // McLaren Speedtail
-  { tier:"SSS", name:"Lambo Countach LPI Rétro", baseValue:475000,repairTime:738}, // Lamborghini Countach LPI
-  { tier:"SSS", name:"Aston Marten Valkyrie Dieu",baseValue:640000,repairTime:837}, // Aston Valkyrie
-  { tier:"SSS", name:"Ferrero Daytona SP3 Soleil",baseValue:720000,repairTime:884}, // Ferrari Daytona SP3
-  { tier:"SSS", name:"McLoren P1 GTR Pistouille",baseValue:610000,repairTime:823}, // McLaren P1 GTR
-  { tier:"SSS", name:"Porsha 959 Classicos",     baseValue:360000,repairTime:660}, // Porsche 959
+  { tier:"SSS", name:"Rimac C_Deux Électrosaur",baseValue:430000,repairTime:4272}, // Rimac C_Two
+  { tier:"SSS", name:"Koenigsmeg Gemêra Fameux", baseValue:495000,repairTime:4488}, // Koenigsegg Gemera
+  { tier:"SSS", name:"McLoren Spèdtail Caudal",  baseValue:520000,repairTime:4548}, // McLaren Speedtail
+  { tier:"SSS", name:"Lambo Countach LPI Rétro", baseValue:475000,repairTime:4428}, // Lamborghini Countach LPI
+  { tier:"SSS", name:"Aston Marten Valkyrie Dieu",baseValue:640000,repairTime:5022}, // Aston Valkyrie
+  { tier:"SSS", name:"Ferrero Daytona SP3 Soleil",baseValue:720000,repairTime:5304}, // Ferrari Daytona SP3
+  { tier:"SSS", name:"McLoren P1 GTR Pistouille",baseValue:610000,repairTime:4938}, // McLaren P1 GTR
+  { tier:"SSS", name:"Porsha 959 Classicos",     baseValue:360000,repairTime:3960}, // Porsche 959
 
   // ── TIER SSS+ — Nouvelles légendes ────────────────────────────────
-  { tier:"SSS+", name:"Ferrero FXX Evoluzounne",  baseValue:1100000,repairTime:1250}, // Ferrari FXX Evoluzione
-  { tier:"SSS+", name:"Pagânì Utopîa Cieliste",   baseValue:2100000,repairTime:1850}, // Pagani Utopia
-  { tier:"SSS+", name:"Koenigsmeg One:1 Absolu",  baseValue:2300000,repairTime:1950}, // Koenigsegg One:1
-  { tier:"SSS+", name:"Lambo Égoïsta Solitaire",  baseValue:1800000,repairTime:1700}, // Lamborghini Egoista
-  { tier:"SSS+", name:"Rimac Nêvera Apoc Record", baseValue:1300000,repairTime:1380}, // Rimac Nevera Record
-  { tier:"SSS+", name:"Aston Marten Valkyrie AMR", baseValue:1950000,repairTime:1780}, // Aston Valkyrie AMR Pro
-  { tier:"SSS+", name:"Bugatti Bolide Atomique",   baseValue:2800000,repairTime:2000}, // Bugatti Bolide
+  { tier:"SSS+", name:"Ferrero FXX Evoluzounne",  baseValue:1100000,repairTime:8125}, // Ferrari FXX Evoluzione
+  { tier:"SSS+", name:"Pagânì Utopîa Cieliste",   baseValue:2100000,repairTime:12025}, // Pagani Utopia
+  { tier:"SSS+", name:"Koenigsmeg One:1 Absolu",  baseValue:2300000,repairTime:12675}, // Koenigsegg One:1
+  { tier:"SSS+", name:"Lambo Égoïsta Solitaire",  baseValue:1800000,repairTime:11050}, // Lamborghini Egoista
+  { tier:"SSS+", name:"Rimac Nêvera Apoc Record", baseValue:1300000,repairTime:8970}, // Rimac Nevera Record
+  { tier:"SSS+", name:"Aston Marten Valkyrie AMR", baseValue:1950000,repairTime:11570}, // Aston Valkyrie AMR Pro
+  { tier:"SSS+", name:"Bugatti Bolide Atomique",   baseValue:2800000,repairTime:13000}, // Bugatti Bolide
 ];
 
 // helpers
@@ -619,7 +621,7 @@ const showroomEmptyEl= $("#showroomEmpty");
 
 const btnAnalyze = $("#btnAnalyze");
 const btnRepairClick = $("#btnRepairClick");
-const btnSave = $("#btnSave");
+// btnSave supprimé du header
 
 // Nom du garage éditable
 const garageNameEl = $("#garageName");
@@ -715,11 +717,10 @@ function computeTalentEffects(){
   saleBonus += getTalentRank("sale_2") * 0.08;
 
   // Atelier — vitesse
-  speedMult *= (1 + getTalentRank("speed_1") * 0.06);
-  speedMult *= (1 + getTalentRank("speed_2") * 0.10);
+  speedMult *= (1 + getTalentRank("speed_1") * 0.04);  // était 0.06
+  speedMult *= (1 + getTalentRank("speed_2") * 0.07);  // était 0.10
 
-  // Atelier — clic bonus
-  clickBonus += getTalentRank("click_1") * 0.2;
+  clickBonus += getTalentRank("click_1") * 0.10;        // était 0.20
 
   // Diagnostic
   diagBonus += getTalentRank("diag_1") * 3;
@@ -776,17 +777,17 @@ const TALENTS = [
   // Branche Atelier
   { id:"speed_1", name:"Routine Atelier", maxRank:10, category:"Atelier",
     icon:"⚡",
-    desc:"+6% vitesse de réparation par rang (clic + auto)",
+    desc:"+4% vitesse de réparation par rang (clic + auto)",
     requires:[] },
 
   { id:"speed_2", name:"Organisation Pro", maxRank:10, category:"Atelier",
     icon:"🔧",
-    desc:"+10% vitesse de réparation par rang (nécessite Routine rang 3)",
+    desc:"+7% vitesse de réparation par rang (nécessite Routine rang 3)",
     requires:[{id:"speed_1", rank:3}] },
 
   { id:"click_1", name:"Main de Fer", maxRank:10, category:"Atelier",
     icon:"🖱️",
-    desc:"+0.2s retirées par clic par rang",
+    desc:"+0.10s retirées par clic par rang",
     requires:[] },
 
   // Branche Diagnostic
@@ -809,7 +810,7 @@ const HERITAGE_PERKS = [
 
   // ══ BRANCHE MÉCANIQUE (rouge/orange) ══════════════════
   { id:"meca_speed_1",   branch:"Mécanique", icon:"⚡", name:"Cadence Atelier",
-    desc:"+8% vitesse de réparation par rang (clic + auto)",
+    desc:"+5% vitesse de réparation par rang (clic + auto)",
     maxRank:5, costPerRank:1,
     requires:[] },
 
@@ -824,7 +825,7 @@ const HERITAGE_PERKS = [
     requires:[{id:"meca_speed_1", rank:2}] },
 
   { id:"meca_speed_2",   branch:"Mécanique", icon:"🚀", name:"Flux Continu",
-    desc:"+15% vitesse de réparation par rang",
+    desc:"+10% vitesse de réparation par rang",
     maxRank:3, costPerRank:3,
     requires:[{id:"meca_speed_1", rank:3}, {id:"meca_auto_1", rank:2}] },
 
@@ -932,7 +933,7 @@ function applyHeritageBonusesToState(){
 }
 
 function canPrestige(){
-  return state.garageLevel >= 50 && state.rep >= 50000;
+  return state.garageLevel >= 50 && state.rep >= 40000;
 }
 
 function applyHeritageBonuses(){
@@ -952,10 +953,10 @@ function applyHeritageBonuses(){
     if(rank === 0) continue;
 
     // Mécanique
-    if(p.id === "meca_speed_1")  b.repSpeed       *= Math.pow(1.08, rank);
-    if(p.id === "meca_click_1")  b.repSpeed       += 0; // géré via repairClick au prestige
-    if(p.id === "meca_auto_1")   b.repSpeed       += 0; // géré via repairAuto au prestige
-    if(p.id === "meca_speed_2")  b.repSpeed       *= Math.pow(1.15, rank);
+    if(p.id === "meca_speed_1")  b.repSpeed       *= Math.pow(1.05, rank);  // était 1.08
+    if(p.id === "meca_click_1")  b.repSpeed       += 0;
+    if(p.id === "meca_auto_1")   b.repSpeed       += 0;
+    if(p.id === "meca_speed_2")  b.repSpeed       *= Math.pow(1.10, rank);  // était 1.15
     if(p.id === "meca_click_2")  b.repSpeed       += 0;
     if(p.id === "meca_ultimate") b.repSpeed       *= 1.5;
 
@@ -1012,6 +1013,7 @@ function doPrestige(){
     garageLevel:       1,
     garageCap:         1,
     garageName:        persistGarageName,
+    showroomCap:       3,
     money:             100 + b.startMoney,
     moneyPerSec:       b.passiveBonus,
     rep:               0,
@@ -1065,7 +1067,7 @@ const UPGRADE_BASE_COSTS = {
   manual:94, toolbox:268, obd:337, impact:800, nego:1000, comp:3500,
   lift:5000, impact2:7500, diagpro:12000, stagiaire:2500, vendeur:6000,
   apprenti:4000, mecanicien:15000, loc_outils:3000, contrat_taxi:8000,
-  assurance:20000, atelier_nuit:50000, franchise:150000,
+  assurance:20000, atelier_nuit:50000, franchise:150000, showroom_slot:8000,
 };
 function getBaseUpgradeCost(id){ return UPGRADE_BASE_COSTS[id] ?? 100; }
 
@@ -1272,6 +1274,7 @@ function renderStatsUI(){
     <div class="statSection statSection--eco">
       <div class="statSection__title"><span class="statSection__titleIcon">💰</span>Économie</div>
       <div class="statRow"><span class="statRow__label">Argent actuel</span><span class="statRow__val statRow__val--green">${formatMoney(state.money)}</span></div>
+      <div class="statRow"><span class="statRow__label">Argent total gagné</span><span class="statRow__val statRow__val--green">${formatMoney(state.totalMoneyEarned ?? 0)}</span></div>
       <div class="statRow"><span class="statRow__label">Revenu passif total</span><span class="statRow__val statRow__val--green">${formatMoney(state.moneyPerSec)}/s</span></div>
       <div class="statRow statRow--sub"><span class="statRow__label">· dont talents</span><span class="statRow__val">${talentPassive} €/s</span></div>
       <div class="statRow statRow--sub"><span class="statRow__label">· dont affaires</span><span class="statRow__val">${dealsPassive} €/s</span></div>
@@ -1515,8 +1518,19 @@ function renderActive(){
 
 function renderShowroom(){
   showroomListEl.innerHTML = "";
+  const cap = state.showroomCap ?? 3;
+  const count = state.showroom.length;
+  const isFull = count >= cap;
 
-  if(state.showroom.length === 0){
+  // Indicateur cap dans le titre showroom
+  const capEl = document.getElementById("showroomCapDisplay");
+  if(capEl) capEl.textContent = `${count} / ${cap}`;
+
+  // Badge "PLEIN" si complet
+  const fullBadgeEl = document.getElementById("showroomFullBadge");
+  if(fullBadgeEl) fullBadgeEl.style.display = isFull ? "inline-block" : "none";
+
+  if(count === 0){
     showroomEmptyEl.style.display = "grid";
     showroomListEl.style.display = "none";
     return;
@@ -1824,7 +1838,12 @@ function calcSaleValue(car){
 }
 
 function finishRepair(){
-  state._lastRepairedTier = state.active.tier; // pour succès "Réparer du Luxe"
+  state._lastRepairedTier = state.active.tier;
+  const cap = state.showroomCap ?? 3;
+  if(state.showroom.length >= cap){
+    // Showroom plein — on ne peut pas déposer, on attend
+    return;
+  }
   state.showroom.unshift(state.active);
   state.active = null;
   state.totalRepairs = (state.totalRepairs ?? 0) + 1;
@@ -1861,7 +1880,9 @@ btnAnalyze.addEventListener("click", () => {
   const occupied = (state.active ? 1 : 0) + state.queue.length;
   if (occupied >= state.garageCap) return;
 
-  state.money += state.diagReward + (state.talentDiagBonus ?? 0);
+  const diagGain = state.diagReward + (state.talentDiagBonus ?? 0);
+  state.money += diagGain;
+  state.totalMoneyEarned = (state.totalMoneyEarned ?? 0) + diagGain;
   state.totalAnalyses = (state.totalAnalyses ?? 0) + 1;
   state.queue.push(makeCar());
   tryStartNextRepair();
@@ -1896,8 +1917,7 @@ showroomListEl.addEventListener("click", (e) => {
   const car = state.showroom[idx];
   const saleValue = calcSaleValue(car);
   state.money += saleValue;
-
-  // REP gagné selon le tier de la voiture vendue
+  state.totalMoneyEarned = (state.totalMoneyEarned ?? 0) + saleValue;
   const tierData = TIERS[car.tier] || TIERS["F"];
   const repMult = state.heritageBonuses?.repGainMult ?? 1.0;
   state.rep += Math.round(tierData.repGain * repMult);
@@ -1928,15 +1948,16 @@ if(id === "manual")  state.diagReward += 1;
 if(id === "obd")     state.diagReward += 5;
 
 // ✅ clic = secondes retirées par clic (petits gains)
-if(id === "toolbox") state.repairClick += 0.10;
-if(id === "impact")  state.repairClick += 0.15; 
-if(id === "impact2") state.repairClick += 0.25; 
+if(id === "toolbox") state.repairClick += 0.05;   // était 0.10 — +0.05/lvl
+if(id === "impact")  state.repairClick += 0.08;   // était 0.15 — +0.08/lvl
+if(id === "impact2") state.repairClick += 0.12;   // était 0.25 — +0.12/lvl
 
 // ✅ vente / vitesse / capacité
 if(id === "nego")    state.saleBonusPct += 0.05;
 if(id === "comp")    state.speedMult *= 1.10;
 if(id === "lift")    state.garageCap += 1;
 if(id === "diagpro") state.diagReward += 20;
+if(id === "showroom_slot") state.showroomCap = (state.showroomCap ?? 3) + 2;
 
 // Équipe auto-repair : on recalcule repairAuto depuis les niveaux
 if(id === "apprenti" || id === "mecanicien") recalcRepairAuto();
@@ -1950,7 +1971,8 @@ if(id === "apprenti" || id === "mecanicien") recalcRepairAuto();
 function recalcRepairAuto(){
   const apprentiLvl   = state.upgrades.find(u => u.id === "apprenti")?.lvl   || 0;
   const mecanicienLvl = state.upgrades.find(u => u.id === "mecanicien")?.lvl || 0;
-  state.repairAuto = (apprentiLvl * 0.3) + (mecanicienLvl * 1.0);
+  // Nerfé : apprenti 0.15s/s (était 0.3), mécanicien 0.5s/s (était 1.0)
+  state.repairAuto = (apprentiLvl * 0.15) + (mecanicienLvl * 0.5);
 }
 
 // =====================
@@ -1965,7 +1987,9 @@ function tick(now){
   const dt = (now - last) / 1000;
   last = now;
 
-  state.money += state.moneyPerSec * dt;
+  const passiveGain = state.moneyPerSec * dt;
+  state.money += passiveGain;
+  state.totalMoneyEarned = (state.totalMoneyEarned ?? 0) + passiveGain;
 
   if(state.active){
     const mult = (state.speedMult ?? 1) * (state.talentSpeedMult ?? 1);
@@ -2005,6 +2029,14 @@ function tick(now){
 
   renderTop();
   renderActive();
+
+  // Met à jour uniquement l'état disabled des boutons d'upgrade (sans recréer le DOM)
+  upgradeListEl?.querySelectorAll("[data-buy]").forEach(btn => {
+    const u = state.upgrades.find(x => x.id === btn.dataset.buy);
+    if(!u) return;
+    const isMaxed = u.maxLvl !== undefined && u.lvl >= u.maxLvl;
+    btn.disabled = isMaxed || state.money < u.cost;
+  });
 
   // Vérification des succès toutes les 2s
   achCheckTimer += dt;
@@ -2080,35 +2112,121 @@ function updateTopbarProfile(){
 function openAuth(){
   if(currentUser){ _supa.auth.signOut(); return; }
   const modal = document.getElementById("supaAuthModal");
-  if(modal){ modal.style.display = "block"; document.getElementById("supaAuthEmail")?.focus(); }
+  if(modal){
+    modal.style.display = "flex";
+    switchAuthView("login");
+    document.getElementById("supaAuthEmail")?.focus();
+  }
+}
+
+function switchAuthView(view){
+  const loginView  = document.getElementById("authViewLogin");
+  const signupView = document.getElementById("authViewSignup");
+  const slider     = document.getElementById("authToggleSlider");
+  const btns       = document.querySelectorAll(".authToggle__btn");
+  const msgEl      = document.getElementById("supaAuthMsg");
+
+  loginView.style.display  = view === "login"  ? "flex" : "none";
+  signupView.style.display = view === "signup" ? "flex" : "none";
+
+  btns.forEach(b => b.classList.toggle("authToggle__btn--active", b.dataset.view === view));
+  if(slider) slider.classList.toggle("authToggle__slider--right", view === "signup");
+  if(msgEl){ msgEl.textContent = ""; msgEl.className = "authMsg"; }
+}
+
+function setAuthMsg(msg, type = ""){
+  const el = document.getElementById("supaAuthMsg");
+  if(!el) return;
+  el.textContent = msg;
+  el.className = "authMsg" + (type ? ` authMsg--${type}` : "");
+}
+
+// Force du mot de passe
+function checkPwdStrength(pwd){
+  const fill  = document.getElementById("pwdStrengthFill");
+  const label = document.getElementById("pwdStrengthLabel");
+  if(!fill || !label) return;
+  let score = 0;
+  if(pwd.length >= 6)  score++;
+  if(pwd.length >= 10) score++;
+  if(/[A-Z]/.test(pwd)) score++;
+  if(/[0-9]/.test(pwd)) score++;
+  if(/[^A-Za-z0-9]/.test(pwd)) score++;
+  const levels = [
+    { w:"0%",   c:"transparent",  t:"" },
+    { w:"25%",  c:"#ff4444",      t:"Très faible" },
+    { w:"45%",  c:"#ff8c00",      t:"Faible" },
+    { w:"65%",  c:"#ffc832",      t:"Moyen" },
+    { w:"85%",  c:"#4ade80",      t:"Fort" },
+    { w:"100%", c:"#31d6ff",      t:"Très fort 🔥" },
+  ];
+  const lvl = levels[Math.min(score, 5)];
+  fill.style.width      = lvl.w;
+  fill.style.background = lvl.c;
+  label.textContent     = lvl.t;
+  label.style.color     = lvl.c;
 }
 
 async function supaAuthSubmit(mode){
-  const email = document.getElementById("supaAuthEmail")?.value?.trim();
-  const pwd   = document.getElementById("supaAuthPwd")?.value;
-  const msgEl = document.getElementById("supaAuthMsg");
-  if(!email || !pwd){ if(msgEl) msgEl.textContent = "Email et mot de passe requis."; return; }
-  if(msgEl) msgEl.textContent = "⏳...";
-  let error;
-  if(mode === "signup"){
-    const r = await _supa.auth.signUp({ email, password: pwd });
-    error = r.error;
-    if(!error && msgEl) msgEl.textContent = "✅ Vérifie ton email pour confirmer !";
+  if(mode === "login"){
+    const email = document.getElementById("supaAuthEmail")?.value?.trim();
+    const pwd   = document.getElementById("supaAuthPwd")?.value;
+    if(!email || !pwd){ setAuthMsg("Email et mot de passe requis.", "error"); return; }
+    setAuthMsg("⏳ Connexion…");
+    const { error } = await _supa.auth.signInWithPassword({ email, password: pwd });
+    if(error){ setAuthMsg("❌ " + error.message, "error"); return; }
+    document.getElementById("supaAuthModal").style.display = "none";
+
   } else {
-    const r = await _supa.auth.signInWithPassword({ email, password: pwd });
-    error = r.error;
-    if(!error) document.getElementById("supaAuthModal").style.display = "none";
+    const pseudo   = document.getElementById("signupPseudo")?.value?.trim();
+    const email    = document.getElementById("signupEmail")?.value?.trim();
+    const pwd      = document.getElementById("signupPwd")?.value;
+    const pwdConf  = document.getElementById("signupPwdConfirm")?.value;
+
+    if(!pseudo)           { setAuthMsg("Un pseudo est requis.", "error"); return; }
+    if(pseudo.length < 2) { setAuthMsg("Le pseudo doit faire au moins 2 caractères.", "error"); return; }
+    if(!email)            { setAuthMsg("Email requis.", "error"); return; }
+    if(!pwd || pwd.length < 6){ setAuthMsg("Mot de passe trop court (min. 6 caractères).", "error"); return; }
+    if(pwd !== pwdConf)   { setAuthMsg("Les mots de passe ne correspondent pas.", "error"); return; }
+
+    setAuthMsg("⏳ Création du compte…");
+    const { error } = await _supa.auth.signUp({ email, password: pwd });
+    if(error){ setAuthMsg("❌ " + error.message, "error"); return; }
+
+    // Pré-remplir le pseudo dans le profil
+    state.profile = { ...state.profile, pseudo: pseudo.substring(0, 20) };
+    updateTopbarProfile();
+
+    setAuthMsg("✅ Compte créé ! Connecte-toi maintenant.", "success");
+    setTimeout(() => switchAuthView("login"), 1800);
   }
-  if(error && msgEl) msgEl.textContent = "❌ " + error.message;
 }
 
 async function supaResetPassword(){
   const email = document.getElementById("supaAuthEmail")?.value?.trim();
-  const msgEl = document.getElementById("supaAuthMsg");
-  if(!email){ if(msgEl) msgEl.textContent = "Entre ton email d'abord."; return; }
+  if(!email){ setAuthMsg("Entre ton email d'abord.", "error"); return; }
   await _supa.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
-  if(msgEl) msgEl.textContent = "✅ Email de réinitialisation envoyé !";
+  setAuthMsg("✅ Email de réinitialisation envoyé !", "success");
 }
+
+// Toggle afficher/masquer mot de passe
+document.getElementById("togglePwdLogin")?.addEventListener("click", () => {
+  const inp = document.getElementById("supaAuthPwd");
+  if(inp) inp.type = inp.type === "password" ? "text" : "password";
+});
+document.getElementById("togglePwdSignup")?.addEventListener("click", () => {
+  const inp = document.getElementById("signupPwd");
+  if(inp) inp.type = inp.type === "password" ? "text" : "password";
+});
+
+// Barre force mot de passe
+document.getElementById("signupPwd")?.addEventListener("input", (e) => checkPwdStrength(e.target.value));
+
+// Toggle login/signup
+document.getElementById("authToggle")?.addEventListener("click", e => {
+  const btn = e.target.closest(".authToggle__btn");
+  if(btn) switchAuthView(btn.dataset.view);
+});
 
 document.getElementById("supaAuthClose")?.addEventListener("click", () => {
   document.getElementById("supaAuthModal").style.display = "none";
@@ -2122,6 +2240,9 @@ document.getElementById("supaAuthBtnReset")?.addEventListener("click",  supaRese
 document.getElementById("supaAuthPwd")?.addEventListener("keydown", (e) => {
   if(e.key === "Enter") supaAuthSubmit("login");
 });
+document.getElementById("signupPwdConfirm")?.addEventListener("keydown", (e) => {
+  if(e.key === "Enter") supaAuthSubmit("signup");
+});
 
 // =====================
 // SAVE / LOAD — Supabase direct + LocalStorage fallback
@@ -2134,6 +2255,7 @@ function buildSavePayload(){
     garageLevel:        state.garageLevel,
     garageCap:          state.garageCap,
     garageName:         state.garageName,
+    showroomCap:        state.showroomCap ?? 3,
     money:              state.money,
     moneyPerSec:        state.moneyPerSec,
     rep:                state.rep,
@@ -2188,6 +2310,7 @@ function applySaveData(data){
   if(typeof state.talents !== "object" || !state.talents) state.talents = {};
   if(typeof state.talentLevelGranted !== "number") state.talentLevelGranted = state.garageLevel ?? 1;
   if(!state.activeTab)  state.activeTab  = "tools";
+  state.activeTab = "tools"; // toujours reset sur "tools" au chargement
   if(!state.garageName) state.garageName = "Garage Turbo";
   if(!state.profile || typeof state.profile !== "object") state.profile = { pseudo:"Mécanicien", avatar:"🔧", country:"FR", banner:"#1a2a4a" };
   else {
@@ -2237,6 +2360,7 @@ async function cloudSave(){
     if(error) throw error;
     console.log("[cloudSave] ✅ succès");
     showSaveIndicator("☁️ Sauvegardé");
+
   } catch(e){
     console.error("[cloudSave] ❌ erreur:", e);
     showSaveIndicator("⚠️ Erreur cloud");
@@ -2294,7 +2418,7 @@ function save(){
   if(currentUser) cloudSave();
 }
 
-btnSave.addEventListener("click", save);
+// btnSave supprimé du header
 const btnAuth = document.getElementById("btnAuth");
 if(btnAuth) btnAuth.addEventListener("click", openAuth);
 
@@ -2604,7 +2728,10 @@ function checkAchievements(){
 
     // Appliquer récompenses
     if(ach.reward.rep)    state.rep    += ach.reward.rep;
-    if(ach.reward.money)  state.money  += ach.reward.money;
+    if(ach.reward.money){
+      state.money += ach.reward.money;
+      state.totalMoneyEarned = (state.totalMoneyEarned ?? 0) + ach.reward.money;
+    }
     if(ach.reward.talent) state.talentPoints += ach.reward.talent;
 
     // Ajouter à la queue de popup seulement si notifs activées
@@ -2756,6 +2883,7 @@ if(achievementsBackdrop) achievementsBackdrop.addEventListener("click", closeAch
 // init
 requestAnimationFrame(tick);
 setInterval(save, 30000);
+setInterval(() => { if(currentUser) pushLeaderboard(); }, 60000); // classement : 1x/min
 
 // Fallback : si onAuthStateChange ne répond pas dans les 5s, on charge quand même depuis localStorage
 setTimeout(() => {
@@ -2767,3 +2895,139 @@ setTimeout(() => {
     _authReady = true;
   }
 }, 5000);
+
+// =====================
+// LEADERBOARD MONDIAL
+// =====================
+
+let _lbTab = "prestige";
+
+// Push le score du joueur connecté dans la table leaderboard
+async function pushLeaderboard(){
+  if(!currentUser) return;
+  try {
+    const p = state.profile || {};
+    await _supa.from("leaderboard").upsert({
+      user_id:       currentUser.id,
+      pseudo:        (p.pseudo || "Mécanicien").substring(0, 30),
+      garage_name:   (state.garageName || "Garage Turbo").substring(0, 40),
+      avatar:        p.avatar || "🔧",
+      country:       p.country || "FR",
+      prestige_count: state.prestigeCount ?? 0,
+      garage_level:   state.garageLevel ?? 1,
+      cars_sold:      state.carsSold ?? 0,
+      total_money:    Math.floor(state.totalMoneyEarned ?? 0),
+      updated_at:     new Date().toISOString(),
+    }, { onConflict: "user_id" });
+  } catch(e){ console.warn("[leaderboard] push erreur:", e.message); }
+}
+
+async function fetchLeaderboard(tab){
+  const colMap = {
+    prestige: { col:"prestige_count", label:"Prestiges", fmt: v => `🔥 ${v}` },
+    level:    { col:"garage_level",   label:"Niveau",    fmt: v => `Niv. ${v}` },
+    money:    { col:"total_money", label:"Argent total gagné", fmt: v => formatMoney(v) },
+    sold:     { col:"cars_sold",      label:"Voitures",  fmt: v => `${v.toLocaleString()} 🚗` },
+  };
+  const { col, fmt } = colMap[tab] || colMap.prestige;
+
+  const { data, error } = await _supa
+    .from("leaderboard")
+    .select("user_id,pseudo,garage_name,avatar,country,prestige_count,garage_level,cars_sold,total_money,updated_at")
+    .order(col, { ascending: false })
+    .limit(50);
+
+  if(error) throw error;
+  return { rows: data || [], fmt, col };
+}
+
+function renderLeaderboardRows(rows, fmt, col){
+  const lbList = document.getElementById("lbList");
+  if(!rows.length){
+    lbList.innerHTML = `<div style="text-align:center;color:var(--muted);padding:40px 0;">Aucun joueur pour l'instant…</div>`;
+    return;
+  }
+
+  const medals = ["🥇","🥈","🥉"];
+  const rankClass = ["lbRow--gold","lbRow--silver","lbRow--bronze"];
+  const rankTextClass = ["lbRank--gold","lbRank--silver","lbRank--bronze"];
+
+  let myRowHTML = "";
+  let html = "";
+
+  rows.forEach((r, i) => {
+    const isMe = currentUser && r.user_id === currentUser.id;
+    const rank = i + 1;
+    const medal = rank <= 3 ? medals[rank-1] : rank;
+    const medalClass = rank <= 3 ? rankTextClass[rank-1] : "";
+    const rowClass = isMe ? "lbRow lbRow--me" : `lbRow ${rank <= 3 ? rankClass[rank-1] : ""}`;
+    const value = r[col];
+    const country = (r.country || "").toUpperCase();
+    const flagHtml = country && country !== "OTHER" && country.length === 2
+      ? `<img src="https://flagcdn.com/16x12/${country.toLowerCase()}.png" width="16" height="12" style="border-radius:2px;vertical-align:middle;margin-right:4px;" alt="${country}" onerror="this.style.display='none'">`
+      : `<span style="font-size:12px;margin-right:4px;">🌍</span>`;
+    const prestigeTag = r.prestige_count > 0
+      ? `<span class="lbPrestigePip">🔥 ${r.prestige_count}</span>` : "";
+    const lastSeen = r.updated_at ? new Date(r.updated_at).toLocaleDateString("fr-FR") : "";
+
+    const rowHTML = `
+      <div class="${rowClass}">
+        <div class="lbRank ${medalClass}">${medal}</div>
+        <div class="lbPlayer">
+          <div class="lbGarage">${r.avatar || "🔧"} ${r.garage_name || "Garage Turbo"}</div>
+          <div class="lbMeta">${flagHtml} ${r.pseudo || "Mécanicien"} ${prestigeTag} <span style="opacity:.4">· ${lastSeen}</span></div>
+        </div>
+        <div class="lbValue">${fmt(value ?? 0)}</div>
+      </div>`;
+
+    html += rowHTML;
+    if(isMe) myRowHTML = rowHTML;
+  });
+
+  lbList.innerHTML = html;
+
+  // Ma position en bas si connecté
+  const myRowEl = document.getElementById("lbMyRow");
+  if(myRowHTML && currentUser){
+    myRowEl.style.display = "block";
+    myRowEl.innerHTML = `<div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:700;">MA POSITION</div>${myRowHTML}`;
+  } else {
+    myRowEl.style.display = "none";
+  }
+}
+
+async function loadLeaderboard(){
+  const lbList = document.getElementById("lbList");
+  lbList.innerHTML = `<div style="text-align:center;color:var(--muted);padding:40px 0;">Chargement…</div>`;
+  try {
+    const { rows, fmt, col } = await fetchLeaderboard(_lbTab);
+    document.getElementById("lbSubtitle").textContent = `Top ${rows.length} joueurs`;
+    renderLeaderboardRows(rows, fmt, col);
+  } catch(e){
+    lbList.innerHTML = `<div style="text-align:center;color:#ff5a5a;padding:40px 0;">Erreur de chargement — réessaie plus tard</div>`;
+    console.warn("[leaderboard] fetch erreur:", e.message);
+  }
+}
+
+function openLeaderboard(){
+  document.getElementById("leaderboardModal").style.display = "flex";
+  loadLeaderboard();
+}
+function closeLeaderboard(){
+  document.getElementById("leaderboardModal").style.display = "none";
+}
+
+// Listeners leaderboard
+document.getElementById("btnLeaderboard")?.addEventListener("click", openLeaderboard);
+document.getElementById("btnLeaderboardClose")?.addEventListener("click", closeLeaderboard);
+document.getElementById("leaderboardBackdrop")?.addEventListener("click", closeLeaderboard);
+document.getElementById("btnLbRefresh")?.addEventListener("click", loadLeaderboard);
+
+document.getElementById("lbTabs")?.addEventListener("click", e => {
+  const btn = e.target.closest(".lbTab");
+  if(!btn) return;
+  _lbTab = btn.dataset.lbtab;
+  document.querySelectorAll(".lbTab").forEach(b => b.classList.remove("lbTab--active"));
+  btn.classList.add("lbTab--active");
+  loadLeaderboard();
+});

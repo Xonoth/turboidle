@@ -47,32 +47,92 @@
   </div>
 
   <!-- SUPABASE AUTH MODAL -->
+  <!-- MODALE AUTH SUPABASE -->
   <div class="modal" id="supaAuthModal" style="display:none;">
     <div class="modal__backdrop" id="supaAuthBackdrop"></div>
-    <div class="modal__panel modal__panel--confirm" style="border-color:rgba(49,214,255,.2);box-shadow:0 0 60px rgba(49,214,255,.1);max-width:380px;">
-      <button class="iconbtn" id="supaAuthClose" style="position:absolute;top:14px;right:14px;">✖️</button>
-      <div class="confirmModal__icon">🔐</div>
-      <div class="confirmModal__title">Connexion / Inscription</div>
+    <div class="authPanel" id="authPanel">
 
-      <div style="display:flex;flex-direction:column;gap:10px;width:100%;margin-top:4px;">
-        <input id="supaAuthEmail" type="email" placeholder="Email" autocomplete="email"
-          style="width:100%;padding:10px 14px;border-radius:9px;border:1px solid rgba(49,214,255,.2);background:rgba(5,9,18,.8);color:#dce8f8;font-size:13px;outline:none;" />
-        <input id="supaAuthPwd" type="password" placeholder="Mot de passe" autocomplete="current-password"
-          style="width:100%;padding:10px 14px;border-radius:9px;border:1px solid rgba(49,214,255,.2);background:rgba(5,9,18,.8);color:#dce8f8;font-size:13px;outline:none;" />
-        <div id="supaAuthMsg" style="font-size:12px;color:rgba(220,232,248,.5);min-height:16px;text-align:center;"></div>
+      <!-- HEADER avec logo + close -->
+      <button class="authPanel__close" id="supaAuthClose">✖️</button>
+      <div class="authPanel__brand">
+        <span class="authPanel__brandIcon">🏎️</span>
+        <span class="authPanel__brandName">Garage Turbo</span>
       </div>
 
-      <div class="confirmModal__actions" style="flex-direction:column;gap:8px;">
-        <button class="btn btn--primary" id="supaAuthBtnLogin" style="width:100%;background:rgba(49,214,255,.1);border-color:rgba(49,214,255,.3);color:#31d6ff;font-weight:800;">
-          🔑 Se connecter
+      <!-- TOGGLE connexion / inscription -->
+      <div class="authToggle" id="authToggle">
+        <button class="authToggle__btn authToggle__btn--active" data-view="login">Connexion</button>
+        <button class="authToggle__btn" data-view="signup">Inscription</button>
+        <div class="authToggle__slider" id="authToggleSlider"></div>
+      </div>
+
+      <!-- MESSAGE FEEDBACK -->
+      <div class="authMsg" id="supaAuthMsg"></div>
+
+      <!-- VUE CONNEXION -->
+      <div class="authView" id="authViewLogin">
+        <div class="authField">
+          <label class="authField__label">Adresse email</label>
+          <div class="authField__wrap">
+            <span class="authField__icon">✉️</span>
+            <input class="authField__input" id="supaAuthEmail" type="email" placeholder="ton@email.com" autocomplete="email" />
+          </div>
+        </div>
+        <div class="authField">
+          <label class="authField__label">Mot de passe</label>
+          <div class="authField__wrap">
+            <span class="authField__icon">🔒</span>
+            <input class="authField__input" id="supaAuthPwd" type="password" placeholder="••••••••" autocomplete="current-password" />
+            <button class="authField__eye" id="togglePwdLogin" type="button" title="Afficher/Masquer">👁️</button>
+          </div>
+        </div>
+        <button class="authBtn authBtn--primary" id="supaAuthBtnLogin">
+          <span>🔑 Se connecter</span>
         </button>
-        <button class="btn" id="supaAuthBtnSignup" style="width:100%;font-weight:700;">
-          ✨ Créer un compte
-        </button>
-        <button class="btn" id="supaAuthBtnReset" style="width:100%;font-size:11px;opacity:.6;padding:6px;">
-          Mot de passe oublié ?
+        <button class="authLink" id="supaAuthBtnReset">Mot de passe oublié ?</button>
+      </div>
+
+      <!-- VUE INSCRIPTION -->
+      <div class="authView" id="authViewSignup" style="display:none;">
+        <div class="authField">
+          <label class="authField__label">Pseudo en jeu</label>
+          <div class="authField__wrap">
+            <span class="authField__icon">🧑‍🔧</span>
+            <input class="authField__input" id="signupPseudo" type="text" placeholder="Ex: LeKingDuGarage" maxlength="20" autocomplete="nickname" />
+          </div>
+          <div class="authField__hint">Affiché dans le classement mondial (max 20 caractères)</div>
+        </div>
+        <div class="authField">
+          <label class="authField__label">Adresse email</label>
+          <div class="authField__wrap">
+            <span class="authField__icon">✉️</span>
+            <input class="authField__input" id="signupEmail" type="email" placeholder="ton@email.com" autocomplete="email" />
+          </div>
+        </div>
+        <div class="authField">
+          <label class="authField__label">Mot de passe</label>
+          <div class="authField__wrap">
+            <span class="authField__icon">🔒</span>
+            <input class="authField__input" id="signupPwd" type="password" placeholder="Min. 6 caractères" autocomplete="new-password" />
+            <button class="authField__eye" id="togglePwdSignup" type="button" title="Afficher/Masquer">👁️</button>
+          </div>
+          <div class="authPwdStrength" id="pwdStrengthBar">
+            <div class="authPwdStrength__fill" id="pwdStrengthFill"></div>
+          </div>
+          <div class="authField__hint" id="pwdStrengthLabel"></div>
+        </div>
+        <div class="authField">
+          <label class="authField__label">Confirmer le mot de passe</label>
+          <div class="authField__wrap">
+            <span class="authField__icon">🔒</span>
+            <input class="authField__input" id="signupPwdConfirm" type="password" placeholder="••••••••" autocomplete="new-password" />
+          </div>
+        </div>
+        <button class="authBtn authBtn--primary" id="supaAuthBtnSignup">
+          <span>✨ Créer mon compte</span>
         </button>
       </div>
+
     </div>
   </div>
 
@@ -222,6 +282,37 @@
     </div>
   </div>
 
+  <!-- MODALE CLASSEMENT MONDIAL -->
+  <div class="modal" id="leaderboardModal" style="display:none;">
+    <div class="modal__backdrop" id="leaderboardBackdrop"></div>
+    <div class="modal__panel" style="width:min(640px,96vw);max-height:88vh;display:flex;flex-direction:column;gap:0;padding:0;overflow:hidden;">
+      <!-- Header -->
+      <div style="padding:24px 28px 16px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+        <div>
+          <div style="font-size:18px;font-weight:800;display:flex;align-items:center;gap:10px;">🌍 Classement Mondial</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:3px;" id="lbSubtitle">Top 50 joueurs</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <button class="btn" id="btnLbRefresh" style="font-size:12px;padding:6px 14px;">🔄 Actualiser</button>
+          <button class="iconbtn" id="btnLeaderboardClose">✖️</button>
+        </div>
+      </div>
+      <!-- Tabs -->
+      <div style="display:flex;gap:0;border-bottom:1px solid rgba(255,255,255,.07);flex-shrink:0;" id="lbTabs">
+        <button class="lbTab lbTab--active" data-lbtab="prestige">🔥 Prestiges</button>
+        <button class="lbTab" data-lbtab="level">⚙️ Niveau</button>
+        <button class="lbTab" data-lbtab="money">💰 Argent</button>
+        <button class="lbTab" data-lbtab="sold">🚗 Ventes</button>
+      </div>
+      <!-- Liste -->
+      <div style="overflow-y:auto;flex:1;padding:16px 20px;" id="lbList">
+        <div style="text-align:center;color:var(--muted);padding:40px 0;" id="lbLoading">Chargement…</div>
+      </div>
+      <!-- Ma position -->
+      <div id="lbMyRow" style="display:none;border-top:1px solid rgba(255,255,255,.07);padding:12px 20px;background:rgba(49,214,255,.05);flex-shrink:0;"></div>
+    </div>
+  </div>
+
   <!-- TOP BAR -->
   <header class="topbar">
 
@@ -265,7 +356,7 @@
       <button class="btn btn--ghost btn--notif" id="btnTalents">⭐ Talents<span class="notifDot" id="talentNotifDot" style="display:none"></span></button>
       <button class="repbtn">🏆 <span id="rep">0</span> REP</button>
       <button class="iconbtn" id="btnAchievements" title="Succès">🎖️</button>
-      <button class="iconbtn" id="btnSave" title="Sauvegarder">💾</button>
+      <button class="iconbtn" id="btnLeaderboard" title="Classement Mondial">🌍</button>
       <button class="iconbtn" id="btnStats" title="Statistiques">📊</button>
 
     </div>
@@ -291,6 +382,10 @@
       <div class="panel panel--showroom">
         <div class="panel__head">
           <div class="panel__title">💲 Showroom</div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);">
+            <span id="showroomCapDisplay">0 / 3</span>
+            <span id="showroomFullBadge" style="display:none;background:#ff4444;color:#fff;font-size:10px;font-weight:800;padding:2px 7px;border-radius:6px;letter-spacing:.5px;">PLEIN</span>
+          </div>
         </div>
         <div class="showroom">
           <div id="showroomList" class="scroll-premium"></div>
