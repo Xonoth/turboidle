@@ -171,7 +171,7 @@ function getTierWeights(rep){
   const weights = {
     F:      Math.max(0,  50  - rep * 0.0002),
     E:      Math.max(0,  35  - rep * 0.0002),
-    D:      rep >= 80    ? Math.max(2, 22 - rep * 0.0001)  : 0,
+    D:      rep >= 150   ? Math.max(2, 22 - rep * 0.0001)  : 0,
     C:      ramp(300,    3,   0.002,  18),
     B:      ramp(1500,   2,   0.001,  14),
     A:      ramp(6000,   2,   0.0008, 10),
@@ -981,6 +981,7 @@ function applyHeritageBonuses(){
 }
 
 function doPrestige(){
+  if(!canPrestige()) return;
   // Applique les bonuses héritage EN PREMIER pour que calcHeritagePoints les prenne en compte
   applyHeritageBonuses();
   const pts = calcHeritagePoints();
@@ -996,6 +997,7 @@ function doPrestige(){
   const persistTotalRep   = state.totalRepairs ?? 0;
   const persistTotalAna   = state.totalAnalyses ?? 0;
   const persistTotalClick = state.totalClickRepairs ?? 0;
+  const persistTotalSales = state.totalCarsSold ?? 0;
   const persistSession    = state.sessionStart;
 
   // Reset du state (même structure que state initial)
@@ -1044,6 +1046,7 @@ function doPrestige(){
     totalRepairs:      persistTotalRep,
     totalAnalyses:     persistTotalAna,
     totalClickRepairs: persistTotalClick,
+    totalCarsSold:     persistTotalSales,
     sessionStart:      persistSession,
     _hasSaved:         false,
     _wasBroke:         false,
@@ -1243,6 +1246,7 @@ if(!state.totalMoneyEarned)  state.totalMoneyEarned  = 0;
 if(!state.totalRepairs)      state.totalRepairs      = 0;
 if(!state.totalAnalyses)     state.totalAnalyses     = 0;
 if(!state.totalClickRepairs) state.totalClickRepairs = 0;
+if(!state.totalCarsSold)     state.totalCarsSold     = 0;
 if(!state.sessionStart)      state.sessionStart      = Date.now();
 
 function renderStatsUI(){
@@ -1299,6 +1303,7 @@ function renderStatsUI(){
     <div class="statSection statSection--activity">
       <div class="statSection__title"><span class="statSection__titleIcon">🚗</span>Activité</div>
       <div class="statRow"><span class="statRow__label">Voitures vendues</span><span class="statRow__val statRow__val--cyan">${state.carsSold.toLocaleString("fr-FR")}</span></div>
+      <div class="statRow"><span class="statRow__label">Ventes totales (tous prestiges)</span><span class="statRow__val statRow__val--cyan">${(state.totalCarsSold??0).toLocaleString("fr-FR")}</span></div>
       <div class="statRow"><span class="statRow__label">Réparations terminées</span><span class="statRow__val">${(state.totalRepairs??0).toLocaleString("fr-FR")}</span></div>
       <div class="statRow"><span class="statRow__label">Diagnostics effectués</span><span class="statRow__val">${(state.totalAnalyses??0).toLocaleString("fr-FR")}</span></div>
       <div class="statRow"><span class="statRow__label">Clics de réparation</span><span class="statRow__val">${(state.totalClickRepairs??0).toLocaleString("fr-FR")}</span></div>
@@ -1311,6 +1316,19 @@ function renderStatsUI(){
       <div class="statRow"><span class="statRow__label">Multiplicateur vitesse</span><span class="statRow__val statRow__val--gold">×${mult.toFixed(2)}</span></div>
       <div class="statRow"><span class="statRow__label">Emplacements garage</span><span class="statRow__val">${state.garageCap}</span></div>
       <div class="statRow"><span class="statRow__label">Niveaux améliorations</span><span class="statRow__val">${upTotalLvl}</span></div>
+    </div>
+
+    <div class="statSection statSection--progress">
+      <div class="statSection__title"><span class="statSection__titleIcon">⭐</span>Progression</div>
+      <div class="statRow"><span class="statRow__label">Niveau Garage</span><span class="statRow__val statRow__val--purple">${state.garageLevel}</span></div>
+      <div class="statRow"><span class="statRow__label">Talents dépensés</span><span class="statRow__val statRow__val--purple">${talentTotal} pts</span></div>
+      <div class="statRow"><span class="statRow__label">Points talent restants</span><span class="statRow__val statRow__val--purple">${state.talentPoints}</span></div>
+    </div>
+
+    <div class="statSection statSection--activity">
+      <div class="statSection__title"><span class="statSection__titleIcon">🎖️</span>Succès</div>
+      <div class="statRow"><span class="statRow__label">Débloqués</span><span class="statRow__val statRow__val--green">${achUnlocked} / ${ACHIEVEMENTS.length}</span></div>
+      <div class="statRow"><span class="statRow__label">Complétion</span><span class="statRow__val statRow__val--green">${Math.round(achUnlocked/ACHIEVEMENTS.length*100)}%</span></div>
     </div>
 
     <div class="statSection statSection--full statSection--rep">
@@ -1326,19 +1344,6 @@ function renderStatsUI(){
           </div>`;
         }).join("")}
       </div>
-    </div>
-
-    <div class="statSection statSection--progress">
-      <div class="statSection__title"><span class="statSection__titleIcon">⭐</span>Progression</div>
-      <div class="statRow"><span class="statRow__label">Niveau Garage</span><span class="statRow__val statRow__val--purple">${state.garageLevel}</span></div>
-      <div class="statRow"><span class="statRow__label">Talents dépensés</span><span class="statRow__val statRow__val--purple">${talentTotal} pts</span></div>
-      <div class="statRow"><span class="statRow__label">Points talent restants</span><span class="statRow__val statRow__val--purple">${state.talentPoints}</span></div>
-    </div>
-
-    <div class="statSection statSection--eco">
-      <div class="statSection__title"><span class="statSection__titleIcon">🎖️</span>Succès</div>
-      <div class="statRow"><span class="statRow__label">Débloqués</span><span class="statRow__val statRow__val--green">${achUnlocked} / ${ACHIEVEMENTS.length}</span></div>
-      <div class="statRow"><span class="statRow__label">Complétion</span><span class="statRow__val statRow__val--green">${Math.round(achUnlocked/ACHIEVEMENTS.length*100)}%</span></div>
     </div>
   `;
 }
@@ -1819,7 +1824,7 @@ document.getElementById("prestigeConfirmBackdrop")?.addEventListener("click", ()
 document.getElementById("prestigeConfirmOk")?.addEventListener("click", () => {
   document.getElementById("prestigeConfirmModal").style.display = "none";
   closePrestige();
-  doPrestige();
+  if(canPrestige()) doPrestige();
 });
 
 // =====================
@@ -1923,6 +1928,7 @@ showroomListEl.addEventListener("click", (e) => {
   state.rep += Math.round(tierData.repGain * repMult);
 
   state.carsSold += 1;
+  state.totalCarsSold = (state.totalCarsSold ?? 0) + 1;
   updateGarageLevel();
 
   state.showroom.splice(idx, 1);
@@ -2276,6 +2282,7 @@ function buildSavePayload(){
     totalRepairs:       state.totalRepairs,
     totalAnalyses:      state.totalAnalyses,
     totalClickRepairs:  state.totalClickRepairs,
+    totalCarsSold:      state.totalCarsSold,
     sessionStart:       state.sessionStart,
     profile:            state.profile,
     achievements:       state.achievements,
@@ -2915,7 +2922,7 @@ async function pushLeaderboard(){
       country:       p.country || "FR",
       prestige_count: state.prestigeCount ?? 0,
       garage_level:   state.garageLevel ?? 1,
-      cars_sold:      state.carsSold ?? 0,
+      cars_sold:      state.totalCarsSold ?? 0,
       total_money:    Math.floor(state.totalMoneyEarned ?? 0),
       updated_at:     new Date().toISOString(),
     }, { onConflict: "user_id" });
