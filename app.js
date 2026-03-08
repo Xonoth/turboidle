@@ -68,8 +68,10 @@ const state = {
     { id:"diagpro", tab:"tools", icon:"🧠", name:"Station Diag Pro",      lvl:0, desc:"+20€ par diag", cost:12000 },
 
     // ÉQUIPE
-    { id:"stagiaire",  tab:"team", icon:"🧑‍🔧", name:"Stagiaire Accueil",  lvl:0, desc:"Diagnostique auto toutes les 12s (min 6s au niv.max)", cost: 2500, maxLvl:10 },
-    { id:"vendeur",    tab:"team", icon:"👔",    name:"Vendeur Junior",     lvl:0, desc:"Vend auto toutes les 15s (min 8s au niv.max)",          cost: 6000, maxLvl:10 },
+    { id:"stagiaire",      tab:"team", icon:"🧑‍🔧", name:"Stagiaire Accueil",   lvl:0, desc:"Diagnostique auto toutes les 12s (min 6s au niv.max)", cost: 2500, maxLvl:10 },
+    { id:"receptionnaire", tab:"team", icon:"📋",    name:"Réceptionnaire",       lvl:0, desc:"Accélère le diagnostic auto jusqu'à 1s (prérequis : Stagiaire niv.10)", cost: 20000, maxLvl:10 },
+    { id:"vendeur",        tab:"team", icon:"👔",    name:"Vendeur Junior",        lvl:0, desc:"Vend auto toutes les 15s (min 8s au niv.max)",          cost: 6000, maxLvl:10 },
+    { id:"vendeur_confirme",tab:"team",icon:"🤵",    name:"Vendeur Confirmé",      lvl:0, desc:"Accélère la vente auto jusqu'à 1s (prérequis : Vendeur Junior niv.10)", cost: 30000, maxLvl:10 },
     { id:"apprenti",   tab:"team", icon:"🔩",    name:"Apprenti Mécanicien",lvl:0, desc:"+0.15s/s de réparation auto par rang",                   cost: 4000 },
     { id:"mecanicien", tab:"team", icon:"🛠️",   name:"Mécanicien",         lvl:0, desc:"+0.5s/s de réparation auto par rang",                    cost: 15000 },
 
@@ -80,6 +82,11 @@ const state = {
     { id:"atelier_nuit", tab:"deals", icon:"🌙",  name:"Atelier de Nuit",         lvl:0, desc:"+20 €/s de revenu passif",  cost: 50000 },
     { id:"franchise",    tab:"deals", icon:"🏢",  name:"Franchise Régionale",     lvl:0, desc:"+50 €/s de revenu passif",  cost: 150000 },
     { id:"showroom_slot", tab:"deals", icon:"🖼️", name:"Extension Showroom",      lvl:0, desc:"+2 emplacements showroom (max 4 achats → 11 max)", cost: 8000, maxLvl:4 },
+
+    // PIÈCES DÉTACHÉES
+    { id:"magasinier",        tab:"stock", icon:"📦", name:"Magasinier",             lvl:0, desc:"-20% délai livraison par rang", cost:5000,  maxLvl:3 },
+    { id:"logiciel_stock",    tab:"stock", icon:"📊", name:"Logiciel Stock",         lvl:0, desc:"Niv.1: alertes rupture · Niv.2: seuils configurables · Niv.3: commandes auto", cost:12000, maxLvl:3 },
+    { id:"slots_livraison",   tab:"stock", icon:"🚛", name:"Slots Livraison",        lvl:0, desc:"Niv.1→9 : +1 livraison simultanée par rang (max 10)", cost:6000, maxLvl:9 },
   ],
 };
 
@@ -162,7 +169,82 @@ const TIERS = {
   "SSS+":{ label:"SSS+",color:"#ffffff", bg:"rgba(255,255,255,.08)", border:"rgba(255,255,255,.35)", desc:"Mythique",   repReq:450000,  repGain:350 },
 };
 
-// Poids de probabilité d'apparition par tier selon la réputation
+const TIER_ORDER = ["F","E","D","C","B","A","S","SS","SSS","SSS+"];
+
+// Retourne le tier min des tiers de la pièce (premier tier débloqué requis)
+function partTierMin(part){ return part.tiers[0]; }
+// Retourne le tier max des tiers de la pièce
+function partTierMax(part){ return part.tiers[part.tiers.length - 1]; }
+// Vérifie si le joueur a débloqué le tier min d'une pièce
+function isPartUnlocked(part){
+  const minTier = partTierMin(part);
+  return state.rep >= (TIERS[minTier]?.repReq ?? 0);
+}
+// Rendu compact des tiers compatibles d'une pièce
+function renderTierRange(part){
+  const min = partTierMin(part);
+  const max = partTierMax(part);
+  const tMin = TIERS[min], tMax = TIERS[max];
+  if(min === max) return `<span style="color:${tMin?.color??'#aaa'}" class="tierPill">${min}</span>`;
+  return `<span style="color:${tMin?.color??'#aaa'}" class="tierPill">${min}</span><span style="color:#555">→</span><span style="color:${tMax?.color??'#aaa'}" class="tierPill">${max}</span>`;
+}
+
+// ── LOGICIEL STOCK ──────────────────────────────────────────────────
+// Niv 1 : alertes badge sur onglet
+// Niv 2 : seuils configurables par pièce (state.stockSettings[partId].threshold)
+// Niv 3 : commande auto au fournisseur par défaut (state.stockSettings[partId].autoSupplier)
+
+function getLogicielLvl(){
+  return getUpgrade("logiciel_stock")?.lvl ?? 0;
+}
+
+// Vérifie les ruptures de pièces débloquées → badge sur onglet STOCK
+function hasStockAlert(){
+  if(getLogicielLvl() < 1) return false;
+  return PARTS_CATALOG.some(p => {
+    if(!isPartUnlocked(p)) return false;
+    const qty = state.parts?.[p.id]?.qty ?? 0;
+    const threshold = state.stockSettings?.[p.id]?.threshold ?? 1;
+    return qty <= threshold;
+  });
+}
+
+// Refs cachées pour renderActive (appelé à chaque frame)
+let _activeBarFill = null;
+let _activeMetaEl  = null;
+let _autoOrderTimer = 0;
+function processAutoOrders(dt = 0){
+  if(getLogicielLvl() < 3) return;
+  // Throttle : vérifie toutes les 2 secondes
+  _autoOrderTimer -= dt;
+  if(_autoOrderTimer > 0) return;
+  _autoOrderTimer = 2;
+
+  const globalSupplier  = state.stockGlobal?.autoSupplier ?? "";
+  const globalThreshold = state.stockGlobal?.threshold ?? 1;
+  const globalQty       = state.stockGlobal?.qty ?? 1;
+
+  // Budget max par cycle : 20% de l'argent actuel (évite de tout dépenser)
+  let budgetLeft = state.money * 0.20;
+
+  for(const part of PARTS_CATALOG){
+    if(!isPartUnlocked(part)) continue;
+    const settings    = state.stockSettings?.[part.id] ?? {};
+    const supplierId  = settings.autoSupplier || globalSupplier;
+    if(!supplierId) continue;
+    const threshold   = settings.threshold !== undefined ? settings.threshold : globalThreshold;
+    const orderQty    = settings.qty       !== undefined ? settings.qty       : globalQty;
+    const qty = state.parts?.[part.id]?.qty ?? 0;
+    const alreadyOrdering = state.orders?.some(o => o.partId === part.id);
+    if(qty <= threshold && !alreadyOrdering){
+      const price = getPartPrice(part.id, supplierId) * orderQty;
+      if(state.money >= price && price <= budgetLeft){
+        orderPart(part.id, supplierId, orderQty);
+        budgetLeft -= price;
+      }
+    }
+  }
+}
 // Conçu pour un run long terme (~60k+ ventes avant SSS+)
 function getTierWeights(rep){
   const ramp = (threshold, startW, rate, cap) =>
@@ -194,6 +276,421 @@ function weightedPickTier(rep){
   }
   return "F";
 }
+
+// =====================================================================
+// SYSTÈME PIÈCES DÉTACHÉES
+// =====================================================================
+
+// --- MARQUES FOURNISSEURS ---
+const SUPPLIERS = {
+  bochmann: {
+    id: "bochmann", name: "Bochmann", icon: "🔵",
+    inspired: "Bosch", tagline: "L'excellence allemande",
+    costPct:0.4, valuePct:0.5, quality: 5, deliveryBase: 300,  // 4h en minutes
+    speciality: null,  // bon partout
+    color: "#4a9eff",
+  },
+  valeplus: {
+    id: "valeplus", name: "Valéo Plus", icon: "🟡",
+    inspired: "Valeo", tagline: "L'équipementier français",
+    costPct:0.29, valuePct:0.35, quality: 4, deliveryBase: 180,  // 2h
+    speciality: null,
+    color: "#ffd700",
+  },
+  ngx: {
+    id: "ngx", name: "NGX Parts", icon: "🟠",
+    inspired: "NGK", tagline: "Spécialiste électronique",
+    costPct:0.16, valuePct:0.2, quality: 4, deliveryBase: 150,  // 3h
+    speciality: "electric",  // +1 qualité sur pièces élec
+    color: "#ff8c00",
+  },
+  euroline: {
+    id: "euroline", name: "Euroline", icon: "🟢",
+    inspired: "Febi/Bilstein", tagline: "Spécialiste mécanique",
+    costPct:0.08, valuePct:0.1, quality: 3, deliveryBase: 90,
+    speciality: ["engine","brakes","transmission","sealing"],  // +1 qualité sur pièces méca
+    color: "#48c78e",
+  },
+  topdrive: {
+    id: "topdrive", name: "TopDrive", icon: "🔴",
+    inspired: "Topran", tagline: "Livraison immédiate — déblocage d'urgence",
+    costPct:0.02, valuePct:0.0, quality: 2, deliveryBase: 5,  // 5s fixe, ignorer magasinier/express
+    speciality: null,
+    noMalus: true,
+    instantDelivery: true,  // délai fixe non réductible par upgrades
+    color: "#ff4d70",
+  },
+};
+
+// Effet qualité sur réparation
+// quality 5 → -30% temps, +15% valeur
+// quality 4 → -15% temps, +8% valeur
+// quality 3 → neutre
+// quality 2 → +20% temps, -5% valeur
+function getQualityEffects(quality, supplierId){
+  const supp = supplierId ? SUPPLIERS[supplierId] : null;
+  const fx = { timeMult:1.0, valueMult:1.0, label:"", color:"#aaa" };
+  // valueMult : vient du valuePct du fournisseur si dispo
+  if(supp) fx.valueMult = 1 + (supp.valuePct ?? 0);
+  // timeMult : basé sur la qualité
+  if(quality >= 5){ fx.timeMult=0.70; fx.label="Premium";      fx.color="#4a9eff"; }
+  else if(quality === 4){ fx.timeMult=0.85; fx.label="Qualité"; fx.color="#ffd700"; }
+  else if(quality === 3){ fx.timeMult=1.00; fx.label="Standard"; fx.color="#aaa"; }
+  else if(quality <= 2){
+    if(supp?.noMalus){
+      fx.timeMult=1.00; fx.label="Dépannage"; fx.color="#ff7a50";
+    } else {
+      fx.timeMult=1.20; fx.label="Bas de gamme"; fx.color="#ff4d70";
+    }
+  }
+  return fx;
+}
+
+// --- CATÉGORIES DE PANNES ---
+const FAILURE_CATEGORIES = {
+  engine:      { id:"engine",      icon:"🔩", name:"Moteur",         color:"#ff6b35" },
+  brakes:      { id:"brakes",      icon:"💨", name:"Freinage",       color:"#ff4d70" },
+  electric:    { id:"electric",    icon:"⚡", name:"Électrique",     color:"#ffd700" },
+  transmission:{ id:"transmission",icon:"🔄", name:"Transmission",   color:"#a07aff" },
+  cooling:     { id:"cooling",     icon:"❄️", name:"Refroidissement", color:"#31d6ff" },
+  suspension:  { id:"suspension",  icon:"🛞", name:"Suspension",     color:"#48c78e" },
+  sealing:     { id:"sealing",     icon:"💧", name:"Étanchéité",     color:"#7ab0ff" },
+};
+
+// --- CATALOGUE DE PIÈCES ---
+// priceFactor = ratio du prix par rapport à la valeur de la voiture (ex: 0.07 = 7% de la valeur)
+// Prix final = valeur_voiture × priceFactor × priceMult_fournisseur × discount_contrat
+// Si pas de voiture en contexte → valeur moyenne du tier min compatible
+// tiers = tiers de voitures qui peuvent nécessiter cette pièce
+const PARTS_CATALOG = [
+  // 🔩 MOTEUR
+  { id:"kit_distrib",    category:"engine",       name:"Kit Distribution",      icon:"⛓️", priceFactor:0.07, tiers:["F","E","D","C","B"] },
+  { id:"joint_culasse",  category:"engine",       name:"Joint de Culasse",      icon:"🔲",  priceFactor:0.06, tiers:["D","C","B","A"] },
+  { id:"kit_pistons",    category:"engine",       name:"Kit Pistons + Segments", icon:"🔩", priceFactor:0.1, tiers:["C","B","A","S"] },
+  { id:"pompe_huile",    category:"engine",       name:"Pompe à Huile",         icon:"🛢️",  priceFactor:0.05, tiers:["E","D","C","B"] },
+  { id:"kit_soupapes",   category:"engine",       name:"Kit Soupapes",          icon:"🔧", priceFactor:0.08, tiers:["B","A","S","SS"] },
+  { id:"turbo",          category:"engine",       name:"Turbocompresseur",      icon:"🌀", priceFactor:0.15, tiers:["S","SS","SSS","SSS+"] },
+
+  // 💨 FREINAGE
+  { id:"kit_plaq_av",    category:"brakes",       name:"Kit Plaquettes AV",     icon:"🔳",  priceFactor:0.04, tiers:["F","E","D","C","B"] },
+  { id:"kit_plaq_ar",    category:"brakes",       name:"Kit Plaquettes AR",     icon:"🔳",  priceFactor:0.03, tiers:["F","E","D","C","B"] },
+  { id:"kit_disques",    category:"brakes",       name:"Kit Disques AV",        icon:"⭕", priceFactor:0.07, tiers:["D","C","B","A"] },
+  { id:"etrier",         category:"brakes",       name:"Étrier Recondit.",      icon:"🗜️", priceFactor:0.08, tiers:["B","A","S","SS"] },
+  { id:"maitre_cyl",     category:"brakes",       name:"Maître-cylindre",       icon:"⚙️",  priceFactor:0.06, tiers:["C","B","A"] },
+
+  // ⚡ ÉLECTRIQUE
+  { id:"alternateur",    category:"electric",     name:"Alternateur",           icon:"⚡", priceFactor:0.08, tiers:["D","C","B","A"] },
+  { id:"batterie",       category:"electric",     name:"Batterie",              icon:"🔋",  priceFactor:0.04, tiers:["F","E","D","C"] },
+  { id:"kit_capteurs",   category:"electric",     name:"Kit Capteurs",          icon:"📡", priceFactor:0.1, tiers:["B","A","S"] },
+  { id:"calculateur",    category:"electric",     name:"Calculateur Moteur",    icon:"💻", priceFactor:0.12, tiers:["A","S","SS","SSS"] },
+  { id:"faisceau",       category:"electric",     name:"Faisceau Électrique",   icon:"🔌", priceFactor:0.1, tiers:["S","SS","SSS","SSS+"] },
+  { id:"demarr",         category:"electric",     name:"Démarreur",             icon:"🔑", priceFactor:0.05, tiers:["E","D","C","B"] },
+
+  // 🔄 TRANSMISSION
+  { id:"kit_embrayage",  category:"transmission", name:"Kit Embrayage Complet", icon:"🔘", priceFactor:0.08, tiers:["D","C","B","A"] },
+  { id:"cardan",         category:"transmission", name:"Cardan + Soufflet",     icon:"〰️", priceFactor:0.1, tiers:["C","B","A","S"] },
+  { id:"roulement",      category:"transmission", name:"Roulement de Roue",     icon:"⚙️",  priceFactor:0.03, tiers:["F","E","D","C"] },
+  { id:"boite_vit",      category:"transmission", name:"Boîte de Vitesses",     icon:"🎛️", priceFactor:0.16, tiers:["SS","SSS","SSS+"] },
+  { id:"diff",           category:"transmission", name:"Différentiel",          icon:"⚙️", priceFactor:0.14, tiers:["A","S","SS","SSS"] },
+
+  // ❄️ REFROIDISSEMENT
+  { id:"radiateur",      category:"cooling",      name:"Radiateur",             icon:"🌡️", priceFactor:0.08, tiers:["D","C","B","A"] },
+  { id:"pompe_eau",      category:"cooling",      name:"Pompe à Eau",           icon:"💧",  priceFactor:0.05, tiers:["E","D","C","B"] },
+  { id:"thermostat",     category:"cooling",      name:"Thermostat + Joint",    icon:"🌡️",  priceFactor:0.02, tiers:["F","E","D","C"] },
+  { id:"vase",           category:"cooling",      name:"Vase d'Expansion",      icon:"🫙",  priceFactor:0.02, tiers:["E","D","C"] },
+  { id:"echangeur",      category:"cooling",      name:"Échangeur Thermique",   icon:"🔁", priceFactor:0.09, tiers:["S","SS","SSS","SSS+"] },
+
+  // 🛞 SUSPENSION
+  { id:"kit_amort_av",   category:"suspension",   name:"Kit Amortisseurs AV",   icon:"📏", priceFactor:0.12, tiers:["C","B","A"] },
+  { id:"kit_amort_ar",   category:"suspension",   name:"Kit Amortisseurs AR",   icon:"📏", priceFactor:0.1, tiers:["C","B","A"] },
+  { id:"rotules",        category:"suspension",   name:"Rotules + Silent-blocs",icon:"🔗",  priceFactor:0.04, tiers:["D","C","B"] },
+  { id:"barre_stab",     category:"suspension",   name:"Barre Stab + Biellettes",icon:"📐",  priceFactor:0.08, tiers:["B","A","S"] },
+  { id:"kit_susp_sport", category:"suspension",   name:"Kit Suspension Sport",  icon:"🏎️", priceFactor:0.12, tiers:["SS","SSS","SSS+"] },
+
+  // 💧 ÉTANCHÉITÉ
+  { id:"kit_joints",     category:"sealing",      name:"Kit Joints Moteur",     icon:"🔵",  priceFactor:0.03, tiers:["F","E","D","C"] },
+  { id:"spi_vilo",       category:"sealing",      name:"Spi Vilebrequin AV+AR", icon:"🔵",  priceFactor:0.04, tiers:["D","C","B"] },
+  { id:"joint_boite",    category:"sealing",      name:"Joint Boîte + Huile",   icon:"🔵",  priceFactor:0.05, tiers:["C","B","A"] },
+  { id:"jeu_joints_haut",category:"sealing",      name:"Jeu de Joints Haut",    icon:"🔵", priceFactor:0.08, tiers:["B","A","S"] },
+];
+
+// --- PANNES PAR TIER ---
+// Chaque entrée : { id, name, category, partsNeeded:[partId,...], tierRange:[min,max] }
+const FAILURE_TYPES = [
+  // MOTEUR
+  { id:"f_distrib",    name:"Distribution",          category:"engine",       parts:["kit_distrib","joint_culasse"], tiers:["F","E","D","C","B"] },
+  { id:"f_pistons",    name:"Pistons usés",           category:"engine",       parts:["kit_pistons","joint_culasse"], tiers:["C","B","A","S"] },
+  { id:"f_huile",      name:"Pompe à huile",          category:"engine",       parts:["pompe_huile","kit_joints"],   tiers:["E","D","C","B"] },
+  { id:"f_soupapes",   name:"Soupapes",               category:"engine",       parts:["kit_soupapes"],              tiers:["B","A","S","SS"] },
+  { id:"f_turbo",      name:"Turbo HS",               category:"engine",       parts:["turbo","kit_joints"],        tiers:["S","SS","SSS","SSS+"] },
+
+  // FREINAGE
+  { id:"f_plaq",       name:"Plaquettes AV+AR",       category:"brakes",       parts:["kit_plaq_av","kit_plaq_ar"], tiers:["F","E","D","C"] },
+  { id:"f_disques",    name:"Disques + Plaquettes",   category:"brakes",       parts:["kit_disques","kit_plaq_av"], tiers:["D","C","B","A"] },
+  { id:"f_etrier",     name:"Étrier grippé",          category:"brakes",       parts:["etrier","kit_plaq_av"],      tiers:["B","A","S","SS"] },
+  { id:"f_maitre",     name:"Maître-cylindre",        category:"brakes",       parts:["maitre_cyl"],               tiers:["C","B","A"] },
+
+  // ÉLECTRIQUE
+  { id:"f_altern",     name:"Alternateur HS",         category:"electric",     parts:["alternateur"],              tiers:["D","C","B","A"] },
+  { id:"f_batterie",   name:"Batterie déchargée",     category:"electric",     parts:["batterie"],                 tiers:["F","E","D","C"] },
+  { id:"f_capteurs",   name:"Capteurs défaillants",   category:"electric",     parts:["kit_capteurs"],             tiers:["B","A","S"] },
+  { id:"f_calc",       name:"Calculateur corrompu",   category:"electric",     parts:["calculateur"],              tiers:["A","S","SS","SSS"] },
+  { id:"f_faisceau",   name:"Faisceau brûlé",         category:"electric",     parts:["faisceau","kit_capteurs"],  tiers:["S","SS","SSS","SSS+"] },
+  { id:"f_demarr",     name:"Démarreur HS",           category:"electric",     parts:["demarr"],                   tiers:["E","D","C","B"] },
+
+  // TRANSMISSION
+  { id:"f_embrayage",  name:"Embrayage grillé",       category:"transmission", parts:["kit_embrayage"],            tiers:["D","C","B","A"] },
+  { id:"f_cardan",     name:"Cardan cassé",           category:"transmission", parts:["cardan"],                   tiers:["C","B","A","S"] },
+  { id:"f_roulement",  name:"Roulement de roue",      category:"transmission", parts:["roulement"],                tiers:["F","E","D","C"] },
+  { id:"f_boite",      name:"Boîte de vitesses",      category:"transmission", parts:["boite_vit"],                tiers:["SS","SSS","SSS+"] },
+  { id:"f_diff",       name:"Différentiel endommagé", category:"transmission", parts:["diff"],                     tiers:["A","S","SS","SSS"] },
+
+  // REFROIDISSEMENT
+  { id:"f_radiateur",  name:"Radiateur percé",        category:"cooling",      parts:["radiateur"],                tiers:["D","C","B","A"] },
+  { id:"f_pompe_eau",  name:"Pompe à eau HS",         category:"cooling",      parts:["pompe_eau","thermostat"],   tiers:["E","D","C","B"] },
+  { id:"f_thermostat", name:"Thermostat bloqué",      category:"cooling",      parts:["thermostat"],               tiers:["F","E","D","C"] },
+  { id:"f_vase",       name:"Vase expansion fissuré", category:"cooling",      parts:["vase"],                     tiers:["E","D","C"] },
+  { id:"f_echangeur",  name:"Échangeur colmaté",      category:"cooling",      parts:["echangeur"],                tiers:["S","SS","SSS","SSS+"] },
+
+  // SUSPENSION
+  { id:"f_amort_av",   name:"Amortisseurs AV usés",   category:"suspension",   parts:["kit_amort_av"],             tiers:["C","B","A"] },
+  { id:"f_amort_ar",   name:"Amortisseurs AR usés",   category:"suspension",   parts:["kit_amort_ar"],             tiers:["C","B","A"] },
+  { id:"f_rotules",    name:"Rotules + silent-blocs", category:"suspension",   parts:["rotules"],                  tiers:["D","C","B"] },
+  { id:"f_stab",       name:"Barre stabilisatrice",   category:"suspension",   parts:["barre_stab"],               tiers:["B","A","S"] },
+  { id:"f_susp_sport", name:"Suspension sport HS",    category:"suspension",   parts:["kit_susp_sport"],           tiers:["SS","SSS","SSS+"] },
+
+  // ÉTANCHÉITÉ
+  { id:"f_joints",     name:"Joints moteur",          category:"sealing",      parts:["kit_joints"],               tiers:["F","E","D","C"] },
+  { id:"f_spi",        name:"Spi vilebrequin",        category:"sealing",      parts:["spi_vilo"],                 tiers:["D","C","B"] },
+  { id:"f_jt_boite",   name:"Joint boîte de vitesses",category:"sealing",      parts:["joint_boite"],              tiers:["C","B","A"] },
+  { id:"f_jt_haut",    name:"Joints de culasse/haut", category:"sealing",      parts:["jeu_joints_haut"],          tiers:["B","A","S"] },
+];
+
+// Tire une panne compatible avec le tier de la voiture
+function pickFailure(tier){
+  const compatible = FAILURE_TYPES.filter(f => f.tiers.includes(tier));
+  if(!compatible.length) return FAILURE_TYPES[0];
+  return pick(compatible);
+}
+
+// Calcule le prix d'une pièce selon le fournisseur
+// Nouveau système : prix = valeur_voiture × supplier.costPct / nb_pièces_réparation
+// Si pas de voiture → valeur moyenne du tier min de la pièce
+const TIER_AVG_VALUE = {
+  F:120, E:320, D:850, C:2000, B:5000,
+  A:13000, S:35000, SS:90000, SSS:230000, "SSS+":600000
+};
+
+function getPartRefValue(part, car){
+  if(car) return car.baseValue ?? car.value ?? TIER_AVG_VALUE[car.tier] ?? 1000;
+  const minTier = part.tiers[0];
+  return TIER_AVG_VALUE[minTier] ?? 1000;
+}
+
+// Système de prix :
+// - Coût total réparation = carValue × supplier.costPct (garanti)
+// - Coût par pièce = coûtTotal × (priceFactor_pièce / somme_priceFactor_réparation)
+// - Si une seule pièce ou pas de contexte : costPct appliqué directement
+// totalFactor = somme des priceFactor de toutes les pièces de la réparation
+function getPartPrice(partId, supplierId, car, totalFactor){
+  const part = PARTS_CATALOG.find(p => p.id === partId);
+  const supp = SUPPLIERS[supplierId];
+  if(!part || !supp) return 0;
+  const refValue = getPartRefValue(part, car);
+  const totalCost = refValue * supp.costPct;
+  // Répartition proportionnelle au priceFactor
+  const ratio = totalFactor ? (part.priceFactor / totalFactor) : 1;
+  return Math.max(1, Math.round(totalCost * ratio));
+}
+
+// Retourne la qualité effective d'un fournisseur pour une pièce (spécialité NGX)
+function getEffectiveQuality(supplierId, partId){
+  const supp = SUPPLIERS[supplierId];
+  if(!supp) return 3;
+  const part = PARTS_CATALOG.find(p => p.id === partId);
+  let q = supp.quality;
+  if(supp.speciality){
+    const cats = Array.isArray(supp.speciality) ? supp.speciality : [supp.speciality];
+    if(part && cats.includes(part.category)) q = Math.min(5, q + 1);
+  }
+  return q;
+}
+
+// Calcule le délai de livraison en secondes selon upgrades
+
+function getShowroomCap(){
+  return (state.showroomCap ?? 3) + (state.talentShowroomSlots ?? 0);
+}
+
+function getMaxOrders(){
+  const lvl = getUpgrade("slots_livraison")?.lvl || 0;
+  return 1 + lvl + (state.talentExtraSlots ?? 0);
+}
+function getDeliveryDelay(supplierId){
+  const supp = SUPPLIERS[supplierId];
+  if(!supp) return 3600;
+  if(supp.instantDelivery) return supp.deliveryBase;
+  const magLvl = getUpgrade("magasinier")?.lvl || 0;
+  let delay = supp.deliveryBase;
+  delay *= Math.pow(0.75, magLvl);
+  delay *= (1 - (state.talentDeliveryDisc ?? 0));  // talent parts_1 : -5%/rang
+  return Math.max(5, Math.round(delay));
+}
+
+// Vérifie si une pièce est en stock (quantité suffisante)
+function hasPartInStock(partId, qty = 1){
+  return (state.parts?.[partId]?.qty ?? 0) >= qty;
+}
+
+// Consomme des pièces du stock pour une réparation
+// Retourne la qualité moyenne pondérée utilisée (pour appliquer effets)
+function consumeParts(partIds, car){
+  if(!state.parts) return 3;
+  let totalQ = 0, count = 0;
+  // Calcule le totalFactor pour la répartition proportionnelle
+  const totalFactor = partIds.reduce((sum, pid) => {
+    const p = PARTS_CATALOG.find(x => x.id === pid);
+    return sum + (p?.priceFactor ?? 0.05);
+  }, 0) || 1;
+  for(const pid of partIds){
+    const slot = state.parts[pid];
+    if(slot && slot.qty > 0){
+      slot.qty--;
+      const effQ = getEffectiveQuality(slot.supplier, pid);
+      totalQ += effQ;
+      count++;
+      const cost = getPartPrice(pid, slot.supplier, car, totalFactor);
+      state.money -= cost;
+    }
+  }
+  return count > 0 ? totalQ / count : null;
+}
+
+// Vérifie si toutes les pièces d'une réparation sont dispo
+function checkPartsAvailability(partIds){
+  if(!state.parts) return { ok: true, missing: [] };
+  const missing = partIds.filter(pid => !hasPartInStock(pid));
+  return { ok: missing.length === 0, missing };
+}
+
+// Lance une commande fournisseur — gratuit à la commande, coût déduit à l'utilisation
+function orderPart(partId, supplierId, qty = 1){
+  if(!state.orders) state.orders = [];
+  if(state.orders.length >= getMaxOrders()){
+    showToast("⚠️ Slots de livraison pleins ! Améliorez les Slots Livraison.");
+    return false;
+  }
+  const delay = getDeliveryDelay(supplierId);
+  state.orders.push({
+    id: crypto.randomUUID(),
+    partId,
+    supplierId,
+    qty,
+    deliveryAt:    Date.now() + delay * 1000,
+    timeLeft:      delay,
+    originalDelay: delay,
+  });
+  return true;
+}
+
+// Toast léger pour notifications pièces (non intrusif)
+let _toastTimeout = null;
+function showToast(msg){
+  let toast = document.getElementById("partsToast");
+  if(!toast){
+    toast = document.createElement("div");
+    toast.id = "partsToast";
+    toast.style.cssText = [
+      "position:fixed","bottom:80px","left:50%","transform:translateX(-50%)",
+      "background:rgba(20,30,50,0.95)","border:1px solid rgba(72,199,142,.3)",
+      "color:#48c78e","padding:8px 18px","border-radius:20px","font-size:13px",
+      "z-index:9999","pointer-events:none","transition:opacity .3s",
+    ].join(";");
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.style.opacity = "1";
+  clearTimeout(_toastTimeout);
+  _toastTimeout = setTimeout(() => { toast.style.opacity = "0"; }, 3000);
+}
+
+// Traite les livraisons en cours (appelé dans tick)
+function processOrders(dt){
+  if(!state.orders || !state.orders.length) return;
+  const now = Date.now();
+  const arrived = [];
+  state.orders = state.orders.filter(order => {
+    order.timeLeft -= dt;
+    if(order.timeLeft <= 0 || now >= order.deliveryAt){
+      arrived.push(order);
+      return false;
+    }
+    return true;
+  });
+  for(const order of arrived){
+    if(!state.parts) state.parts = {};
+    if(!state.parts[order.partId]){
+      state.parts[order.partId] = { qty: 0, supplier: order.supplierId };
+    }
+    state.parts[order.partId].qty += order.qty;
+    state.parts[order.partId].supplier  = order.supplierId;
+    state.parts[order.partId].lastPrice = getPartPrice(order.partId, order.supplierId);
+    // Succès livraison rapide : Euroline en < 10s (avec talents/amélios)
+    if(order.supplierId === "euroline" && (order.originalDelay ?? order.timeLeft + dt) <= 10){
+      state._fastDelivery = true;
+    }
+    showToast(`📦 Livraison reçue : ${PARTS_CATALOG.find(p=>p.id===order.partId)?.name ?? order.partId} ×${order.qty}`);
+  }
+}
+
+// Modificateur de vitesse de réparation selon stock pièces
+// Retourne un multiplicateur appliqué au speedMult global
+function getPartsSpeedMult(car){
+  if(!car?.failure || !state.parts) return 1.0;
+  const { ok } = checkPartsAvailability(car.failure.parts);
+  if(!ok) return 0.5; // pièce manquante → ×0.5 vitesse
+  // Applique le timeMult de la qualité des pièces en stock
+  // On prend la qualité moyenne des pièces requises
+  let totalQ = 0, count = 0;
+  for(const pid of car.failure.parts){
+    const slot = state.parts[pid];
+    if(slot?.qty > 0){
+      totalQ += getEffectiveQuality(slot.supplier, pid);
+      count++;
+    }
+  }
+  if(count === 0) return 1.0;
+  const avgQ = totalQ / count;
+  const suppId = state.parts[car.failure.parts[0]]?.supplier ?? null;
+  return getQualityEffects(Math.round(avgQ), suppId).timeMult;
+}
+
+// Calcule le coût total des pièces nécessaires pour réparer une voiture
+function calcPartsCost(car){
+  if(!car?.failure?.parts?.length) return 0;
+  const totalFactor = car.failure.parts.reduce((sum, pid) => {
+    const p = PARTS_CATALOG.find(x => x.id === pid);
+    return sum + (p?.priceFactor ?? 0.05);
+  }, 0) || 1;
+  let total = 0;
+  for(const pid of car.failure.parts){
+    const slot = state.parts?.[pid];
+    const supplierId = slot?.supplier ?? "euroline";
+    total += getPartPrice(pid, supplierId, car, totalFactor);
+  }
+  return total;
+}
+
+// Retourne le multiplicateur de valeur de vente selon qualité pièces utilisées
+function getPartsValueMult(car){
+  if(!car?.partsQuality) return 1.0;
+  const suppId = car.partsSupplier ?? null;
+  return getQualityEffects(Math.round(car.partsQuality), suppId).valueMult;
+}
+
+// =====================================================================
+// FIN SYSTÈME PIÈCES DÉTACHÉES
+// =====================================================================
 
 // =====================
 // CAR CATALOG — Tiers A→SSS+
@@ -577,6 +1074,9 @@ function makeCar(){
   const value = Math.round(base.baseValue * (0.92 + Math.random() * 0.16));
   const time  = Math.max(1, Math.round(base.repairTime * (0.92 + Math.random() * 0.16)));
 
+  // Tire une panne compatible avec le tier
+  const failure = pickFailure(tier);
+
   return {
     id: crypto.randomUUID(),
     name: base.name,
@@ -584,6 +1084,9 @@ function makeCar(){
     baseValue: value,
     repairTime: time,
     timeRemaining: time,
+    failure: { id: failure.id, name: failure.name, category: failure.category, parts: [...failure.parts] },
+    partsQuality: null,   // sera rempli lors de la réparation
+    partsSupplier: null,  // marque utilisée (dernière pièce posée)
   };
 }
 
@@ -702,38 +1205,48 @@ function renderGarageProgress(){
 }
 
 function computeTalentEffects(){
-  let passive   = 0;
-  let speedMult = 1.0;
-  let diagBonus = 0;
-  let saleBonus = 0;
-  let clickBonus= 0;
+  let passive      = 0;
+  let speedMult    = 1.0;
+  let diagBonus    = 0;
+  let diagMult     = 1.0; // multiplicateur final sur la récompense totale (diag_3)
+  let saleBonus    = 0;
+  let clickBonus   = 0;
+  let showroomSlots= 0;
+  let rareMult     = 1.0; // multiplicateur valeur voitures S+
+  let repairAuto   = 0;
+  let deliveryDisc = 0;
+  let extraSlots   = 0;
 
-  // Business — passif
-  passive += getTalentRank("passive_1") * 2;
-  passive += getTalentRank("passive_2") * 8;
+  // ── Business ────────────────────────────────────────
+  passive      += getTalentRank("passive_1")    * 5;
+  passive      += getTalentRank("passive_2")    * 20;
+  saleBonus    += getTalentRank("sale_1")       * 0.03;
+  saleBonus    += getTalentRank("sale_2")       * 0.08;
+  showroomSlots += getTalentRank("showroom_1");
+  rareMult     *= (1 + getTalentRank("rare_bonus_1") * 0.03);
 
-  // Business — vente
-  saleBonus += getTalentRank("sale_1") * 0.03;
-  saleBonus += getTalentRank("sale_2") * 0.08;
+  // ── Atelier ─────────────────────────────────────────
+  speedMult    *= (1 + getTalentRank("speed_1")       * 0.04);
+  speedMult    *= (1 + getTalentRank("speed_2")       * 0.07);
+  clickBonus   += getTalentRank("click_1")            * 0.10;
+  repairAuto   += getTalentRank("multi_repair_1")     * 0.5;
+  deliveryDisc  = Math.min(0.30, getTalentRank("parts_1") * 0.03); // -3%/rang, plafonné à -30%
+  extraSlots   += Math.floor(getTalentRank("parts_2") / 5);
 
-  // Atelier — vitesse
-  speedMult *= (1 + getTalentRank("speed_1") * 0.04);  // était 0.06
-  speedMult *= (1 + getTalentRank("speed_2") * 0.07);  // était 0.10
+  // ── Diagnostic ──────────────────────────────────────
+  diagBonus    += getTalentRank("diag_1") * 3;
+  diagBonus    += getTalentRank("diag_2") * 8;
+  diagMult     *= (1 + getTalentRank("diag_3") * 0.05); // +5%/rang sur la récompense totale
 
-  clickBonus += getTalentRank("click_1") * 0.10;        // était 0.20
-
-  // Diagnostic
-  diagBonus += getTalentRank("diag_1") * 3;
-  diagBonus += getTalentRank("diag_2") * 8;
-
-  return { passive, speedMult, diagBonus, saleBonus, clickBonus };
+  return { passive, speedMult, diagBonus, diagMult, saleBonus, clickBonus,
+           showroomSlots, rareMult, repairAuto, deliveryDisc, extraSlots };
 }
 
 function calcDealsPassive(){
   const rates = { loc_outils:2, contrat_taxi:5, assurance:10, atelier_nuit:20, franchise:50 };
   let total = 0;
   for(const [id, rate] of Object.entries(rates)){
-    const u = state.upgrades.find(x => x.id === id);
+    const u = getUpgrade(id);
     if(u) total += u.lvl * rate;
   }
   return total;
@@ -742,65 +1255,89 @@ function calcDealsPassive(){
 function applyTalentEffects(){
   const fx = computeTalentEffects();
 
-  state.moneyPerSec    = fx.passive + calcDealsPassive() + (state.heritageBonuses?.passiveBonus ?? 0);
-  state.talentSpeedMult= fx.speedMult;
-  state.talentDiagBonus= fx.diagBonus;
-  state.talentSaleBonus= fx.saleBonus;
-  state.talentClickBonus = fx.clickBonus;
+  state.moneyPerSec         = fx.passive + calcDealsPassive() + (state.heritageBonuses?.passiveBonus ?? 0);
+  state.talentSpeedMult     = fx.speedMult;
+  state.talentDiagBonus     = fx.diagBonus;
+  state.talentDiagMult      = fx.diagMult;
+  state.talentSaleBonus     = fx.saleBonus;
+  state.talentClickBonus    = fx.clickBonus;
+  state.talentShowroomSlots = fx.showroomSlots;
+  state.talentRareMult      = fx.rareMult;
+  state.talentRepairAuto    = fx.repairAuto;
+  state.talentDeliveryDisc  = fx.deliveryDisc;
+  state.talentExtraSlots    = fx.extraSlots;
 }
 
 // =====================
 // TALENT TREE
 // =====================
 const TALENTS = [
-  // Branche Business
-  { id:"passive_1", name:"Caisse Automatique", maxRank:10, category:"Business",
-    icon:"💰",
-    desc:"+2 €/s par rang — revenu passif de base",
+
+  // ══ BRANCHE BUSINESS ══════════════════════════════════════════
+  { id:"passive_1", name:"Caisse Automatique", maxRank:20, category:"Business", icon:"💰",
+    desc:"+5 €/s par rang — revenu passif de base",
     requires:[] },
 
-  { id:"passive_2", name:"Contrats Mensuels", maxRank:10, category:"Business",
-    icon:"📑",
-    desc:"+8 €/s par rang (nécessite Caisse Automatique rang 3)",
-    requires:[{id:"passive_1", rank:3}] },
+  { id:"passive_2", name:"Contrats Mensuels", maxRank:20, category:"Business", icon:"📑",
+    desc:"+20 €/s par rang",
+    requires:[{id:"passive_1", rank:20}] },
 
-  { id:"sale_1", name:"Négociateur Né", maxRank:10, category:"Business",
-    icon:"🤝",
+  { id:"sale_1", name:"Négociateur Né", maxRank:20, category:"Business", icon:"🤝",
     desc:"+3% valeur de vente par rang",
     requires:[] },
 
-  { id:"sale_2", name:"Réputation Locale", maxRank:10, category:"Business",
-    icon:"🏆",
-    desc:"+8% valeur de vente par rang (nécessite Négociateur rang 3)",
-    requires:[{id:"sale_1", rank:3}] },
+  { id:"sale_2", name:"Réputation Locale", maxRank:20, category:"Business", icon:"🏆",
+    desc:"+8% valeur de vente par rang",
+    requires:[{id:"sale_1", rank:20}] },
 
-  // Branche Atelier
-  { id:"speed_1", name:"Routine Atelier", maxRank:10, category:"Atelier",
-    icon:"⚡",
+  { id:"showroom_1", name:"Expansion Vitrine", maxRank:20, category:"Business", icon:"🏪",
+    desc:"+1 emplacement showroom par rang — exposez plus de véhicules simultanément",
+    requires:[{id:"sale_1", rank:20}] },
+
+  { id:"rare_bonus_1", name:"Clientèle Haut de Gamme", maxRank:20, category:"Business", icon:"🏎️",
+    desc:"+3% valeur de revente sur les voitures tier S et supérieur par rang",
+    requires:[{id:"sale_1", rank:20}] },
+
+  // ══ BRANCHE ATELIER ═══════════════════════════════════════════
+  { id:"speed_1", name:"Routine Atelier", maxRank:20, category:"Atelier", icon:"⚡",
     desc:"+4% vitesse de réparation par rang (clic + auto)",
     requires:[] },
 
-  { id:"speed_2", name:"Organisation Pro", maxRank:10, category:"Atelier",
-    icon:"🔧",
-    desc:"+7% vitesse de réparation par rang (nécessite Routine rang 3)",
-    requires:[{id:"speed_1", rank:3}] },
+  { id:"speed_2", name:"Organisation Pro", maxRank:20, category:"Atelier", icon:"🔧",
+    desc:"+7% vitesse de réparation par rang",
+    requires:[{id:"speed_1", rank:20}] },
 
-  { id:"click_1", name:"Main de Fer", maxRank:10, category:"Atelier",
-    icon:"🖱️",
+  { id:"click_1", name:"Main de Fer", maxRank:20, category:"Atelier", icon:"🖱️",
     desc:"+0.10s retirées par clic par rang",
     requires:[] },
 
-  // Branche Diagnostic
-  { id:"diag_1", name:"Œil de Lynx", maxRank:10, category:"Diagnostic",
-    icon:"🔍",
+  { id:"multi_repair_1", name:"Double Shift", maxRank:20, category:"Atelier", icon:"🔩",
+    desc:"+0.5s/s de réparation automatique par rang",
+    requires:[{id:"speed_1", rank:20}] },
+
+  { id:"parts_1", name:"Gestion des Stocks", maxRank:10, category:"Atelier", icon:"📦",
+    desc:"-3% délai livraison par rang (max rang 10 = -30%)",
+    requires:[{id:"speed_1", rank:20}] },
+
+  { id:"parts_2", name:"Fournisseur Fidèle", maxRank:20, category:"Atelier", icon:"🚛",
+    desc:"+1 slot de livraison simultanée tous les 5 rangs (max +4)",
+    requires:[{id:"parts_1", rank:10}] },
+
+  // ══ BRANCHE DIAGNOSTIC ════════════════════════════════════════
+  { id:"diag_1", name:"Œil de Lynx", maxRank:20, category:"Diagnostic", icon:"🔍",
     desc:"+3 € par analyse par rang",
     requires:[] },
 
-  { id:"diag_2", name:"Scan Avancé", maxRank:10, category:"Diagnostic",
-    icon:"🧠",
-    desc:"+8 € par analyse par rang (nécessite Œil de Lynx rang 3)",
-    requires:[{id:"diag_1", rank:3}] },
+  { id:"diag_2", name:"Scan Avancé", maxRank:20, category:"Diagnostic", icon:"🧠",
+    desc:"+8 € par analyse par rang",
+    requires:[{id:"diag_1", rank:20}] },
+
+  { id:"diag_3", name:"Expert Certifié", maxRank:20, category:"Diagnostic", icon:"🎓",
+    desc:"+5% multiplicateur sur la récompense totale de diagnostic par rang",
+    requires:[{id:"diag_2", rank:20}] },
+
 ];
+
 
 
 // =====================
@@ -872,7 +1409,7 @@ const HERITAGE_PERKS = [
 
   // ══ BRANCHE RÉPUTATION (bleu/violet) ══════════════════
   { id:"rep_gain_1",     branch:"Réputation", icon:"🏆", name:"Légende Locale",
-    desc:"+15% REP gagné par vente par rang",
+    desc:"+10% REP gagné par vente par rang",
     maxRank:5, costPerRank:1,
     requires:[] },
 
@@ -887,7 +1424,7 @@ const HERITAGE_PERKS = [
     requires:[{id:"rep_gain_1", rank:2}] },
 
   { id:"rep_gain_2",     branch:"Réputation", icon:"👑", name:"Réputation Nationale",
-    desc:"+25% REP gagné par vente par rang",
+    desc:"+15% REP gagné par vente par rang",
     maxRank:3, costPerRank:3,
     requires:[{id:"rep_gain_1", rank:3}, {id:"rep_talent_1", rank:2}] },
 
@@ -897,7 +1434,7 @@ const HERITAGE_PERKS = [
     requires:[{id:"rep_talent_1", rank:3}] },
 
   { id:"rep_ultimate",   branch:"Réputation", icon:"🌟", name:"Légende Vivante",
-    desc:"×2 REP gagné sur toutes les ventes (unique)",
+    desc:"×1.75 REP gagné sur toutes les ventes (unique)",
     maxRank:1, costPerRank:8,
     requires:[{id:"rep_gain_2", rank:2}, {id:"rep_prestige_1", rank:3}] },
 ];
@@ -926,10 +1463,12 @@ function calcHeritagePoints(){
 function applyHeritageBonusesToState(){
   const b = state.heritageBonuses;
   if(!b) return;
-  state.speedMult   = b.repSpeed;
-  state.saleBonusPct= b.saleBonus;
-  state.diagReward  = 1 + b.diagBonus;
-  state.moneyPerSec = (state.moneyPerSec ?? 0); // recalculé par applyTalentEffects
+  state.speedMult    = b.repSpeed;
+  state.saleBonusPct = b.saleBonus;
+  state.diagReward   = 1 + b.diagBonus;
+  state.repairClick  = 0.5 + b.clickBonus;
+  state.repairAuto   = b.autoBonus;
+  recalcRepairAuto(); // ajoute l'apprenti/mécanicien par-dessus
 }
 
 function canPrestige(){
@@ -946,6 +1485,8 @@ function applyHeritageBonuses(){
     talentBonus:      0,
     diagBonus:        0,
     prestigeGainMult: 1.0,
+    clickBonus:       0,
+    autoBonus:        0,
   };
 
   for(const p of HERITAGE_PERKS){
@@ -953,12 +1494,12 @@ function applyHeritageBonuses(){
     if(rank === 0) continue;
 
     // Mécanique
-    if(p.id === "meca_speed_1")  b.repSpeed       *= Math.pow(1.05, rank);  // était 1.08
-    if(p.id === "meca_click_1")  b.repSpeed       += 0;
-    if(p.id === "meca_auto_1")   b.repSpeed       += 0;
-    if(p.id === "meca_speed_2")  b.repSpeed       *= Math.pow(1.10, rank);  // était 1.15
-    if(p.id === "meca_click_2")  b.repSpeed       += 0;
-    if(p.id === "meca_ultimate") b.repSpeed       *= 1.5;
+    if(p.id === "meca_speed_1")  b.repSpeed  *= Math.pow(1.05, rank);
+    if(p.id === "meca_click_1")  b.clickBonus += rank * 0.3;   // +0.3s/clic/rang
+    if(p.id === "meca_auto_1")   b.autoBonus  += rank * 0.5;   // +0.5s/s auto/rang
+    if(p.id === "meca_speed_2")  b.repSpeed  *= Math.pow(1.10, rank);
+    if(p.id === "meca_click_2")  b.clickBonus += rank * 0.8;   // +0.8s/clic/rang
+    if(p.id === "meca_ultimate") b.repSpeed  *= 1.5;
 
     // Commerce
     if(p.id === "com_start_1")   b.startMoney     += rank * 500;
@@ -969,12 +1510,12 @@ function applyHeritageBonuses(){
     if(p.id === "com_ultimate")  b.passiveBonus   *= 2;
 
     // Réputation
-    if(p.id === "rep_gain_1")    b.repGainMult    *= Math.pow(1.15, rank);
+    if(p.id === "rep_gain_1")    b.repGainMult    *= Math.pow(1.10, rank);  // était 1.15 → ×1.61 max au lieu de ×2.01
     if(p.id === "rep_talent_1")  b.talentBonus    += rank * 1;
     if(p.id === "rep_prestige_1")b.prestigeGainMult += rank * 0.10;
-    if(p.id === "rep_gain_2")    b.repGainMult    *= Math.pow(1.25, rank);
+    if(p.id === "rep_gain_2")    b.repGainMult    *= Math.pow(1.15, rank);  // était 1.25 → ×1.52 max au lieu de ×1.95
     if(p.id === "rep_talent_2")  b.talentBonus    += rank * 2;
-    if(p.id === "rep_ultimate")  b.repGainMult    *= 2;
+    if(p.id === "rep_ultimate")  b.repGainMult    *= 1.75;                  // était ×2 → ×1.75
   }
 
   state.heritageBonuses = b;
@@ -1021,8 +1562,8 @@ function doPrestige(){
     rep:               0,
     carsSold:          0,
     diagReward:        1 + b.diagBonus,
-    repairClick:       0.5,
-    repairAuto:        0.0,
+    repairClick:       0.5 + b.clickBonus,
+    repairAuto:        b.autoBonus,
     speedMult:         b.repSpeed,
     saleBonusPct:      b.saleBonus,
     talentPoints:      bonusTalent,
@@ -1048,6 +1589,10 @@ function doPrestige(){
     totalClickRepairs: persistTotalClick,
     totalCarsSold:     persistTotalSales,
     sessionStart:      persistSession,
+    parts:             {},
+    orders:            [],
+    stockSettings:     state.stockSettings ?? {},
+    stockGlobal:       state.stockGlobal ?? {},
     _hasSaved:         false,
     _wasBroke:         false,
     _lastRepairedTier: "",
@@ -1056,6 +1601,8 @@ function doPrestige(){
   applyGarageName();
   applyTalentEffects();
   recalcRepairAuto();
+  rebuildUpgradeMap();
+  resetPendingAchievements();
   updateGarageLevel();
   updateTopbarProfile();
   renderAll();
@@ -1119,9 +1666,15 @@ function renderTalentsUI(){
     else if(maxed)  cardClass += " talentCard--maxed";
     else if(rank>0) cardClass += " talentCard--active";
 
-    const dots = Array.from({length: t.maxRank}, (_, i) =>
-      `<div class="talentCard__dot${i < rank ? " talentCard__dot--filled" : ""}"></div>`
-    ).join("");
+    const pct = t.maxRank > 0 ? (rank / t.maxRank * 100).toFixed(1) : 0;
+    const barColor = maxed ? "#31d6ff" : rank > 0 ? "#a78bfa" : "rgba(255,255,255,.1)";
+    const progressBar = `
+      <div class="talentCard__rankRow">
+        <div class="talentCard__progressTrack">
+          <div class="talentCard__progressFill" style="width:${pct}%;background:${barColor}"></div>
+        </div>
+        <div class="talentCard__rankLabel">${rank} / ${t.maxRank}</div>
+      </div>`;
 
     let btnClass = "talentBtn";
     let btnLabel = `Acheter — 1 point`;
@@ -1139,10 +1692,7 @@ function renderTalentsUI(){
         </div>
         <div class="talentCard__cat">${t.category}</div>
       </div>
-      <div class="talentCard__rankRow">
-        <div class="talentCard__dots">${dots}</div>
-        <div class="talentCard__rankLabel">${rank} / ${t.maxRank}</div>
-      </div>
+      ${progressBar}
       <button class="${btnClass}" data-talent-buy="${t.id}" ${canBuy ? "" : "disabled"}>
         ${btnLabel}
       </button>
@@ -1221,10 +1771,17 @@ document.getElementById("btnResetConfirm")?.addEventListener("click", () => {
   state.money      -= cost;
   state.talentPoints += totalRanks;
   state.talents    = {};
-  state.talentSpeedMult  = 1;
-  state.talentDiagBonus  = 0;
-  state.talentSaleBonus  = 0;
-  state.talentClickBonus = 0;
+  state.talentSpeedMult     = 1;
+  state.talentDiagBonus     = 0;
+  state.talentDiagMult      = 1;
+  state.talentSaleBonus     = 0;
+  state.talentClickBonus    = 0;
+  state.talentShowroomSlots = 0;
+  state.talentRareMult      = 1;
+  state.talentQueueMult     = 1; // conservé pour compatibilité saves
+  state.talentRepairAuto    = 0;
+  state.talentDeliveryDisc  = 0;
+  state.talentExtraSlots    = 0;
 
   applyTalentEffects();
   document.getElementById("talentResetModal").style.display = "none";
@@ -1255,10 +1812,10 @@ function renderStatsUI(){
   const upTotalLvl    = state.upgrades.reduce((a,u)=>a+u.lvl, 0);
   const talentTotal   = Object.values(state.talents).reduce((a,v)=>a+v, 0);
   const dealsPassive  = calcDealsPassive();
-  const talentPassive = (getTalentRank("passive_1")*2) + (getTalentRank("passive_2")*8);
+  const talentPassive = (getTalentRank("passive_1")*5) + (getTalentRank("passive_2")*20);
   const mult          = (state.speedMult??1) * (state.talentSpeedMult??1);
   const clickAmt      = ((state.repairClick??0) + (state.talentClickBonus??0)) * mult;
-  const autoAmt       = (state.repairAuto??0) * mult;
+  const autoAmt       = ((state.repairAuto??0) + (state.talentRepairAuto??0)) * mult;
   const salePct       = Math.round((state.saleBonusPct + (state.talentSaleBonus??0)) * 100);
   const sessionMin    = Math.floor((Date.now() - (state.sessionStart??Date.now())) / 60000);
   const achUnlocked   = Object.keys(state.achievements??{}).length;
@@ -1388,11 +1945,11 @@ function renderTop(){
   setIfChanged(garageLevelEl, state.garageLevel);
   setIfChanged(carsSoldEl,    state.carsSold);
 
-  const diagTotal = state.diagReward + (state.talentDiagBonus ?? 0);
+  const diagTotal = Math.round((state.diagReward + (state.talentDiagBonus ?? 0)) * (state.talentDiagMult ?? 1));
   setIfChanged(diagRewardEl, diagTotal);
 
   const mult = (state.speedMult ?? 1) * (state.talentSpeedMult ?? 1);
-  setIfChanged(repairAutoEl,  (state.repairAuto  * mult).toFixed(2));
+  setIfChanged(repairAutoEl,  ((state.repairAuto + (state.talentRepairAuto ?? 0)) * mult).toFixed(2));
   setIfChanged(repairClickEl, (state.repairClick * mult).toFixed(2));
 
   // Point de notification talents
@@ -1401,6 +1958,9 @@ function renderTop(){
 }
 
 function renderQueue(){
+  // Invalidate les refs cachées de renderActive (le DOM va être reconstruit)
+  _activeBarFill = null;
+  _activeMetaEl  = null;
   // Occupés = voiture en atelier + voitures en file
   const occupied = (state.active ? 1 : 0) + state.queue.length;
   queueCountEl.textContent = occupied;
@@ -1410,8 +1970,8 @@ function renderQueue(){
   garageSlotsEl.innerHTML = "";
 
   // Calcul du badge worker pour le slot actif
-  const apprentiLvl   = state.upgrades.find(u => u.id === "apprenti")?.lvl   || 0;
-  const mecanicienLvl = state.upgrades.find(u => u.id === "mecanicien")?.lvl || 0;
+  const apprentiLvl   = getUpgrade("apprenti")?.lvl   || 0;
+  const mecanicienLvl = getUpgrade("mecanicien")?.lvl || 0;
   const hasWorker = apprentiLvl > 0 || mecanicienLvl > 0;
   const workerLabel = mecanicienLvl > 0
     ? `🛠️ Méca. niv.${mecanicienLvl}`
@@ -1425,22 +1985,31 @@ function renderQueue(){
       if(car){
         const pct = car.repairTime > 0 ? Math.max(0, (1 - car.timeRemaining / car.repairTime) * 100) : 100;
         const t = TIERS[car.tier] || TIERS["F"];
+        const fail = car.failure ? FAILURE_CATEGORIES[car.failure.category] : null;
+        const partsMult = getPartsSpeedMult(car);
+        const hasMissingParts = car.failure?.parts?.length && !checkPartsAvailability(car.failure.parts).ok;
+        const barColor = hasMissingParts ? "#ff8c40" : "";
         slot.className = "garageSlot garageSlot--active";
         slot.innerHTML = `
           <div class="garageSlot__num">🔧</div>
           <div class="garageSlot__body">
             <div class="garageSlot__row">
-              <div style="display:flex;align-items:center;gap:7px;min-width:0">
+              <div style="display:flex;align-items:center;gap:7px;min-width:0;flex-wrap:wrap">
                 <span class="tierBadge" style="background:${t.bg};border-color:${t.border};color:${t.color}">${t.label}</span>
+                ${fail ? `<span class="failBadge" style="color:${fail.color}">${fail.icon} ${car.failure.name}</span>` : ""}
                 <div class="garageSlot__name">${car.name}</div>
               </div>
-              <span class="garageSlot__status garageSlot__status--active">EN RÉPARATION</span>
+              <span class="garageSlot__status garageSlot__status--active">${hasMissingParts ? "⚠️ PIÈCE MANQUANTE" : "EN RÉPARATION"}</span>
             </div>
             <div class="garageSlot__bar">
-              <div class="garageSlot__barFill" style="width:${pct.toFixed(1)}%"></div>
+              <div class="garageSlot__barFill" style="width:${pct.toFixed(1)}%;${barColor?"background:"+barColor:""}"></div>
             </div>
             <div class="garageSlot__row">
-              <div class="garageSlot__meta">${t.desc} · ${formatMoney(car.baseValue)} · ${pct.toFixed(0)}%</div>
+              <div class="garageSlot__meta">
+                <span>💰 ${formatMoney(calcSaleValue(car))}</span>
+                <span style="color:${hasMissingParts?'#ff8c40':'var(--muted2)'}">⏱️ ${(()=>{const s=Math.round(car.timeRemaining??car.repairTime); return s>=60?`${Math.floor(s/60)}m${s%60>0?s%60+'s':''}`:s+'s';})()}</span>
+                <span style="color:#666">${pct.toFixed(0)}%</span>
+              </div>
               ${hasWorker ? `<span class="garageSlot__status garageSlot__status--worker">${workerLabel}</span>` : ""}
             </div>
           </div>
@@ -1450,7 +2019,7 @@ function renderQueue(){
         slot.innerHTML = `
           <div class="garageSlot__num">🔧</div>
           <div class="garageSlot__body">
-            <div class="garageSlot__label">Atelier libre — en attente d'une voiture</div>
+            <div class="garageSlot__label">Emplacement libre</div>
           </div>
         `;
       }
@@ -1458,18 +2027,33 @@ function renderQueue(){
       const car = state.queue[i - 1];
       if(car){
         const t = TIERS[car.tier] || TIERS["F"];
+        const fail = car.failure ? FAILURE_CATEGORIES[car.failure.category] : null;
+        const { ok } = checkPartsAvailability(car.failure?.parts ?? []);
+        const saleVal  = calcSaleValue(car);
+        const estSecs  = calcEstimatedRepairTime(car);
+        const repStr   = estSecs === null ? "—"
+          : estSecs >= 3600 ? `${Math.floor(estSecs/3600)}h${Math.floor((estSecs%3600)/60)}m`
+          : estSecs >= 60   ? `${Math.floor(estSecs/60)}m${estSecs%60 > 0 ? (estSecs%60)+"s" : ""}`
+          : `${estSecs}s`;
         slot.className = "garageSlot garageSlot--occupied";
         slot.innerHTML = `
           <div class="garageSlot__num">${i + 1}</div>
           <div class="garageSlot__body">
             <div class="garageSlot__row">
-              <div style="display:flex;align-items:center;gap:7px;min-width:0">
+              <div style="display:flex;align-items:center;gap:7px;min-width:0;flex-wrap:wrap">
                 <span class="tierBadge" style="background:${t.bg};border-color:${t.border};color:${t.color}">${t.label}</span>
+                ${fail ? `<span class="failBadge" style="color:${fail.color}">${fail.icon} ${car.failure.name}</span>` : ""}
                 <div class="garageSlot__name">${car.name}</div>
               </div>
-              <span class="garageSlot__status garageSlot__status--wait">EN ATTENTE</span>
+              <span class="garageSlot__status ${ok?"garageSlot__status--wait":"garageSlot__status--warn"}">${ok?"EN ATTENTE":"⚠️ PIÈCE MANQUANTE"}</span>
             </div>
-            <div class="garageSlot__meta">${t.desc} · ${formatMoney(car.baseValue)} · ⏱️ ${car.repairTime}s</div>
+            <div class="garageSlot__bar garageSlot__bar--wait">
+              <div class="garageSlot__barFill garageSlot__barFill--wait" style="width:100%"></div>
+            </div>
+            <div class="garageSlot__meta">
+              <span>💰 ${formatMoney(saleVal)}</span>
+              <span>⏱️ ${repStr}</span>
+            </div>
           </div>
         `;
       } else {
@@ -1496,9 +2080,6 @@ function renderActive(){
     activeCarTimeEl.textContent = "—";
     activeCarTierEl.textContent = "—";
     repairBarEl.style.width = "0%";
-    // Mettre à jour le slot atelier dans la grille
-    const activeSlot = garageSlotsEl?.querySelector(".garageSlot--active, .garageSlot--empty");
-    if(activeSlot) renderQueue();
     return;
   }
 
@@ -1512,18 +2093,17 @@ function renderActive(){
   const pct   = total > 0 ? (1 - (left / total)) : 1;
   repairBarEl.style.width = `${(pct * 100).toFixed(1)}%`;
 
-  // Mettre à jour la mini barre dans le slot actif de la grille
-  const fill = garageSlotsEl?.querySelector(".garageSlot--active .garageSlot__barFill");
-  if(fill) fill.style.width = `${(pct * 100).toFixed(1)}%`;
-
-  const metaEl = garageSlotsEl?.querySelector(".garageSlot--active .garageSlot__meta");
+  // Mettre à jour la mini barre dans le slot actif de la grille (refs cachées)
+  if(!_activeBarFill) _activeBarFill = garageSlotsEl?.querySelector(".garageSlot--active .garageSlot__barFill");
+  if(!_activeMetaEl)  _activeMetaEl  = garageSlotsEl?.querySelector(".garageSlot--active .garageSlot__meta");
+  if(_activeBarFill) _activeBarFill.style.width = `${(pct * 100).toFixed(1)}%`;
   const t = TIERS[car.tier] || TIERS["F"];
-  if(metaEl) metaEl.textContent = `${t.desc} · ${formatMoney(car.baseValue)} · ${(pct*100).toFixed(0)}%`;
+  if(_activeMetaEl) _activeMetaEl.textContent = `${t.desc} · ${formatMoney(car.baseValue)} · ${(pct*100).toFixed(0)}%`;
 }
 
 function renderShowroom(){
   showroomListEl.innerHTML = "";
-  const cap = state.showroomCap ?? 3;
+  const cap = getShowroomCap();
   const count = state.showroom.length;
   const isFull = count >= cap;
 
@@ -1547,15 +2127,22 @@ function renderShowroom(){
   for(const car of state.showroom){
     const saleValue = calcSaleValue(car);
     const t = TIERS[car.tier] || TIERS["F"];
+    const fail = car.failure ? FAILURE_CATEGORIES[car.failure.category] : null;
+    const qfx = car.partsQuality ? getQualityEffects(Math.round(car.partsQuality)) : null;
+    const supp = car.partsSupplier ? SUPPLIERS[car.partsSupplier] : null;
     const div = document.createElement("div");
     div.className = "sItem";
     div.innerHTML = `
       <div style="min-width:0;flex:1">
-        <div style="display:flex;align-items:center;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <span class="tierBadge" style="background:${t.bg};border-color:${t.border};color:${t.color}">${t.label}</span>
+          ${fail ? `<span class="failBadge" style="color:${fail.color}">${fail.icon} ${fail.name}</span>` : ""}
           <div class="sItem__name">${car.name}</div>
         </div>
-        <div class="sItem__meta" style="margin-top:4px">${t.desc} — ${formatMoney(saleValue)}</div>
+        <div class="sItem__meta" style="margin-top:4px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <span>${t.desc} — ${formatMoney(saleValue)}</span>
+          ${qfx ? `<span style="color:${qfx.color};font-size:11px">⭐ ${qfx.label}${supp?` · <span style="color:${supp.color}">${supp.icon} ${supp.name}</span>`:""}</span>` : ""}
+        </div>
       </div>
       <button class="sell" data-sell="${car.id}">Vendre</button>
     `;
@@ -1564,20 +2151,449 @@ function renderShowroom(){
 }
 
 function renderUpgrades(){
+  // Ne pas recréer le DOM si l'utilisateur est en train d'éditer un champ dans le panel
+  // Exception : l'onglet stock gère lui-même ses inputs (bouton Enregistrer)
+  if(state.activeTab !== "stock"){
+    const focused = document.activeElement;
+    if(focused && upgradeListEl?.contains(focused) && (focused.tagName === "INPUT" || focused.tagName === "SELECT" || focused.tagName === "TEXTAREA")){
+      return;
+    }
+  }
+
   upgradeListEl.innerHTML = "";
   const totalLvls = state.upgrades.reduce((a,u)=>a+u.lvl,0);
   upgradeLevelEl.textContent = totalLvls;
 
+  // Onglet STOCK → UI dédiée
+  if(state.activeTab === "stock"){
+    renderStockUI();
+    return;
+  }
+
   const filteredUpgrades = state.upgrades.filter(u => u.tab === state.activeTab);
+
+  // Prérequis des upgrades avec dépendances
+  const UPGRADE_PREREQS = {
+    "receptionnaire":  { id: "stagiaire",  lvl: 10 },
+    "vendeur_confirme":{ id: "vendeur",    lvl: 10 },
+  };
 
   for(const u of filteredUpgrades){
     const isMaxed = u.maxLvl !== undefined && u.lvl >= u.maxLvl;
-    const canBuy  = !isMaxed && state.money >= u.cost;
+
+    // Vérifier prérequis
+    const prereq = UPGRADE_PREREQS[u.id];
+    const prereqMet = !prereq || (state.upgrades.find(x => x.id === prereq.id)?.lvl ?? 0) >= prereq.lvl;
+    const prereqUpgrade = prereq ? state.upgrades.find(x => x.id === prereq.id) : null;
+
+    const canBuy  = !isMaxed && prereqMet && state.money >= u.cost;
 
     const maxLvlHtml = u.maxLvl !== undefined
       ? `<div class="item__maxlvl">${isMaxed ? `✅ Niveau maximum atteint (${u.maxLvl})` : `Niveau max : ${u.maxLvl}`}</div>`
       : "";
 
+    const prereqHtml = prereq && !prereqMet
+      ? `<div class="item__prereq">🔒 Nécessite ${prereqUpgrade?.name ?? prereq.id} niv.${prereq.lvl} (actuellement niv.${prereqUpgrade?.lvl ?? 0})</div>`
+      : "";
+
+    const item = document.createElement("div");
+    item.className = `item${prereq && !prereqMet ? " item--locked" : ""}`;
+    item.innerHTML = `
+      <div class="item__left">
+        <div class="item__icon">${u.icon}</div>
+        <div class="item__txt">
+          <div class="item__name">${u.name} <span class="pill">niv. ${u.lvl}</span></div>
+          <div class="item__desc">${u.desc}</div>
+          ${prereqHtml}
+          ${maxLvlHtml}
+        </div>
+      </div>
+      <div class="item__right">
+        <button class="buy" ${canBuy ? "" : "disabled"} data-buy="${u.id}">
+          ${isMaxed ? "Max" : prereq && !prereqMet ? "🔒" : formatMoney(u.cost)}
+        </button>
+      </div>
+    `;
+    upgradeListEl.appendChild(item);
+  }
+}
+
+// =====================
+// STOCK UI
+// =====================
+let _stockView = "stock"; // "stock" | "order" | "upgrades"
+let _stockOrderPart = null; // partId en cours de commande
+
+function renderStockUI(){
+  const el = upgradeListEl;
+  el.innerHTML = "";
+
+  // --- HEADER NAVIGATION ---
+  const nav = document.createElement("div");
+  nav.className = "stockNav";
+  nav.innerHTML = `
+    <button class="stockNav__btn ${_stockView==="stock"?"stockNav__btn--active":""}" data-sview="stock">📦 Stock</button>
+    <button class="stockNav__btn ${_stockView==="order"?"stockNav__btn--active":""}" data-sview="order">🛒 Commander</button>
+    <button class="stockNav__btn ${_stockView==="upgrades"?"stockNav__btn--active":""}" data-sview="upgrades">⬆️ Améliorations</button>
+  `;
+  nav.querySelectorAll("[data-sview]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      _stockView = btn.dataset.sview;
+      _stockOrderPart = null;
+      renderUpgrades();
+    });
+  });
+  el.appendChild(nav);
+
+  if(_stockView === "stock")    renderStockView(el);
+  if(_stockView === "order")    renderOrderView(el);
+  if(_stockView === "upgrades") renderStockUpgradesView(el);
+}
+
+function renderStockView(el){
+  const logLvl = getLogicielLvl();
+
+  // Commandes en cours
+  if(state.orders?.length){
+    const sec = document.createElement("div");
+    sec.className = "stockSection";
+    sec.innerHTML = `<div class="stockSection__title">🚚 Livraisons en cours (${state.orders.length}/${getMaxOrders()})</div>`;
+    for(const order of state.orders){
+      const part = PARTS_CATALOG.find(p => p.id === order.partId);
+      const supp = SUPPLIERS[order.supplierId];
+      const left  = Math.max(0, Math.ceil(order.timeLeft));
+      const mins  = Math.floor(left/60), secs = left%60;
+      const timeStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+      const row = document.createElement("div");
+      row.className = "stockOrderRow";
+      row.dataset.orderId = order.id ?? order.partId + "_" + order.supplierId;
+      row.innerHTML = `
+        <span class="stockOrderRow__supp" style="color:${supp?.color??'#aaa'}">${supp?.icon??''} ${supp?.name??order.supplierId}</span>
+        <span class="stockOrderRow__part">${part?.icon??'📦'} ${part?.name??order.partId} ×${order.qty}</span>
+        <span class="stockOrderRow__time">⏱ ${timeStr}</span>
+      `;
+      sec.appendChild(row);
+    }
+    el.appendChild(sec);
+  }
+
+  // Stock par catégorie
+  const cats = Object.values(FAILURE_CATEGORIES);
+  for(const cat of cats){
+    const catParts = PARTS_CATALOG.filter(p => p.category === cat.id);
+    const sec = document.createElement("div");
+    sec.className = "stockSection";
+    sec.innerHTML = `<div class="stockSection__title" style="color:${cat.color}">${cat.icon} ${cat.name}</div>`;
+
+    for(const part of catParts){
+      const unlocked = isPartUnlocked(part);
+      const slot = state.parts?.[part.id];
+      const qty  = slot?.qty ?? 0;
+      const supp = slot?.supplier ? SUPPLIERS[slot.supplier] : null;
+      const threshold = state.stockSettings?.[part.id]?.threshold ?? 1;
+      const autoSupplier = state.stockSettings?.[part.id]?.autoSupplier ?? null;
+      const isLow  = qty <= threshold && qty > 0;
+      const isEmpty = qty === 0;
+
+      const row = document.createElement("div");
+      row.className = `stockRow ${!unlocked ? "stockRow--locked" : isEmpty ? "stockRow--empty" : isLow ? "stockRow--low" : ""}`;
+
+      if(!unlocked){
+        // Pièce verrouillée — afficher le tier requis
+        const minTier = partTierMin(part);
+        const tData = TIERS[minTier];
+        row.innerHTML = `
+          <span class="stockRow__icon" style="opacity:.4">${part.icon}</span>
+          <span class="stockRow__name" style="opacity:.4">${part.name}</span>
+          <span class="stockRow__tiers">${renderTierRange(part)}</span>
+          <span class="stockRow__locked">🔒 <span style="color:${tData?.color}">${minTier}</span> requis</span>
+        `;
+      } else {
+        // Pièce débloquée
+        const autoIcon = autoSupplier && logLvl >= 3
+          ? `<span class="stockRow__auto" title="Commande auto: ${SUPPLIERS[autoSupplier]?.name}">🤖 ${SUPPLIERS[autoSupplier]?.icon}</span>`
+          : "";
+        row.innerHTML = `
+          <span class="stockRow__icon">${part.icon}</span>
+          <span class="stockRow__name">${part.name}</span>
+          <span class="stockRow__tiers">${renderTierRange(part)}</span>
+          <span class="stockRow__supp">${supp ? `<span style="color:${supp.color}">${supp.icon} ${supp.name}</span>` : '<span style="color:#555">—</span>'}</span>
+          ${autoIcon}
+          <span class="stockRow__qty ${isEmpty?"stockRow__qty--zero":isLow?"stockRow__qty--low":""}">${isEmpty ? "RUPTURE" : `×${qty}`}</span>
+          <button class="stockRow__btn" data-order="${part.id}">🛒</button>
+        `;
+        row.querySelector("[data-order]").addEventListener("click", () => {
+          _stockView = "order";
+          _stockOrderPart = part.id;
+          renderUpgrades();
+        });
+      }
+      sec.appendChild(row);
+    }
+    el.appendChild(sec);
+  }
+}
+
+function renderOrderView(el){
+  const parts = _stockOrderPart
+    ? PARTS_CATALOG.filter(p => p.id === _stockOrderPart)
+    : PARTS_CATALOG;
+
+  // Filtre catégorie si pas de pièce spécifique
+  if(!_stockOrderPart){
+    const filterDiv = document.createElement("div");
+    filterDiv.className = "stockCatFilters";
+    filterDiv.innerHTML = `<span class="stockCatFilter stockCatFilter--active" data-cat="">Toutes</span>` +
+      Object.values(FAILURE_CATEGORIES).map(c =>
+        `<span class="stockCatFilter" data-cat="${c.id}" style="color:${c.color}">${c.icon} ${c.name}</span>`
+      ).join("");
+    filterDiv.querySelectorAll("[data-cat]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        filterDiv.querySelectorAll("[data-cat]").forEach(b => b.classList.remove("stockCatFilter--active"));
+        btn.classList.add("stockCatFilter--active");
+        // re-render juste la liste
+        const listEl = el.querySelector(".stockOrderList");
+        if(listEl) renderOrderList(listEl, btn.dataset.cat || null);
+      });
+    });
+    el.appendChild(filterDiv);
+  } else {
+    const backBtn = document.createElement("button");
+    backBtn.className = "stockBackBtn";
+    backBtn.textContent = "← Retour au stock";
+    backBtn.addEventListener("click", () => { _stockView="stock"; _stockOrderPart=null; renderUpgrades(); });
+    el.appendChild(backBtn);
+  }
+
+  const listEl = document.createElement("div");
+  listEl.className = "stockOrderList";
+  el.appendChild(listEl);
+  renderOrderList(listEl, null);
+}
+
+function renderOrderList(listEl, catFilter){
+  listEl.innerHTML = "";
+  const logLvl = getLogicielLvl();
+  const parts = _stockOrderPart
+    ? PARTS_CATALOG.filter(p => p.id === _stockOrderPart)
+    : catFilter
+      ? PARTS_CATALOG.filter(p => p.category === catFilter)
+      : PARTS_CATALOG;
+
+  for(const part of parts){
+    const cat = FAILURE_CATEGORIES[part.category];
+    const unlocked = isPartUnlocked(part);
+    const minTier = partTierMin(part);
+    const maxTier = partTierMax(part);
+    const tMin = TIERS[minTier], tMax = TIERS[maxTier];
+
+    const sec = document.createElement("div");
+    sec.className = `stockOrderPart ${!unlocked ? "stockOrderPart--locked" : ""}`;
+
+    // État collapsed — persisté dans un Set global
+    if(!window._stockExpanded) window._stockExpanded = new Set();
+    const isCollapsed = !window._stockExpanded.has(part.id);
+
+    // En-tête avec tiers
+    const tierRangeHtml = minTier === maxTier
+      ? `<span class="tierPill" style="color:${tMin?.color}">${minTier}</span>`
+      : `<span class="tierPill" style="color:${tMin?.color}">${minTier}</span><span style="color:#555;font-size:10px">→</span><span class="tierPill" style="color:${tMax?.color}">${maxTier}</span>`;
+
+    const stockQty = state.parts?.[part.id]?.qty ?? 0;
+    const stockColor = stockQty === 0 ? "#ff4d70" : stockQty <= 2 ? "#ffd700" : "#48c78e";
+
+    sec.innerHTML = `
+      <div class="stockOrderPart__head">
+        <span class="stockOrderPart__toggle">${isCollapsed ? "▶" : "▼"}</span>
+        <span class="stockOrderPart__cat" style="color:${cat?.color}">${cat?.icon} ${cat?.name}</span>
+        <span class="stockOrderPart__name">${part.icon} ${part.name}</span>
+        <span class="stockOrderPart__tiers">${tierRangeHtml}</span>
+        <span class="stockOrderPart__stock" style="color:${stockColor}">📦 <b>${stockQty}</b></span>
+        ${!unlocked ? `<span class="stockOrderPart__lock">🔒 <span style="color:${tMin?.color}">${minTier}</span> requis</span>` : ""}
+      </div>
+      <div class="stockOrderPart__body ${isCollapsed ? "stockOrderPart__body--hidden" : ""}">
+        <div class="stockOrderPart__suppliers"></div>
+      </div>
+    `;
+
+    // Toggle click sur le header
+    sec.querySelector(".stockOrderPart__head").addEventListener("click", () => {
+      if(window._stockExpanded.has(part.id)){
+        window._stockExpanded.delete(part.id);
+      } else {
+        window._stockExpanded.add(part.id);
+      }
+      renderUpgrades();
+    });
+
+    if(!unlocked){
+      sec.style.opacity = "0.45";
+      sec.style.pointerEvents = "none";
+      listEl.appendChild(sec);
+      continue;
+    }
+
+    // Panel settings logiciel stock niv 2+
+    const bodyEl = sec.querySelector(".stockOrderPart__body");
+    if(logLvl >= 2 && unlocked){
+      const settings = state.stockSettings?.[part.id] ?? {};
+      const threshold = settings.threshold ?? 1;
+      const autoSupplier = settings.autoSupplier ?? "";
+      const settingsDiv = document.createElement("div");
+      settingsDiv.className = "stockSettingsRow";
+      settingsDiv.innerHTML = `
+        <span class="stockSettingsRow__label">📊 Seuil d'alerte :</span>
+        <input class="stockSettingsRow__input" type="number" min="0" max="20" value="${threshold}" data-setting="threshold" data-pid="${part.id}">
+        ${logLvl >= 3 ? `
+        <span class="stockSettingsRow__label" style="margin-left:10px">🤖 Auto :</span>
+        <select class="stockSettingsRow__select" data-setting="autoSupplier" data-pid="${part.id}">
+          <option value="">— Désactivé</option>
+          ${Object.values(SUPPLIERS).map(s => `<option value="${s.id}" ${autoSupplier===s.id?"selected":""}>${s.icon} ${s.name}</option>`).join("")}
+        </select>` : ""}
+      `;
+      settingsDiv.querySelectorAll("[data-setting]").forEach(input => {
+        input.addEventListener("change", () => {
+          const pid = input.dataset.pid;
+          if(!state.stockSettings) state.stockSettings = {};
+          if(!state.stockSettings[pid]) state.stockSettings[pid] = {};
+          const val = input.dataset.setting === "threshold" ? parseInt(input.value)||0 : input.value;
+          state.stockSettings[pid][input.dataset.setting] = val;
+          showToast(`⚙️ Paramètre mis à jour pour ${part.name}`);
+        });
+      });
+      bodyEl.appendChild(settingsDiv);
+    }
+
+    // Fournisseurs
+    const suppEl = bodyEl.querySelector(".stockOrderPart__suppliers");
+    for(const [sid, supp] of Object.entries(SUPPLIERS)){
+      const price = getPartPrice(part.id, sid);
+      const effQ  = getEffectiveQuality(sid, part.id);
+      const qfx   = getQualityEffects(effQ, sid);
+      const delay = getDeliveryDelay(sid);
+      const delayMins = Math.floor(delay/60);
+      const delaySecs = delay % 60;
+      const delayStr = delayMins >= 1 ? `${delayMins}m${delaySecs>0?' '+delaySecs+'s':''}` : `${delay}s`;
+      const slotsFull = state.orders.length >= getMaxOrders();
+      const canAfford = state.money >= price && !slotsFull;
+      const canAfford5  = state.money >= price*5  && !slotsFull;
+      const canAfford10 = state.money >= price*10 && !slotsFull;
+
+      const specCats = supp.speciality ? (Array.isArray(supp.speciality) ? supp.speciality : [supp.speciality]) : [];
+      const isSpecBonus = specCats.includes(part.category);
+
+      // Bonus/malus concrets depuis costPct/valuePct
+      const costPct  = Math.round((supp.costPct ?? 0) * 100);
+      const valuePct = Math.round((supp.valuePct ?? 0) * 100);
+      const netPct   = valuePct - costPct;
+      const netColor = netPct > 0 ? "#48c78e" : netPct < 0 ? "#ff4d70" : "#666";
+
+      const timeSign  = qfx.timeMult < 1 ? "−" : qfx.timeMult > 1 ? "+" : "";
+      const timePct   = Math.round(Math.abs(qfx.timeMult - 1) * 100);
+      const timeColor = qfx.timeMult < 1 ? "#48c78e" : qfx.timeMult > 1 ? "#ff4d70" : "#666";
+
+      const bonusTags = [];
+      if(costPct > 0)  bonusTags.push(`<span class="supplBonus" style="color:#ff9950">💸 Coût ${costPct}% valeur voiture</span>`);
+      if(valuePct > 0) bonusTags.push(`<span class="supplBonus" style="color:#48c78e">💰 +${valuePct}% valeur revente</span>`);
+      if(netPct !== 0) bonusTags.push(`<span class="supplBonus" style="color:${netColor}">📊 Net ${netPct > 0 ? "+" : ""}${netPct}%</span>`);
+      if(timePct > 0)  bonusTags.push(`<span class="supplBonus" style="color:${timeColor}">⏱ ${timeSign}${timePct}% tps répa</span>`);
+      if(isSpecBonus){
+        const specColor = sid === "ngx" ? "#ff8c00" : "#48c78e";
+        const specIcon  = sid === "ngx" ? "⚡" : "🔧";
+        bonusTags.push(`<span class="supplBonus" style="color:${specColor}">${specIcon} Spécialiste +1 qualité</span>`);
+      }
+      if(supp.noMalus && effQ <= 2) bonusTags.push(`<span class="supplBonus" style="color:#ff7a50">⚡ Livraison 5s fixe · Sans malus qualité</span>`);
+
+      // Badges contextuels (seulement les infos non-redondantes)
+      const badges = [];
+      if(timePct > 0) badges.push(`<span class="supplBadge" style="color:${timeColor}">⏱ ${timeSign}${timePct}% répa</span>`);
+      if(isSpecBonus) badges.push(`<span class="supplBadge" style="color:${sid==="ngx"?"#ff8c00":"#4ec97b"}">${sid==="ngx"?"⚡":"🔧"} Spécialiste</span>`);
+      if(supp.noMalus) badges.push(`<span class="supplBadge" style="color:#ff9950">⚡ 5s · sans malus</span>`);
+
+      const row = document.createElement("div");
+      row.className = `stockSupplRow ${canAfford?"":"stockSupplRow--broke"}`;
+      row.innerHTML = `
+        <div class="stockSupplRow__left">
+          <span class="stockSupplRow__name" style="color:${supp.color}">${supp.icon} ${supp.name}</span>
+          <span class="stockSupplRow__quality" style="color:${qfx.color}">⭐${effQ} ${qfx.label}</span>
+          ${badges.length ? `<div class="stockSupplRow__badges">${badges.join("")}</div>` : ""}
+        </div>
+        <div class="stockSupplRow__mid">
+          <span class="stockSupplRow__stat"><span style="color:#888">Coût</span> <b style="color:#ff9950">${costPct}%</b></span>
+          <span class="stockSupplRow__stat"><span style="color:#888">Gain</span> <b style="color:#48c78e">${valuePct > 0 ? "+"+valuePct+"%" : "—"}</b></span>
+          <span class="stockSupplRow__stat"><span style="color:#888">Net</span> <b style="color:${netColor}">${netPct > 0 ? "+"+netPct+"%" : netPct+"%"}</b></span>
+          <span class="stockSupplRow__stat"><span style="color:#888">Délai</span> <b>🚚 ${delayStr}</b></span>
+        </div>
+        <div class="stockSupplRow__right">
+          <span class="stockSupplRow__price" style="color:${canAfford?"#48c78e":"#ff4d70"}">${formatMoney(price)}</span>
+          <div class="stockSupplRow__btns">
+            <button class="stockSupplRow__buy" data-pid="${part.id}" data-sid="${sid}" data-qty="1"  ${canAfford   ?"":"disabled"}>×1</button>
+            <button class="stockSupplRow__buy" data-pid="${part.id}" data-sid="${sid}" data-qty="5"  ${canAfford5  ?"":"disabled"}>×5</button>
+            <button class="stockSupplRow__buy" data-pid="${part.id}" data-sid="${sid}" data-qty="10" ${canAfford10 ?"":"disabled"}>×10</button>
+          </div>
+        </div>
+      `;
+      row.querySelectorAll("[data-qty]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const ok = orderPart(btn.dataset.pid, btn.dataset.sid, parseInt(btn.dataset.qty));
+          if(ok){ showToast(`🛒 Commande passée : ${part.name} ×${btn.dataset.qty}`); renderUpgrades(); }
+        });
+      });
+      suppEl.appendChild(row);
+    }
+    listEl.appendChild(sec);
+  }
+}
+
+function renderStockUpgradesView(el){
+  const logLvl = getLogicielLvl();
+
+  // Panel paramètres globaux (logiciel niv 3)
+  if(logLvl >= 3){
+    const g = state.stockGlobal ?? {};
+    const panel = document.createElement("div");
+    panel.className = "stockGlobalPanel";
+    panel.innerHTML = `
+      <div class="stockGlobalPanel__title">🤖 Commandes automatiques — Paramètres globaux</div>
+      <div class="stockGlobalPanel__desc">Appliqués à toutes les pièces sauf override individuel</div>
+      <div class="stockGlobalPanel__row">
+        <label class="stockGlobalPanel__label">🏭 Fournisseur par défaut</label>
+        <select class="stockGlobalPanel__select" id="globalSupplierSelect">
+          <option value="">— Désactivé</option>
+          ${Object.values(SUPPLIERS).map(s =>
+            `<option value="${s.id}" ${g.autoSupplier===s.id?"selected":""}>${s.icon} ${s.name}</option>`
+          ).join("")}
+        </select>
+      </div>
+      <div class="stockGlobalPanel__row">
+        <label class="stockGlobalPanel__label">📦 Seuil d'alerte par défaut</label>
+        <input class="stockGlobalPanel__input" id="globalThresholdInput" type="number" min="0" max="20" value="${g.threshold ?? 1}">
+        <span class="stockGlobalPanel__hint">Commande si stock ≤ seuil</span>
+      </div>
+      <div class="stockGlobalPanel__row">
+        <label class="stockGlobalPanel__label">🛒 Quantité commandée</label>
+        <input class="stockGlobalPanel__input" id="globalQtyInput" type="number" min="1" max="20" value="${g.qty ?? 1}">
+        <span class="stockGlobalPanel__hint">Pièces commandées à chaque déclenchement</span>
+      </div>
+      <button class="stockGlobalPanel__save" id="saveGlobalBtn">💾 Enregistrer</button>
+    `;
+    panel.querySelector("#saveGlobalBtn").addEventListener("click", () => {
+      if(!state.stockGlobal) state.stockGlobal = {};
+      state.stockGlobal.autoSupplier = panel.querySelector("#globalSupplierSelect").value;
+      state.stockGlobal.threshold    = parseInt(panel.querySelector("#globalThresholdInput").value) || 0;
+      state.stockGlobal.qty          = Math.max(1, parseInt(panel.querySelector("#globalQtyInput").value) || 1);
+      save();
+      showToast("✅ Paramètres globaux sauvegardés");
+    });
+    el.appendChild(panel);
+  }
+
+  const stockUpgrades = state.upgrades.filter(u => u.tab === "stock");
+  for(const u of stockUpgrades){
+    const isMaxed = u.maxLvl !== undefined && u.lvl >= u.maxLvl;
+    const canBuy  = !isMaxed && state.money >= u.cost;
+    const maxLvlHtml = u.maxLvl !== undefined
+      ? `<div class="item__maxlvl">${isMaxed ? `✅ Max (${u.maxLvl})` : `Max : ${u.maxLvl}`}</div>` : "";
     const item = document.createElement("div");
     item.className = "item";
     item.innerHTML = `
@@ -1590,12 +2606,12 @@ function renderUpgrades(){
         </div>
       </div>
       <div class="item__right">
-        <button class="buy" ${canBuy ? "" : "disabled"} data-buy="${u.id}">
+        <button class="buy" ${canBuy?"":"disabled"} data-buy="${u.id}">
           ${isMaxed ? "Max" : formatMoney(u.cost)}
         </button>
       </div>
     `;
-    upgradeListEl.appendChild(item);
+    el.appendChild(item);
   }
 }
 
@@ -1614,6 +2630,10 @@ document.querySelector(".tabs").addEventListener("click", (e) => {
 
 function renderAll(){
   applyTalentEffects();
+  // Sync visuel de l'onglet actif
+  document.querySelectorAll(".tab").forEach(t => {
+    t.classList.toggle("tab--active", t.getAttribute("data-tab") === state.activeTab);
+  });
   renderTop();
   renderQueue();
   renderActive();
@@ -1622,6 +2642,13 @@ function renderAll(){
   renderGarageProgress();
   renderTalentsUI();
   renderPrestigeNotif();
+  // Badge alerte stock (logiciel stock niv 1+)
+  const stockTab = document.querySelector(".tab[data-tab='stock']");
+  if(stockTab){
+    let dot = stockTab.querySelector(".stockAlertDot");
+    if(!dot){ dot = document.createElement("span"); dot.className = "stockAlertDot"; stockTab.appendChild(dot); }
+    dot.style.display = hasStockAlert() ? "inline-block" : "none";
+  }
 }
 
 // =====================
@@ -1837,19 +2864,47 @@ function tryStartNextRepair(){
   state.active = next;
 }
 
+// Temps de réparation estimé en tenant compte de tous les multiplicateurs actifs
+function calcEstimatedRepairTime(car){
+  const partsMult  = getPartsSpeedMult(car);           // 0.5 si pièce manquante, sinon timeMult qualité
+  const speedMult  = (state.speedMult ?? 1) * (state.talentSpeedMult ?? 1) * partsMult;
+  const secPerSec  = (state.repairAuto + (state.talentRepairAuto ?? 0)) * speedMult;
+  if(secPerSec <= 0) return null;                      // pas de réparation auto active
+  return Math.round(car.repairTime / secPerSec);       // secondes réelles estimées
+}
+
 function calcSaleValue(car){
   const bonus = 1 + state.saleBonusPct + (state.talentSaleBonus ?? 0);
-  return Math.round(car.baseValue * bonus);
+  const partsMult = getPartsValueMult(car);
+  const rareTiers = ["S","SS","SSS","SSS+"];
+  const rareMult  = rareTiers.includes(car.tier) ? (state.talentRareMult ?? 1) : 1;
+  return Math.round(car.baseValue * bonus * partsMult * rareMult);
 }
 
 function finishRepair(){
   state._lastRepairedTier = state.active.tier;
-  const cap = state.showroomCap ?? 3;
+  const cap = getShowroomCap();
   if(state.showroom.length >= cap){
-    // Showroom plein — on ne peut pas déposer, on attend
     return;
   }
-  state.showroom.unshift(state.active);
+
+  // Consommer les pièces et enregistrer la qualité sur la voiture
+  const car = state.active;
+  if(car.failure?.parts?.length){
+    const avgQuality = consumeParts(car.failure.parts, car);
+    if(avgQuality !== null){
+      car.partsQuality = avgQuality;
+      // Récupère le fournisseur de la première pièce utilisée
+      const firstPart = car.failure.parts[0];
+      car.partsSupplier = state.parts?.[firstPart]?.supplier ?? null;
+    } else {
+      // Pièce manquante → qualité pénalisée
+      car.partsQuality = 2.5;
+      car.partsSupplier = null;
+    }
+  }
+
+  state.showroom.unshift(car);
   state.active = null;
   state.totalRepairs = (state.totalRepairs ?? 0) + 1;
   tryStartNextRepair();
@@ -1885,7 +2940,7 @@ btnAnalyze.addEventListener("click", () => {
   const occupied = (state.active ? 1 : 0) + state.queue.length;
   if (occupied >= state.garageCap) return;
 
-  const diagGain = state.diagReward + (state.talentDiagBonus ?? 0);
+  const diagGain = Math.round((state.diagReward + (state.talentDiagBonus ?? 0)) * (state.talentDiagMult ?? 1));
   state.money += diagGain;
   state.totalMoneyEarned = (state.totalMoneyEarned ?? 0) + diagGain;
   state.totalAnalyses = (state.totalAnalyses ?? 0) + 1;
@@ -1941,7 +2996,7 @@ upgradeListEl.addEventListener("click", (e) => {
   if(!btn) return;
 
   const id = btn.getAttribute("data-buy");
-  const u = state.upgrades.find(x => x.id === id);
+  const u = getUpgrade(id);
   if(!u) return;
   if(state.money < u.cost) return;
   if(u.maxLvl !== undefined && u.lvl >= u.maxLvl) return;
@@ -1971,14 +3026,15 @@ if(id === "apprenti" || id === "mecanicien") recalcRepairAuto();
   // coût scale
   u.cost = Math.ceil(u.cost * 1.25);
 
+  rebuildUpgradeMap();
   renderAll();
 });
 
 function recalcRepairAuto(){
-  const apprentiLvl   = state.upgrades.find(u => u.id === "apprenti")?.lvl   || 0;
-  const mecanicienLvl = state.upgrades.find(u => u.id === "mecanicien")?.lvl || 0;
-  // Nerfé : apprenti 0.15s/s (était 0.3), mécanicien 0.5s/s (était 1.0)
-  state.repairAuto = (apprentiLvl * 0.15) + (mecanicienLvl * 0.5);
+  const apprentiLvl   = getUpgrade("apprenti")?.lvl   || 0;
+  const mecanicienLvl = getUpgrade("mecanicien")?.lvl || 0;
+  const heritageAuto  = state.heritageBonuses?.autoBonus ?? 0;
+  state.repairAuto = heritageAuto + (apprentiLvl * 0.15) + (mecanicienLvl * 0.5);
 }
 
 // =====================
@@ -1988,32 +3044,47 @@ let last = performance.now();
 let autoAnalyzeTimer = 0;
 let autoSellTimer = 0;
 let achCheckTimer = 0;
+let stockTimerAccu = 0;
+
+// Cache O(1) pour les lookups upgrades fréquents — reconstruit après chaque achat/prestige
+let _upgradeMap = {};
+function rebuildUpgradeMap(){
+  _upgradeMap = {};
+  for(const u of state.upgrades) _upgradeMap[u.id] = u;
+}
+function getUpgrade(id){ return _upgradeMap[id] ?? state.upgrades.find(u => u.id === id); }
 
 function tick(now){
-  const dt = (now - last) / 1000;
+  const dt = Math.min((now - last) / 1000, 5); // max 5s pour éviter les spikes d'onglet inactif
   last = now;
 
   const passiveGain = state.moneyPerSec * dt;
   state.money += passiveGain;
   state.totalMoneyEarned = (state.totalMoneyEarned ?? 0) + passiveGain;
 
+  // Traitement des livraisons de pièces
+  processOrders(dt);
+  processAutoOrders(dt);
+
   if(state.active){
-    const mult = (state.speedMult ?? 1) * (state.talentSpeedMult ?? 1);
-    const secPerSec = state.repairAuto * mult;
+    const partsMult = getPartsSpeedMult(state.active);
+    const mult = (state.speedMult ?? 1) * (state.talentSpeedMult ?? 1) * partsMult;
+    const secPerSec = (state.repairAuto + (state.talentRepairAuto ?? 0)) * mult;
     applyRepairTime(secPerSec * dt);
   } else {
     tryStartNextRepair();
   }
 
   // --- LOGIQUE D'AUTOMATISATION ---
-  const stagiaireLvl = state.upgrades.find(u => u.id === "stagiaire")?.lvl || 0;
+  const stagiaireLvl      = getUpgrade("stagiaire")?.lvl      || 0;
+  const receptionnaireLvl = getUpgrade("receptionnaire")?.lvl || 0;
   if (stagiaireLvl > 0) {
     autoAnalyzeTimer += dt;
-    // Nerfé : démarre à 12s, descend à 6s max (niveau 5 = ~9s, niveau 10 = 6s)
-    const delay = Math.max(6, 12 - (stagiaireLvl * 0.6));
+    // Stagiaire seul : 12s → 6s min. Réceptionnaire réduit encore jusqu'à 1s min
+    let delay = Math.max(6, 12 - (stagiaireLvl * 0.6));
+    if (receptionnaireLvl > 0) delay = Math.max(1, delay - (receptionnaireLvl * 0.5));
     if (autoAnalyzeTimer >= delay) {
       autoAnalyzeTimer = 0;
-      // Utilise la même limite que le bouton manuel : queue < garageCap - 1
       const occupied = (state.active ? 1 : 0) + state.queue.length;
       if (occupied < state.garageCap) {
         document.getElementById("btnAnalyze").click();
@@ -2021,11 +3092,13 @@ function tick(now){
     }
   }
 
-  const vendeurLvl = state.upgrades.find(u => u.id === "vendeur")?.lvl || 0;
+  const vendeurLvl         = getUpgrade("vendeur")?.lvl          || 0;
+  const vendeurConfirmeLvl = getUpgrade("vendeur_confirme")?.lvl || 0;
   if (vendeurLvl > 0 && state.showroom.length > 0) {
     autoSellTimer += dt;
-    // Nerfé : démarre à 15s, descend à 8s max
-    const delay = Math.max(8, 15 - (vendeurLvl * 0.7));
+    // Vendeur seul : 15s → 8s min. Vendeur Confirmé réduit encore jusqu'à 1s min
+    let delay = Math.max(8, 15 - (vendeurLvl * 0.7));
+    if (vendeurConfirmeLvl > 0) delay = Math.max(1, delay - (vendeurConfirmeLvl * 0.7));
     if (autoSellTimer >= delay) {
       autoSellTimer = 0;
       const firstCarSellBtn = document.querySelector("#showroomList .sell");
@@ -2036,9 +3109,18 @@ function tick(now){
   renderTop();
   renderActive();
 
+  // Actualise le stock (timers livraison) toutes les secondes si l'onglet est visible
+  stockTimerAccu += dt;
+  if(stockTimerAccu >= 1){
+    stockTimerAccu = 0;
+    if(state.activeTab === "stock" && (_stockView === "stock" || _stockView === "order")){
+      renderStockUI();
+    }
+  }
+
   // Met à jour uniquement l'état disabled des boutons d'upgrade (sans recréer le DOM)
   upgradeListEl?.querySelectorAll("[data-buy]").forEach(btn => {
-    const u = state.upgrades.find(x => x.id === btn.dataset.buy);
+    const u = getUpgrade(btn.dataset.buy);
     if(!u) return;
     const isMaxed = u.maxLvl !== undefined && u.lvl >= u.maxLvl;
     btn.disabled = isMaxed || state.money < u.cost;
@@ -2066,7 +3148,7 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const _supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let currentUser = null;
-let _authReady  = false; // empêche le tick de sauvegarder avant que la session soit connue
+let _authReady = false; // empêche le tick de sauvegarder avant que la session soit connue
 
 // Unique point d'entrée pour toute la gestion de session
 _supa.auth.onAuthStateChange(async (event, session) => {
@@ -2076,7 +3158,6 @@ _supa.auth.onAuthStateChange(async (event, session) => {
 
   if(event === "INITIAL_SESSION" || event === "SIGNED_IN"){
     if(currentUser){
-      // Petit délai pour laisser le token JWT se stabiliser
       await new Promise(r => setTimeout(r, 300));
       await cloudLoad();
     } else {
@@ -2253,7 +3334,7 @@ document.getElementById("signupPwdConfirm")?.addEventListener("keydown", (e) => 
 // =====================
 // SAVE / LOAD — Supabase direct + LocalStorage fallback
 // =====================
-const SAVE_KEY = "garage_idle_save_v2";
+const SAVE_KEY = "garage_idle_save_v3";
 
 // Données à sauvegarder
 function buildSavePayload(){
@@ -2283,6 +3364,10 @@ function buildSavePayload(){
     totalAnalyses:      state.totalAnalyses,
     totalClickRepairs:  state.totalClickRepairs,
     totalCarsSold:      state.totalCarsSold,
+    parts:              state.parts ?? {},
+    orders:             state.orders ?? [],
+    stockSettings:      state.stockSettings ?? {},
+    stockGlobal:        state.stockGlobal ?? {},
     sessionStart:       state.sessionStart,
     profile:            state.profile,
     achievements:       state.achievements,
@@ -2317,7 +3402,7 @@ function applySaveData(data){
   if(typeof state.talents !== "object" || !state.talents) state.talents = {};
   if(typeof state.talentLevelGranted !== "number") state.talentLevelGranted = state.garageLevel ?? 1;
   if(!state.activeTab)  state.activeTab  = "tools";
-  state.activeTab = "tools"; // toujours reset sur "tools" au chargement
+  // Ne pas forcer tools — on respecte l'onglet sauvegardé
   if(!state.garageName) state.garageName = "Garage Turbo";
   if(!state.profile || typeof state.profile !== "object") state.profile = { pseudo:"Mécanicien", avatar:"🔧", country:"FR", banner:"#1a2a4a" };
   else {
@@ -2327,6 +3412,10 @@ function applySaveData(data){
     state.profile.banner  = state.profile.banner  || "#1a2a4a";
   }
   if(!state.achievements || typeof state.achievements !== "object") state.achievements = {};
+  if(!state.parts  || typeof state.parts  !== "object") state.parts  = {};
+  if(!Array.isArray(state.orders)) state.orders = [];
+  if(!state.stockSettings || typeof state.stockSettings !== "object") state.stockSettings = {};
+  if(!state.stockGlobal   || typeof state.stockGlobal   !== "object") state.stockGlobal   = {};
   if(typeof state.prestigeCount  !== "number") state.prestigeCount  = 0;
   if(typeof state.heritagePoints !== "number") state.heritagePoints = 0;
   if(typeof state.heritageSpent  !== "number") state.heritageSpent  = 0;
@@ -2339,6 +3428,8 @@ function applySaveData(data){
   applyGarageName();
   applyTalentEffects();
   recalcRepairAuto();
+  rebuildUpgradeMap();
+  resetPendingAchievements();
   updateGarageLevel();
   updateTopbarProfile();
 }
@@ -2394,7 +3485,9 @@ async function cloudLoad(){
     if(error) throw error;
     if(data?.save_data){
       console.log("[cloudLoad] save trouvée, application...");
+      const currentTab = state.activeTab; // préserver l'onglet actif
       applySaveData(data.save_data);
+      if(currentTab) state.activeTab = currentTab;
       localSave();
       showSaveIndicator("☁️ Partie chargée");
     } else {
@@ -2579,112 +3672,240 @@ document.getElementById("profileCountry")?.addEventListener("change", updateProf
 // =====================
 const ACHIEVEMENTS = [
   // ── VENTES ──────────────────────────────────────────
-  { id:"sell_1",      cat:"Ventes",      icon:"🚗", name:"Premier Client",         desc:"Vendre 1 voiture",                     cond:s=>s.carsSold>=1,        reward:{rep:5,   money:0,      talent:0} },
-  { id:"sell_10",     cat:"Ventes",      icon:"🚗", name:"Petit Commerce",          desc:"Vendre 10 voitures",                   cond:s=>s.carsSold>=10,       reward:{rep:10,  money:500,    talent:0} },
-  { id:"sell_50",     cat:"Ventes",      icon:"🚙", name:"Vendeur Confirmé",        desc:"Vendre 50 voitures",                   cond:s=>s.carsSold>=50,       reward:{rep:25,  money:2000,   talent:1} },
-  { id:"sell_100",    cat:"Ventes",      icon:"🚙", name:"Centenaire",              desc:"Vendre 100 voitures",                  cond:s=>s.carsSold>=100,      reward:{rep:50,  money:5000,   talent:1} },
-  { id:"sell_250",    cat:"Ventes",      icon:"🏎️", name:"Série Noire",             desc:"Vendre 250 voitures",                  cond:s=>s.carsSold>=250,      reward:{rep:100, money:10000,  talent:1} },
-  { id:"sell_500",    cat:"Ventes",      icon:"🏎️", name:"Demi-Millier",            desc:"Vendre 500 voitures",                  cond:s=>s.carsSold>=500,      reward:{rep:200, money:25000,  talent:2} },
-  { id:"sell_1000",   cat:"Ventes",      icon:"🏁", name:"Mille Voitures",          desc:"Vendre 1 000 voitures",                cond:s=>s.carsSold>=1000,     reward:{rep:400, money:50000,  talent:2} },
-  { id:"sell_5000",   cat:"Ventes",      icon:"🏁", name:"Tycoon de l'Occasion",    desc:"Vendre 5 000 voitures",                cond:s=>s.carsSold>=5000,     reward:{rep:1000,money:200000, talent:3} },
-  { id:"sell_10000",  cat:"Ventes",      icon:"👑", name:"Empire de l'Auto",        desc:"Vendre 10 000 voitures",               cond:s=>s.carsSold>=10000,    reward:{rep:2000,money:500000, talent:5} },
-  { id:"sell_50000",  cat:"Ventes",      icon:"👑", name:"Légende Vivante",         desc:"Vendre 50 000 voitures",               cond:s=>s.carsSold>=50000,    reward:{rep:5000,money:1000000,talent:10} },
+  { id:"sell_1",       cat:"Ventes",       icon:"🚗", name:"Premier Client",           desc:"Vendre 1 voiture",                          cond:s=>s.carsSold>=1,         reward:{rep:5,    money:100,     talent:1} },
+  { id:"sell_10",      cat:"Ventes",       icon:"🚗", name:"Petit Commerce",            desc:"Vendre 10 voitures",                        cond:s=>s.carsSold>=10,        reward:{rep:15,   money:500,     talent:0} },
+  { id:"sell_25",      cat:"Ventes",       icon:"🚙", name:"En Rythme",                 desc:"Vendre 25 voitures",                        cond:s=>s.carsSold>=25,        reward:{rep:25,   money:1000,    talent:0} },
+  { id:"sell_50",      cat:"Ventes",       icon:"🚙", name:"Vendeur Confirmé",          desc:"Vendre 50 voitures",                        cond:s=>s.carsSold>=50,        reward:{rep:40,   money:2500,    talent:0} },
+  { id:"sell_100",     cat:"Ventes",       icon:"🚙", name:"Centenaire",                desc:"Vendre 100 voitures",                       cond:s=>s.carsSold>=100,       reward:{rep:75,   money:6000,    talent:0} },
+  { id:"sell_250",     cat:"Ventes",       icon:"🏎️", name:"Série Noire",              desc:"Vendre 250 voitures",                       cond:s=>s.carsSold>=250,       reward:{rep:150,  money:15000,   talent:0} },
+  { id:"sell_500",     cat:"Ventes",       icon:"🏎️", name:"Demi-Millier",             desc:"Vendre 500 voitures",                       cond:s=>s.carsSold>=500,       reward:{rep:300,  money:30000,   talent:1} },
+  { id:"sell_1000",    cat:"Ventes",       icon:"🏁", name:"Mille Voitures",            desc:"Vendre 1 000 voitures",                     cond:s=>s.carsSold>=1000,      reward:{rep:600,  money:75000,   talent:1} },
+  { id:"sell_2500",    cat:"Ventes",       icon:"🏁", name:"Concessionnaire",           desc:"Vendre 2 500 voitures",                     cond:s=>s.carsSold>=2500,      reward:{rep:1200, money:200000,  talent:1} },
+  { id:"sell_5000",    cat:"Ventes",       icon:"🏁", name:"Tycoon de l'Occasion",      desc:"Vendre 5 000 voitures",                     cond:s=>s.carsSold>=5000,      reward:{rep:2500, money:500000,  talent:2} },
+  { id:"sell_10000",   cat:"Ventes",       icon:"👑", name:"Empire de l'Auto",          desc:"Vendre 10 000 voitures",                    cond:s=>s.carsSold>=10000,     reward:{rep:5000, money:1000000, talent:3} },
+  { id:"sell_50000",   cat:"Ventes",       icon:"👑", name:"Légende Vivante",           desc:"Vendre 50 000 voitures",                    cond:s=>s.carsSold>=50000,     reward:{rep:15000,money:3000000, talent:5} },
 
   // ── ARGENT ──────────────────────────────────────────
-  { id:"money_1k",    cat:"Argent",      icon:"💰", name:"Premier Billet",          desc:"Avoir 1 000 € en caisse",              cond:s=>s.money>=1000,        reward:{rep:5,   money:0,      talent:0} },
-  { id:"money_10k",   cat:"Argent",      icon:"💰", name:"Petite Épargne",          desc:"Avoir 10 000 € en caisse",             cond:s=>s.money>=10000,       reward:{rep:15,  money:0,      talent:0} },
-  { id:"money_100k",  cat:"Argent",      icon:"💵", name:"Cent Mille",              desc:"Avoir 100 000 € en caisse",            cond:s=>s.money>=100000,      reward:{rep:50,  money:0,      talent:1} },
-  { id:"money_1m",    cat:"Argent",      icon:"💵", name:"Millionnaire",            desc:"Avoir 1 000 000 € en caisse",          cond:s=>s.money>=1000000,     reward:{rep:200, money:0,      talent:2} },
-  { id:"money_10m",   cat:"Argent",      icon:"💎", name:"Dizaine de Millions",     desc:"Avoir 10 000 000 € en caisse",         cond:s=>s.money>=10000000,    reward:{rep:500, money:0,      talent:3} },
-  { id:"money_1b",    cat:"Argent",      icon:"💎", name:"Milliardaire",            desc:"Avoir 1 000 000 000 € en caisse",      cond:s=>s.money>=1000000000,  reward:{rep:2000,money:0,      talent:5} },
-  { id:"passive_10",  cat:"Argent",      icon:"📈", name:"Rente Modeste",           desc:"Atteindre 10 €/s de revenu passif",    cond:s=>s.moneyPerSec>=10,    reward:{rep:20,  money:5000,   talent:0} },
-  { id:"passive_100", cat:"Argent",      icon:"📈", name:"Flux Continu",            desc:"Atteindre 100 €/s de revenu passif",   cond:s=>s.moneyPerSec>=100,   reward:{rep:100, money:20000,  talent:1} },
-  { id:"passive_1k",  cat:"Argent",      icon:"📊", name:"Machine à Cash",          desc:"Atteindre 1 000 €/s de revenu passif", cond:s=>s.moneyPerSec>=1000,  reward:{rep:500, money:100000, talent:2} },
+  { id:"money_500",    cat:"Argent",       icon:"💶", name:"Premiers Sous",             desc:"Avoir 500 € en caisse",                     cond:s=>s.money>=500,          reward:{rep:5,    money:0,       talent:0} },
+  { id:"money_1k",     cat:"Argent",       icon:"💰", name:"Premier Billet",            desc:"Avoir 1 000 € en caisse",                   cond:s=>s.money>=1000,         reward:{rep:10,   money:0,       talent:0} },
+  { id:"money_5k",     cat:"Argent",       icon:"💰", name:"Petite Réserve",            desc:"Avoir 5 000 € en caisse",                   cond:s=>s.money>=5000,         reward:{rep:15,   money:0,       talent:0} },
+  { id:"money_10k",    cat:"Argent",       icon:"💰", name:"Petite Épargne",            desc:"Avoir 10 000 € en caisse",                  cond:s=>s.money>=10000,        reward:{rep:25,   money:0,       talent:0} },
+  { id:"money_50k",    cat:"Argent",       icon:"💵", name:"Cinquante Mille",           desc:"Avoir 50 000 € en caisse",                  cond:s=>s.money>=50000,        reward:{rep:60,   money:0,       talent:0} },
+  { id:"money_100k",   cat:"Argent",       icon:"💵", name:"Cent Mille",                desc:"Avoir 100 000 € en caisse",                 cond:s=>s.money>=100000,       reward:{rep:120,  money:0,       talent:0} },
+  { id:"money_500k",   cat:"Argent",       icon:"💵", name:"Demi-Million",              desc:"Avoir 500 000 € en caisse",                 cond:s=>s.money>=500000,       reward:{rep:300,  money:0,       talent:0} },
+  { id:"money_1m",     cat:"Argent",       icon:"💎", name:"Millionnaire",              desc:"Avoir 1 000 000 € en caisse",               cond:s=>s.money>=1000000,      reward:{rep:600,  money:0,       talent:1} },
+  { id:"money_10m",    cat:"Argent",       icon:"💎", name:"Dizaine de Millions",       desc:"Avoir 10 000 000 € en caisse",              cond:s=>s.money>=10000000,     reward:{rep:2000, money:0,       talent:2} },
+  { id:"money_1b",     cat:"Argent",       icon:"💎", name:"Milliardaire",              desc:"Avoir 1 000 000 000 € en caisse",           cond:s=>s.money>=1000000000,   reward:{rep:8000, money:0,       talent:3} },
+  { id:"passive_5",    cat:"Argent",       icon:"📈", name:"Premiers Intérêts",         desc:"Atteindre 5 €/s de revenu passif",          cond:s=>s.moneyPerSec>=5,      reward:{rep:10,   money:2000,    talent:0} },
+  { id:"passive_10",   cat:"Argent",       icon:"📈", name:"Rente Modeste",             desc:"Atteindre 10 €/s de revenu passif",         cond:s=>s.moneyPerSec>=10,     reward:{rep:25,   money:5000,    talent:0} },
+  { id:"passive_50",   cat:"Argent",       icon:"📈", name:"Flux Régulier",             desc:"Atteindre 50 €/s de revenu passif",         cond:s=>s.moneyPerSec>=50,     reward:{rep:60,   money:15000,   talent:0} },
+  { id:"passive_100",  cat:"Argent",       icon:"📈", name:"Flux Continu",              desc:"Atteindre 100 €/s de revenu passif",        cond:s=>s.moneyPerSec>=100,    reward:{rep:150,  money:30000,   talent:0} },
+  { id:"passive_500",  cat:"Argent",       icon:"📊", name:"Rente Confortable",         desc:"Atteindre 500 €/s de revenu passif",        cond:s=>s.moneyPerSec>=500,    reward:{rep:400,  money:80000,   talent:1} },
+  { id:"passive_1k",   cat:"Argent",       icon:"📊", name:"Machine à Cash",            desc:"Atteindre 1 000 €/s de revenu passif",      cond:s=>s.moneyPerSec>=1000,   reward:{rep:1000, money:200000,  talent:2} },
+  { id:"earned_1m",    cat:"Argent",       icon:"🏦", name:"Un Million Gagné",          desc:"Avoir gagné 1 000 000 € au total",          cond:s=>(s.totalMoneyEarned??0)>=1000000,   reward:{rep:300,  money:0,       talent:0} },
+  { id:"earned_100m",  cat:"Argent",       icon:"🏦", name:"Cent Millions Gagnés",      desc:"Avoir gagné 100 000 000 € au total",        cond:s=>(s.totalMoneyEarned??0)>=100000000, reward:{rep:2000, money:0,       talent:2} },
 
   // ── RÉPUTATION ──────────────────────────────────────
-  { id:"rep_10",      cat:"Réputation",  icon:"⭐", name:"Débutant Connu",          desc:"Atteindre 10 REP",                     cond:s=>s.rep>=10,            reward:{rep:0,   money:100,    talent:0} },
-  { id:"rep_100",     cat:"Réputation",  icon:"⭐", name:"Réputation Locale",       desc:"Atteindre 100 REP",                    cond:s=>s.rep>=100,           reward:{rep:0,   money:500,    talent:0} },
-  { id:"rep_500",     cat:"Réputation",  icon:"🌟", name:"Garage Reconnu",          desc:"Atteindre 500 REP",                    cond:s=>s.rep>=500,           reward:{rep:0,   money:2000,   talent:1} },
-  { id:"rep_2000",    cat:"Réputation",  icon:"🌟", name:"Expert Régional",         desc:"Atteindre 2 000 REP",                  cond:s=>s.rep>=2000,          reward:{rep:0,   money:8000,   talent:1} },
-  { id:"rep_10000",   cat:"Réputation",  icon:"💫", name:"Célébrité Nationale",     desc:"Atteindre 10 000 REP",                 cond:s=>s.rep>=10000,         reward:{rep:0,   money:50000,  talent:2} },
-  { id:"rep_50000",   cat:"Réputation",  icon:"💫", name:"Icône Mondiale",          desc:"Atteindre 50 000 REP",                 cond:s=>s.rep>=50000,         reward:{rep:0,   money:200000, talent:3} },
-  { id:"rep_200000",  cat:"Réputation",  icon:"🔱", name:"Légende de l'Asphalte",   desc:"Atteindre 200 000 REP",                cond:s=>s.rep>=200000,        reward:{rep:0,   money:1000000,talent:5} },
+  { id:"rep_10",       cat:"Réputation",   icon:"⭐", name:"Débutant Connu",            desc:"Atteindre 10 REP",                          cond:s=>s.rep>=10,             reward:{rep:0,    money:200,     talent:0} },
+  { id:"rep_50",       cat:"Réputation",   icon:"⭐", name:"Bouche à Oreille",          desc:"Atteindre 50 REP",                          cond:s=>s.rep>=50,             reward:{rep:0,    money:500,     talent:0} },
+  { id:"rep_100",      cat:"Réputation",   icon:"⭐", name:"Réputation Locale",         desc:"Atteindre 100 REP",                         cond:s=>s.rep>=100,            reward:{rep:0,    money:1000,    talent:0} },
+  { id:"rep_500",      cat:"Réputation",   icon:"🌟", name:"Garage Reconnu",            desc:"Atteindre 500 REP",                         cond:s=>s.rep>=500,            reward:{rep:0,    money:4000,    talent:0} },
+  { id:"rep_2000",     cat:"Réputation",   icon:"🌟", name:"Expert Régional",           desc:"Atteindre 2 000 REP",                       cond:s=>s.rep>=2000,           reward:{rep:0,    money:12000,   talent:0} },
+  { id:"rep_10000",    cat:"Réputation",   icon:"💫", name:"Célébrité Nationale",       desc:"Atteindre 10 000 REP",                      cond:s=>s.rep>=10000,          reward:{rep:0,    money:60000,   talent:1} },
+  { id:"rep_50000",    cat:"Réputation",   icon:"💫", name:"Icône Mondiale",            desc:"Atteindre 50 000 REP",                      cond:s=>s.rep>=50000,          reward:{rep:0,    money:250000,  talent:2} },
+  { id:"rep_200000",   cat:"Réputation",   icon:"🔱", name:"Légende de l'Asphalte",     desc:"Atteindre 200 000 REP",                     cond:s=>s.rep>=200000,         reward:{rep:0,    money:1000000, talent:3} },
 
   // ── TIERS ────────────────────────────────────────────
-  { id:"tier_D",      cat:"Tiers",       icon:"🔓", name:"Véhicules Communs",       desc:"Débloquer le tier D",                  cond:s=>s.rep>=80,            reward:{rep:10,  money:1000,   talent:0} },
-  { id:"tier_C",      cat:"Tiers",       icon:"🔓", name:"Compactes Sportives",     desc:"Débloquer le tier C",                  cond:s=>s.rep>=300,           reward:{rep:20,  money:3000,   talent:0} },
-  { id:"tier_B",      cat:"Tiers",       icon:"🔓", name:"Sportives & Youngtimers", desc:"Débloquer le tier B",                  cond:s=>s.rep>=1500,          reward:{rep:50,  money:10000,  talent:1} },
-  { id:"tier_A",      cat:"Tiers",       icon:"🔓", name:"Luxe & SUV Premium",      desc:"Débloquer le tier A",                  cond:s=>s.rep>=6000,          reward:{rep:100, money:30000,  talent:1} },
-  { id:"tier_S",      cat:"Tiers",       icon:"🌠", name:"Sportives Prestige",      desc:"Débloquer le tier S",                  cond:s=>s.rep>=20000,         reward:{rep:200, money:100000, talent:2} },
-  { id:"tier_SS",     cat:"Tiers",       icon:"🌠", name:"Supercars",               desc:"Débloquer le tier SS",                 cond:s=>s.rep>=70000,         reward:{rep:500, money:300000, talent:3} },
-  { id:"tier_SSS",    cat:"Tiers",       icon:"💥", name:"Hypercars Rares",         desc:"Débloquer le tier SSS",                cond:s=>s.rep>=200000,        reward:{rep:1000,money:1000000,talent:5} },
-  { id:"tier_SSSp",   cat:"Tiers",       icon:"💥", name:"Mythiques",               desc:"Débloquer le tier SSS+",               cond:s=>s.rep>=600000,        reward:{rep:5000,money:5000000,talent:10} },
+  { id:"tier_D",       cat:"Tiers",        icon:"🔓", name:"Véhicules Communs",         desc:"Débloquer le tier D",                       cond:s=>s.rep>=80,             reward:{rep:10,   money:1000,    talent:0} },
+  { id:"tier_C",       cat:"Tiers",        icon:"🔓", name:"Compactes Sportives",       desc:"Débloquer le tier C",                       cond:s=>s.rep>=300,            reward:{rep:20,   money:3000,    talent:0} },
+  { id:"tier_B",       cat:"Tiers",        icon:"🔓", name:"Sportives & Youngtimers",   desc:"Débloquer le tier B",                       cond:s=>s.rep>=1500,           reward:{rep:50,   money:12000,   talent:0} },
+  { id:"tier_A",       cat:"Tiers",        icon:"🔓", name:"Luxe & SUV Premium",        desc:"Débloquer le tier A",                       cond:s=>s.rep>=6000,           reward:{rep:100,  money:40000,   talent:0} },
+  { id:"tier_S",       cat:"Tiers",        icon:"🌠", name:"Sportives Prestige",        desc:"Débloquer le tier S",                       cond:s=>s.rep>=20000,          reward:{rep:200,  money:120000,  talent:1} },
+  { id:"tier_SS",      cat:"Tiers",        icon:"🌠", name:"Supercars",                 desc:"Débloquer le tier SS",                      cond:s=>s.rep>=70000,          reward:{rep:500,  money:400000,  talent:2} },
+  { id:"tier_SSS",     cat:"Tiers",        icon:"💥", name:"Hypercars Rares",           desc:"Débloquer le tier SSS",                     cond:s=>s.rep>=200000,         reward:{rep:1000, money:1200000, talent:3} },
+  { id:"tier_SSSp",    cat:"Tiers",        icon:"💥", name:"Mythiques",                 desc:"Débloquer le tier SSS+",                    cond:s=>s.rep>=600000,         reward:{rep:5000, money:5000000, talent:5} },
 
   // ── NIVEAU GARAGE ────────────────────────────────────
-  { id:"lvl_5",       cat:"Garage",      icon:"🏠", name:"Atelier en Rodage",       desc:"Atteindre le niveau 5",                cond:s=>s.garageLevel>=5,     reward:{rep:10,  money:500,    talent:0} },
-  { id:"lvl_10",      cat:"Garage",      icon:"🏠", name:"Garage Opérationnel",     desc:"Atteindre le niveau 10",               cond:s=>s.garageLevel>=10,    reward:{rep:20,  money:2000,   talent:1} },
-  { id:"lvl_25",      cat:"Garage",      icon:"🏗️", name:"Expansion Majeure",       desc:"Atteindre le niveau 25",               cond:s=>s.garageLevel>=25,    reward:{rep:50,  money:10000,  talent:1} },
-  { id:"lvl_50",      cat:"Garage",      icon:"🏗️", name:"Centre Auto",             desc:"Atteindre le niveau 50",               cond:s=>s.garageLevel>=50,    reward:{rep:100, money:30000,  talent:2} },
-  { id:"lvl_100",     cat:"Garage",      icon:"🏢", name:"Complexe Automobile",     desc:"Atteindre le niveau 100",              cond:s=>s.garageLevel>=100,   reward:{rep:300, money:100000, talent:3} },
-  { id:"lvl_150",     cat:"Garage",      icon:"🏢", name:"Méga Garage",             desc:"Atteindre le niveau 150",              cond:s=>s.garageLevel>=150,   reward:{rep:600, money:500000, talent:5} },
-  { id:"lvl_200",     cat:"Garage",      icon:"🌆", name:"Empire Immobilier",       desc:"Atteindre le niveau 200",              cond:s=>s.garageLevel>=200,   reward:{rep:2000,money:2000000,talent:10} },
-  { id:"cap_2",       cat:"Garage",      icon:"🅿️", name:"Double Atelier",          desc:"Avoir 2 emplacements de garage",       cond:s=>s.garageCap>=2,       reward:{rep:15,  money:1000,   talent:0} },
-  { id:"cap_4",       cat:"Garage",      icon:"🅿️", name:"Quadruple Capacité",      desc:"Avoir 4 emplacements de garage",       cond:s=>s.garageCap>=4,       reward:{rep:50,  money:5000,   talent:1} },
-  { id:"cap_6",       cat:"Garage",      icon:"🅿️", name:"Parc de Stationnement",   desc:"Avoir 6 emplacements de garage",       cond:s=>s.garageCap>=6,       reward:{rep:100, money:15000,  talent:1} },
+  { id:"lvl_5",        cat:"Garage",       icon:"🏠", name:"Atelier en Rodage",         desc:"Atteindre le niveau 5",                     cond:s=>s.garageLevel>=5,      reward:{rep:10,   money:500,     talent:0} },
+  { id:"lvl_10",       cat:"Garage",       icon:"🏠", name:"Garage Opérationnel",       desc:"Atteindre le niveau 10",                    cond:s=>s.garageLevel>=10,     reward:{rep:25,   money:2000,    talent:0} },
+  { id:"lvl_20",       cat:"Garage",       icon:"🏗️", name:"Atelier Solide",           desc:"Atteindre le niveau 20",                    cond:s=>s.garageLevel>=20,     reward:{rep:40,   money:6000,    talent:0} },
+  { id:"lvl_25",       cat:"Garage",       icon:"🏗️", name:"Expansion Majeure",        desc:"Atteindre le niveau 25",                    cond:s=>s.garageLevel>=25,     reward:{rep:60,   money:12000,   talent:0} },
+  { id:"lvl_50",       cat:"Garage",       icon:"🏗️", name:"Centre Auto",              desc:"Atteindre le niveau 50",                    cond:s=>s.garageLevel>=50,     reward:{rep:150,  money:40000,   talent:1} },
+  { id:"lvl_75",       cat:"Garage",       icon:"🏢", name:"Groupe Automobile",         desc:"Atteindre le niveau 75",                    cond:s=>s.garageLevel>=75,     reward:{rep:300,  money:100000,  talent:1} },
+  { id:"lvl_100",      cat:"Garage",       icon:"🏢", name:"Complexe Automobile",       desc:"Atteindre le niveau 100",                   cond:s=>s.garageLevel>=100,    reward:{rep:600,  money:250000,  talent:2} },
+  { id:"lvl_150",      cat:"Garage",       icon:"🌆", name:"Empire Industriel",         desc:"Atteindre le niveau 150",                   cond:s=>s.garageLevel>=150,    reward:{rep:2000, money:1000000, talent:3} },
 
-  // ── RÉPARATIONS ──────────────────────────────────────
-  { id:"rep_1",       cat:"Atelier",     icon:"🔧", name:"Première Réparation",     desc:"Terminer 1 réparation",                cond:s=>s.totalRepairs>=1,    reward:{rep:5,   money:0,      talent:0} },
-  { id:"rep_50r",     cat:"Atelier",     icon:"🔧", name:"Mains dans le Cambouis",  desc:"Terminer 50 réparations",              cond:s=>s.totalRepairs>=50,   reward:{rep:20,  money:1000,   talent:0} },
-  { id:"rep_200r",    cat:"Atelier",     icon:"🛠️", name:"Mécanicien Chevronné",    desc:"Terminer 200 réparations",             cond:s=>s.totalRepairs>=200,  reward:{rep:50,  money:5000,   talent:1} },
-  { id:"rep_1000r",   cat:"Atelier",     icon:"🛠️", name:"Maître de l'Atelier",     desc:"Terminer 1 000 réparations",           cond:s=>s.totalRepairs>=1000, reward:{rep:150, money:20000,  talent:1} },
-  { id:"rep_5000r",   cat:"Atelier",     icon:"⚙️", name:"Machine de Guerre",       desc:"Terminer 5 000 réparations",           cond:s=>s.totalRepairs>=5000, reward:{rep:500, money:100000, talent:2} },
-  { id:"click_10",    cat:"Atelier",     icon:"🖱️", name:"Première Frappe",         desc:"10 clics de réparation",               cond:s=>s.totalClickRepairs>=10,   reward:{rep:5,   money:50,   talent:0} },
-  { id:"click_500",   cat:"Atelier",     icon:"🖱️", name:"Tapoteur Assidu",         desc:"500 clics de réparation",              cond:s=>s.totalClickRepairs>=500,  reward:{rep:20,  money:1000, talent:0} },
-  { id:"click_5000",  cat:"Atelier",     icon:"💪", name:"Bras d'Acier",            desc:"5 000 clics de réparation",            cond:s=>s.totalClickRepairs>=5000, reward:{rep:80,  money:5000, talent:1} },
-  { id:"click_50000", cat:"Atelier",     icon:"💪", name:"Cliqueur Légendaire",     desc:"50 000 clics de réparation",           cond:s=>s.totalClickRepairs>=50000,reward:{rep:300, money:50000,talent:2} },
-  { id:"auto_repair", cat:"Atelier",     icon:"🤖", name:"Atelier Automatisé",      desc:"Avoir une réparation auto active",     cond:s=>s.repairAuto>0,       reward:{rep:30,  money:2000,   talent:0} },
-  { id:"speed_5",     cat:"Atelier",     icon:"⚡", name:"Vitesse de Croisière",    desc:"Multiplicateur de vitesse ≥ 1.5×",     cond:s=>(s.speedMult??1)*(s.talentSpeedMult??1)>=1.5, reward:{rep:50,money:5000,talent:1} },
-  { id:"speed_10",    cat:"Atelier",     icon:"⚡", name:"Turbo Activé",            desc:"Multiplicateur de vitesse ≥ 2×",       cond:s=>(s.speedMult??1)*(s.talentSpeedMult??1)>=2,   reward:{rep:150,money:20000,talent:2} },
+  // ── ATELIER ──────────────────────────────────────────
+  { id:"repair_10",    cat:"Atelier",      icon:"🔧", name:"Mains dans le Cambouis",    desc:"Effectuer 10 réparations",                  cond:s=>(s.totalRepairs??0)>=10,    reward:{rep:10,   money:500,     talent:0} },
+  { id:"repair_100",   cat:"Atelier",      icon:"🔧", name:"Mécanicien Expérimenté",    desc:"Effectuer 100 réparations",                 cond:s=>(s.totalRepairs??0)>=100,   reward:{rep:50,   money:3000,    talent:0} },
+  { id:"repair_500",   cat:"Atelier",      icon:"🛠️", name:"Série de Chantiers",        desc:"Effectuer 500 réparations",                 cond:s=>(s.totalRepairs??0)>=500,   reward:{rep:150,  money:15000,   talent:0} },
+  { id:"repair_1000",  cat:"Atelier",      icon:"🛠️", name:"Mil Réparations",           desc:"Effectuer 1 000 réparations",               cond:s=>(s.totalRepairs??0)>=1000,  reward:{rep:400,  money:50000,   talent:1} },
+  { id:"repair_5000",  cat:"Atelier",      icon:"⚙️", name:"Usine à Réparer",           desc:"Effectuer 5 000 réparations",               cond:s=>(s.totalRepairs??0)>=5000,  reward:{rep:1500, money:200000,  talent:2} },
+  { id:"repair_10000", cat:"Atelier",      icon:"⚙️", name:"Maître des Pistons",        desc:"Effectuer 10 000 réparations",              cond:s=>(s.totalRepairs??0)>=10000, reward:{rep:5000, money:500000,  talent:3} },
+  { id:"auto_repair",  cat:"Atelier",      icon:"🤖", name:"Atelier Automatisé",        desc:"Avoir une réparation auto active",          cond:s=>s.repairAuto>0,             reward:{rep:30,   money:2000,    talent:0} },
+  { id:"speed_15",     cat:"Atelier",      icon:"⚡", name:"Vitesse de Croisière",      desc:"Multiplicateur de vitesse ≥ 1.5×",          cond:s=>(s.speedMult??1)*(s.talentSpeedMult??1)>=1.5,  reward:{rep:50,   money:5000,    talent:0} },
+  { id:"speed_2",      cat:"Atelier",      icon:"⚡", name:"Turbo Activé",              desc:"Multiplicateur de vitesse ≥ 2×",            cond:s=>(s.speedMult??1)*(s.talentSpeedMult??1)>=2,    reward:{rep:150,  money:20000,   talent:1} },
+  { id:"speed_3",      cat:"Atelier",      icon:"⚡", name:"Mode Fusée",                desc:"Multiplicateur de vitesse ≥ 3×",            cond:s=>(s.speedMult??1)*(s.talentSpeedMult??1)>=3,    reward:{rep:500,  money:80000,   talent:2} },
+  { id:"click_500",    cat:"Atelier",      icon:"👊", name:"Bras Musclé",               desc:"Effectuer 500 clics de réparation",         cond:s=>(s.totalClickRepairs??0)>=500,   reward:{rep:20,   money:1000,    talent:0} },
+  { id:"click_5000",   cat:"Atelier",      icon:"👊", name:"Acharnement",               desc:"Effectuer 5 000 clics de réparation",       cond:s=>(s.totalClickRepairs??0)>=5000,  reward:{rep:80,   money:8000,    talent:0} },
+  { id:"click_50000",  cat:"Atelier",      icon:"🥊", name:"Légende du Clic",           desc:"Effectuer 50 000 clics de réparation",      cond:s=>(s.totalClickRepairs??0)>=50000, reward:{rep:500,  money:50000,   talent:1} },
+  { id:"slots_3",      cat:"Atelier",      icon:"🅿️", name:"Triple Chantier",           desc:"Avoir 3 emplacements garage",               cond:s=>s.garageCap>=3,             reward:{rep:20,   money:2000,    talent:0} },
+  { id:"slots_5",      cat:"Atelier",      icon:"🅿️", name:"Quinconce",                 desc:"Avoir 5 emplacements garage",               cond:s=>s.garageCap>=5,             reward:{rep:60,   money:8000,    talent:0} },
+  { id:"slots_max",    cat:"Atelier",      icon:"🅿️", name:"Parking Complet",           desc:"Avoir 8 emplacements garage",               cond:s=>s.garageCap>=8,             reward:{rep:200,  money:30000,   talent:1} },
 
   // ── DIAGNOSTIC ───────────────────────────────────────
-  { id:"diag_1",      cat:"Diagnostic",  icon:"🔍", name:"Scanner en Main",         desc:"Effectuer 1 diagnostic",               cond:s=>s.totalAnalyses>=1,   reward:{rep:5,   money:0,      talent:0} },
-  { id:"diag_100",    cat:"Diagnostic",  icon:"🔍", name:"Diagnostiqueur",          desc:"Effectuer 100 diagnostics",            cond:s=>s.totalAnalyses>=100, reward:{rep:20,  money:500,    talent:0} },
-  { id:"diag_1000",   cat:"Diagnostic",  icon:"🧠", name:"Expert du Scan",          desc:"Effectuer 1 000 diagnostics",          cond:s=>s.totalAnalyses>=1000,reward:{rep:80,  money:5000,   talent:1} },
-  { id:"diag_10000",  cat:"Diagnostic",  icon:"🧠", name:"Maître Diagnostiqueur",   desc:"Effectuer 10 000 diagnostics",         cond:s=>s.totalAnalyses>=10000,reward:{rep:300,money:30000,  talent:2} },
-  { id:"diag_auto",   cat:"Diagnostic",  icon:"🤖", name:"Stagiaire Embauché",      desc:"Débloquer le Stagiaire Accueil",       cond:s=>(s.upgrades?.find(u=>u.id==="stagiaire")?.lvl??0)>=1, reward:{rep:25,money:2000,talent:0} },
-  { id:"diag_reward", cat:"Diagnostic",  icon:"💡", name:"Diagnostic Premium",      desc:"Avoir +50€ par diagnostic",            cond:s=>s.diagReward>=50,     reward:{rep:100, money:10000,  talent:1} },
+  { id:"diag_1",       cat:"Diagnostic",   icon:"🔍", name:"Scanner en Main",           desc:"Effectuer 1 diagnostic",                    cond:s=>s.totalAnalyses>=1,         reward:{rep:5,    money:0,       talent:0} },
+  { id:"diag_50",      cat:"Diagnostic",   icon:"🔍", name:"Œil Affûté",                desc:"Effectuer 50 diagnostics",                  cond:s=>s.totalAnalyses>=50,        reward:{rep:15,   money:200,     talent:0} },
+  { id:"diag_100",     cat:"Diagnostic",   icon:"🔍", name:"Diagnostiqueur",            desc:"Effectuer 100 diagnostics",                 cond:s=>s.totalAnalyses>=100,       reward:{rep:30,   money:800,     talent:0} },
+  { id:"diag_500",     cat:"Diagnostic",   icon:"🧠", name:"Technicien Certifié",       desc:"Effectuer 500 diagnostics",                 cond:s=>s.totalAnalyses>=500,       reward:{rep:80,   money:4000,    talent:0} },
+  { id:"diag_1000",    cat:"Diagnostic",   icon:"🧠", name:"Expert du Scan",            desc:"Effectuer 1 000 diagnostics",               cond:s=>s.totalAnalyses>=1000,      reward:{rep:200,  money:12000,   talent:0} },
+  { id:"diag_10000",   cat:"Diagnostic",   icon:"🧠", name:"Maître Diagnostiqueur",     desc:"Effectuer 10 000 diagnostics",              cond:s=>s.totalAnalyses>=10000,     reward:{rep:800,  money:60000,   talent:1} },
+  { id:"diag_auto",    cat:"Diagnostic",   icon:"🤖", name:"Stagiaire Embauché",        desc:"Débloquer le Stagiaire Accueil",            cond:s=>(s.upgrades?.find(u=>u.id==="stagiaire")?.lvl??0)>=1, reward:{rep:25,money:2000,talent:0} },
+  { id:"diag_reward",  cat:"Diagnostic",   icon:"💡", name:"Diagnostic Premium",        desc:"Avoir +50 € par diagnostic",                cond:s=>s.diagReward>=50,           reward:{rep:100,  money:10000,   talent:0} },
+  { id:"diag_reward2", cat:"Diagnostic",   icon:"💡", name:"Scanner d'Élite",           desc:"Avoir +200 € par diagnostic",               cond:s=>s.diagReward>=200,          reward:{rep:400,  money:50000,   talent:1} },
+
+  // ── PIÈCES & STOCK ───────────────────────────────────
+  { id:"part_first",   cat:"Stock",        icon:"📦", name:"Première Commande",         desc:"Commander une pièce pour la première fois", cond:s=>Object.keys(s.parts??{}).length>=1,         reward:{rep:10,   money:500,     talent:0} },
+  { id:"part_5types",  cat:"Stock",        icon:"📦", name:"Stock Varié",               desc:"Avoir 5 types de pièces en stock",          cond:s=>Object.values(s.parts??{}).filter(p=>p.qty>0).length>=5,  reward:{rep:25,   money:2000,    talent:0} },
+  { id:"part_15types", cat:"Stock",        icon:"🗄️", name:"Magasin Pièces",            desc:"Avoir 15 types de pièces en stock",         cond:s=>Object.values(s.parts??{}).filter(p=>p.qty>0).length>=15, reward:{rep:80,   money:8000,    talent:0} },
+  { id:"part_30types", cat:"Stock",        icon:"🗄️", name:"Entrepôt Équipé",           desc:"Avoir 30 types de pièces en stock",         cond:s=>Object.values(s.parts??{}).filter(p=>p.qty>0).length>=30, reward:{rep:200,  money:25000,   talent:1} },
+  { id:"part_bochmann",cat:"Stock",        icon:"🔵", name:"Qualité Allemande",         desc:"Commander des pièces Bochmann",             cond:s=>Object.values(s.parts??{}).some(p=>p.supplier==="bochmann"), reward:{rep:50,money:5000,talent:0} },
+  { id:"part_slots3",  cat:"Stock",        icon:"🚛", name:"Flux Tendu",                desc:"Avoir 3 slots de livraison simultanés",     cond:s=>(s.upgrades?.find(u=>u.id==="slots_livraison")?.lvl??0)>=2, reward:{rep:30,money:3000,talent:0} },
+  { id:"part_slots5",  cat:"Stock",        icon:"🚛", name:"Logisticien",               desc:"Avoir 5 slots de livraison simultanés",     cond:s=>(s.upgrades?.find(u=>u.id==="slots_livraison")?.lvl??0)>=4, reward:{rep:100,money:15000,talent:0} },
+  { id:"part_norupture",cat:"Stock",       icon:"✅", name:"Zéro Rupture",              desc:"Avoir au moins 5 pièces de chaque type en stock (min 10 types)", cond:s=>{const vals=Object.values(s.parts??{});return vals.filter(p=>p.qty>=5).length>=10;}, reward:{rep:150,money:20000,talent:1} },
+  { id:"part_auto_on",  cat:"Stock",       icon:"🤖", name:"Stock Pilote Auto",          desc:"Activer les commandes automatiques (Logiciel Stock niv.3)",       cond:s=>(s.upgrades?.find(u=>u.id==="logiciel_stock")?.lvl??0)>=3,  reward:{rep:200, money:30000,  talent:1} },
+  { id:"part_topdrv10", cat:"Stock",       icon:"🔴", name:"Bonnes Affaires",            desc:"Commander 10 fois chez TopDrive (pièces sans malus)",             cond:s=>Object.values(s.parts??{}).filter(p=>p.supplier==="topdrive"&&p.qty>0).length>=3, reward:{rep:80,  money:5000,   talent:0} },
+  { id:"part_val_10k",  cat:"Stock",       icon:"💰", name:"Stock de Valeur",            desc:"Avoir un stock de pièces valant plus de 10 000 € au total",       cond:s=>Object.values(s.parts??{}).reduce((a,p)=>a+(p.qty*(p.lastPrice??0)),0)>=10000,     reward:{rep:300, money:50000,  talent:1} },
+  { id:"part_del_fast", cat:"Stock",       icon:"⚡", name:"Livraison Express",          desc:"Recevoir une livraison Euroline en moins de 10 secondes",         cond:s=>s._fastDelivery===true,                                     reward:{rep:200, money:20000,  talent:1} },
 
   // ── AMÉLIORATIONS ────────────────────────────────────
-  { id:"up_first",    cat:"Améliorations",icon:"📦",name:"Premier Investissement",  desc:"Acheter une première amélioration",    cond:s=>s.upgrades?.some(u=>u.lvl>0), reward:{rep:5,  money:0,     talent:0} },
-  { id:"up_10",       cat:"Améliorations",icon:"📦",name:"Équipé",                  desc:"10 niveaux d'améliorations au total",  cond:s=>s.upgrades?.reduce((a,u)=>a+u.lvl,0)>=10,    reward:{rep:20, money:1000,  talent:0} },
-  { id:"up_50",       cat:"Améliorations",icon:"🔩",name:"Garage Équipé",           desc:"50 niveaux d'améliorations au total",  cond:s=>s.upgrades?.reduce((a,u)=>a+u.lvl,0)>=50,    reward:{rep:80, money:5000,  talent:1} },
-  { id:"up_100",      cat:"Améliorations",icon:"🔩",name:"Atelier Pro",             desc:"100 niveaux d'améliorations au total", cond:s=>s.upgrades?.reduce((a,u)=>a+u.lvl,0)>=100,   reward:{rep:200,money:20000, talent:2} },
-  { id:"up_vendeur",  cat:"Améliorations",icon:"👔",name:"Vendeur Recruté",         desc:"Embaucher le Vendeur Junior",          cond:s=>(s.upgrades?.find(u=>u.id==="vendeur")?.lvl??0)>=1,    reward:{rep:30, money:3000,  talent:0} },
-  { id:"up_meca",     cat:"Améliorations",icon:"🛠️",name:"Mécanicien Recruté",      desc:"Embaucher le Mécanicien",              cond:s=>(s.upgrades?.find(u=>u.id==="mecanicien")?.lvl??0)>=1, reward:{rep:50, money:5000,  talent:0} },
-  { id:"up_franchise",cat:"Améliorations",icon:"🏢",name:"Franchisé",              desc:"Acheter la Franchise Régionale",       cond:s=>(s.upgrades?.find(u=>u.id==="franchise")?.lvl??0)>=1,  reward:{rep:200,money:0,     talent:2} },
+  { id:"up_first",     cat:"Améliorations",icon:"📦", name:"Premier Investissement",   desc:"Acheter une première amélioration",         cond:s=>s.upgrades?.some(u=>u.lvl>0),                                reward:{rep:5,    money:0,       talent:0} },
+  { id:"up_10",        cat:"Améliorations",icon:"📦", name:"Équipé",                   desc:"10 niveaux d'améliorations au total",        cond:s=>s.upgrades?.reduce((a,u)=>a+u.lvl,0)>=10,                    reward:{rep:25,   money:1000,    talent:0} },
+  { id:"up_50",        cat:"Améliorations",icon:"🔩", name:"Garage Équipé",            desc:"50 niveaux d'améliorations au total",        cond:s=>s.upgrades?.reduce((a,u)=>a+u.lvl,0)>=50,                    reward:{rep:100,  money:8000,    talent:0} },
+  { id:"up_100",       cat:"Améliorations",icon:"🔩", name:"Atelier Pro",              desc:"100 niveaux d'améliorations au total",       cond:s=>s.upgrades?.reduce((a,u)=>a+u.lvl,0)>=100,                   reward:{rep:300,  money:30000,   talent:1} },
+  { id:"up_200",       cat:"Améliorations",icon:"🔩", name:"Maître des Outils",        desc:"200 niveaux d'améliorations au total",       cond:s=>s.upgrades?.reduce((a,u)=>a+u.lvl,0)>=200,                   reward:{rep:800,  money:100000,  talent:2} },
+  { id:"up_vendeur",   cat:"Améliorations",icon:"👔", name:"Vendeur Recruté",          desc:"Embaucher le Vendeur Junior",               cond:s=>(s.upgrades?.find(u=>u.id==="vendeur")?.lvl??0)>=1,           reward:{rep:30,   money:3000,    talent:0} },
+  { id:"up_meca",      cat:"Améliorations",icon:"🛠️", name:"Mécanicien Recruté",       desc:"Embaucher le Mécanicien",                   cond:s=>(s.upgrades?.find(u=>u.id==="mecanicien")?.lvl??0)>=1,        reward:{rep:50,   money:5000,    talent:0} },
+  { id:"up_meca_max",  cat:"Améliorations",icon:"🛠️", name:"Mécanicien Expert",        desc:"Mécanicien niveau 10",                      cond:s=>(s.upgrades?.find(u=>u.id==="mecanicien")?.lvl??0)>=10,       reward:{rep:300,  money:50000,   talent:1} },
+  { id:"up_franchise", cat:"Améliorations",icon:"🏢", name:"Franchisé",               desc:"Acheter la Franchise Régionale",            cond:s=>(s.upgrades?.find(u=>u.id==="franchise")?.lvl??0)>=1,         reward:{rep:200,  money:0,       talent:1} },
+  { id:"up_logiciel",  cat:"Améliorations",icon:"💻", name:"Gestion Numérique",        desc:"Acheter le Logiciel Stock niveau 1",        cond:s=>(s.upgrades?.find(u=>u.id==="logiciel_stock")?.lvl??0)>=1,   reward:{rep:40,   money:3000,    talent:0} },
 
   // ── TALENTS ──────────────────────────────────────────
-  { id:"tal_first",   cat:"Talents",     icon:"⭐", name:"Premier Don",             desc:"Dépenser 1 point de talent",           cond:s=>Object.values(s.talents??{}).reduce((a,v)=>a+v,0)>=1,  reward:{rep:10, money:500,   talent:0} },
-  { id:"tal_10",      cat:"Talents",     icon:"⭐", name:"Arbre Naissant",          desc:"10 rangs de talents dépensés",         cond:s=>Object.values(s.talents??{}).reduce((a,v)=>a+v,0)>=10, reward:{rep:30, money:2000,  talent:0} },
-  { id:"tal_50",      cat:"Talents",     icon:"🌟", name:"Maîtrise Avancée",        desc:"50 rangs de talents dépensés",         cond:s=>Object.values(s.talents??{}).reduce((a,v)=>a+v,0)>=50, reward:{rep:100,money:10000, talent:1} },
-  { id:"tal_max1",    cat:"Talents",     icon:"💫", name:"Spécialiste",             desc:"Maxer un talent à 10/10",              cond:s=>Object.values(s.talents??{}).some(v=>v>=10),           reward:{rep:150,money:15000, talent:1} },
-  { id:"tal_max5",    cat:"Talents",     icon:"💫", name:"Expert Polyvalent",       desc:"Maxer 5 talents à 10/10",              cond:s=>Object.values(s.talents??{}).filter(v=>v>=10).length>=5,reward:{rep:500,money:50000, talent:3} },
+  { id:"tal_first",    cat:"Talents",      icon:"⭐", name:"Premier Don",              desc:"Dépenser 1 point de talent",                cond:s=>Object.values(s.talents??{}).reduce((a,v)=>a+v,0)>=1,         reward:{rep:10,   money:500,     talent:0} },
+  { id:"tal_10",       cat:"Talents",      icon:"⭐", name:"Arbre Naissant",           desc:"10 rangs de talents dépensés",              cond:s=>Object.values(s.talents??{}).reduce((a,v)=>a+v,0)>=10,        reward:{rep:30,   money:2000,    talent:0} },
+  { id:"tal_50",       cat:"Talents",      icon:"🌟", name:"Maîtrise Avancée",         desc:"50 rangs de talents dépensés",              cond:s=>Object.values(s.talents??{}).reduce((a,v)=>a+v,0)>=50,        reward:{rep:100,  money:10000,   talent:0} },
+  { id:"tal_100",      cat:"Talents",      icon:"🌟", name:"Développement Total",      desc:"100 rangs de talents dépensés",             cond:s=>Object.values(s.talents??{}).reduce((a,v)=>a+v,0)>=100,       reward:{rep:300,  money:30000,   talent:1} },
+  { id:"tal_200",      cat:"Talents",      icon:"💫", name:"Arbre Complet",            desc:"200 rangs de talents dépensés",             cond:s=>Object.values(s.talents??{}).reduce((a,v)=>a+v,0)>=200,       reward:{rep:1000, money:100000,  talent:1} },
+  { id:"tal_max1",     cat:"Talents",      icon:"💫", name:"Spécialiste",              desc:"Maxer un talent à 20/20",                   cond:s=>Object.values(s.talents??{}).some(v=>v>=20),                  reward:{rep:500,  money:50000,   talent:1} },
+  { id:"tal_max3",     cat:"Talents",      icon:"💫", name:"Expert Polyvalent",        desc:"Maxer 3 talents à 20/20",                   cond:s=>Object.values(s.talents??{}).filter(v=>v>=20).length>=3,      reward:{rep:2000, money:200000,  talent:2} },
+
+  // ── PRESTIGE ─────────────────────────────────────────
+  { id:"prestige_1",   cat:"Prestige",     icon:"🔄", name:"Renaissance",              desc:"Effectuer un premier prestige",             cond:s=>(s.prestigeCount??0)>=1,    reward:{rep:0,    money:0,       talent:2} },
+  { id:"prestige_3",   cat:"Prestige",     icon:"🔄", name:"Cycle Maîtrisé",           desc:"Effectuer 3 prestiges",                     cond:s=>(s.prestigeCount??0)>=3,    reward:{rep:0,    money:0,       talent:3} },
+  { id:"prestige_5",   cat:"Prestige",     icon:"🔄", name:"Phénix",                   desc:"Effectuer 5 prestiges",                     cond:s=>(s.prestigeCount??0)>=5,    reward:{rep:0,    money:0,       talent:5} },
+  { id:"prestige_10",  cat:"Prestige",     icon:"♾️", name:"L'Éternel Recommencement", desc:"Effectuer 10 prestiges",                    cond:s=>(s.prestigeCount??0)>=10,   reward:{rep:0,    money:0,       talent:8} },
+  { id:"heritage_5",   cat:"Prestige",     icon:"🏛️", name:"Héritage Solide",          desc:"Dépenser 5 points Héritage",                cond:s=>(s.heritageSpent??0)>=5,    reward:{rep:100,  money:10000,   talent:0} },
+  { id:"heritage_15",  cat:"Prestige",     icon:"🏛️", name:"Maître du Passé",          desc:"Dépenser 15 points Héritage",               cond:s=>(s.heritageSpent??0)>=15,   reward:{rep:500,  money:50000,   talent:1} },
+  { id:"heritage_30",  cat:"Prestige",     icon:"🏛️", name:"Dynastique",               desc:"Dépenser 30 points Héritage",               cond:s=>(s.heritageSpent??0)>=30,   reward:{rep:2000, money:200000,  talent:2} },
 
   // ── SHOWROOM ─────────────────────────────────────────
-  { id:"show_3",      cat:"Showroom",    icon:"🚘", name:"Petite Expo",             desc:"Avoir 3 voitures au showroom",         cond:s=>s.showroom?.length>=3,  reward:{rep:15, money:500,    talent:0} },
-  { id:"show_S",      cat:"Showroom",    icon:"🏆", name:"Voiture de Prestige",     desc:"Avoir une voiture tier S au showroom", cond:s=>s.showroom?.some(c=>c.tier==="S"),   reward:{rep:100,money:10000,  talent:1} },
-  { id:"show_SS",     cat:"Showroom",    icon:"🏆", name:"Supercar en Vitrine",     desc:"Avoir une voiture tier SS au showroom",cond:s=>s.showroom?.some(c=>c.tier==="SS"),  reward:{rep:300,money:50000,  talent:2} },
-  { id:"show_SSS",    cat:"Showroom",    icon:"💎", name:"Hypercar Exposée",        desc:"Avoir une voiture tier SSS au showroom",cond:s=>s.showroom?.some(c=>c.tier==="SSS"), reward:{rep:1000,money:200000,talent:3} },
-  { id:"show_SSSp",   cat:"Showroom",    icon:"💎", name:"Mythique en Vitrine",     desc:"Avoir une voiture SSS+ au showroom",   cond:s=>s.showroom?.some(c=>c.tier==="SSS+"),reward:{rep:5000,money:1000000,talent:5} },
+  { id:"show_1",       cat:"Showroom",     icon:"🚘", name:"Première Expo",            desc:"Avoir 1 voiture au showroom",               cond:s=>s.showroom?.length>=1,      reward:{rep:5,    money:200,     talent:0} },
+  { id:"show_3",       cat:"Showroom",     icon:"🚘", name:"Petite Expo",              desc:"Avoir 3 voitures au showroom",              cond:s=>s.showroom?.length>=3,      reward:{rep:20,   money:1000,    talent:0} },
+  { id:"show_full",    cat:"Showroom",     icon:"🏪", name:"Showroom Plein",           desc:"Remplir complètement le showroom",          cond:s=>s.showroom?.length>0&&s.showroom.length>=(s.showroomCap??3)+(s.talentShowroomSlots??0), reward:{rep:50,money:5000,talent:0} },
+  { id:"show_S",       cat:"Showroom",     icon:"🏆", name:"Voiture de Prestige",      desc:"Avoir une voiture tier S au showroom",      cond:s=>s.showroom?.some(c=>c.tier==="S"),    reward:{rep:150,  money:15000,   talent:0} },
+  { id:"show_SS",      cat:"Showroom",     icon:"🏆", name:"Supercar en Vitrine",      desc:"Avoir une voiture tier SS au showroom",     cond:s=>s.showroom?.some(c=>c.tier==="SS"),   reward:{rep:500,  money:60000,   talent:1} },
+  { id:"show_SSS",     cat:"Showroom",     icon:"💎", name:"Hypercar Exposée",         desc:"Avoir une voiture tier SSS au showroom",    cond:s=>s.showroom?.some(c=>c.tier==="SSS"),  reward:{rep:2000, money:300000,  talent:2} },
+  { id:"show_SSSp",    cat:"Showroom",     icon:"💎", name:"Mythique en Vitrine",      desc:"Avoir une voiture SSS+ au showroom",        cond:s=>s.showroom?.some(c=>c.tier==="SSS+"), reward:{rep:8000, money:2000000, talent:3} },
 
-  // ── SESSIONS / DIVERS ────────────────────────────────
-  { id:"session_1h",  cat:"Divers",      icon:"⏱️", name:"Joueur Assidu",           desc:"Jouer 1 heure au total",               cond:s=>Date.now()-(s.sessionStart??Date.now())>=3600000,    reward:{rep:20, money:1000,  talent:0} },
-  { id:"save_first",  cat:"Divers",      icon:"💾", name:"Données Sécurisées",      desc:"Sauvegarder la partie",                cond:s=>s._hasSaved===true,   reward:{rep:5,   money:100,    talent:0} },
-  { id:"name_change", cat:"Divers",      icon:"✏️", name:"Mon Garage, Mes Règles",  desc:"Renommer ton garage",                  cond:s=>s.garageName!=="Garage Turbo",       reward:{rep:10, money:500,    talent:0} },
-  { id:"profile_set", cat:"Divers",      icon:"👤", name:"Identité Établie",        desc:"Personnaliser ton profil",             cond:s=>s.profile?.pseudo!=="Mécanicien"&&s.profile?.pseudo!=null, reward:{rep:15,money:500,talent:0} },
-  { id:"full_garage", cat:"Divers",      icon:"🔥", name:"Garage Complet",          desc:"Remplir tous les emplacements",        cond:s=>{const occ=(s.active?1:0)+(s.queue?.length??0);return occ>0&&occ>=s.garageCap;}, reward:{rep:20,money:1000,talent:0} },
-  { id:"rich_repair", cat:"Divers",      icon:"💸", name:"Réparer du Luxe",         desc:"Réparer une voiture de tier A ou +",   cond:s=>["A","S","SS","SSS","SSS+"].includes(s._lastRepairedTier??""), reward:{rep:50,money:5000,talent:0} },
-  { id:"broke",       cat:"Divers",      icon:"😅", name:"Dans le Rouge",           desc:"Passer sous 10 €",                     cond:s=>s._wasBroke===true,   reward:{rep:5,   money:200,    talent:0} },
+  // ── DIVERS ────────────────────────────────────────────
+  { id:"session_1h",   cat:"Divers",       icon:"⏱️", name:"Joueur Assidu",            desc:"Jouer 1 heure au total",                    cond:s=>Date.now()-(s.sessionStart??Date.now())>=3600000,            reward:{rep:20,   money:1000,    talent:0} },
+  { id:"session_5h",   cat:"Divers",       icon:"⏱️", name:"Passionné",               desc:"Jouer 5 heures au total",                   cond:s=>Date.now()-(s.sessionStart??Date.now())>=18000000,           reward:{rep:80,   money:8000,    talent:0} },
+  { id:"save_first",   cat:"Divers",       icon:"💾", name:"Données Sécurisées",       desc:"Sauvegarder la partie",                     cond:s=>s._hasSaved===true,                                          reward:{rep:5,    money:100,     talent:0} },
+  { id:"name_change",  cat:"Divers",       icon:"✏️", name:"Mon Garage, Mes Règles",  desc:"Renommer ton garage",                       cond:s=>s.garageName!=="Garage Turbo",                               reward:{rep:10,   money:500,     talent:0} },
+  { id:"profile_set",  cat:"Divers",       icon:"👤", name:"Identité Établie",         desc:"Personnaliser ton profil",                  cond:s=>s.profile?.pseudo!=="Mécanicien"&&s.profile?.pseudo!=null,   reward:{rep:15,   money:500,     talent:0} },
+  { id:"full_garage",  cat:"Divers",       icon:"🔥", name:"Garage Complet",           desc:"Remplir tous les emplacements",             cond:s=>{const occ=(s.active?1:0)+(s.queue?.length??0);return occ>0&&occ>=s.garageCap;}, reward:{rep:20,money:1000,talent:0} },
+  { id:"rich_repair",  cat:"Divers",       icon:"💸", name:"Réparer du Luxe",          desc:"Réparer une voiture de tier A ou +",        cond:s=>["A","S","SS","SSS","SSS+"].includes(s._lastRepairedTier??""),reward:{rep:50,   money:5000,    talent:0} },
+  { id:"broke",        cat:"Divers",       icon:"😅", name:"Dans le Rouge",            desc:"Passer sous 10 €",                          cond:s=>s._wasBroke===true,                                          reward:{rep:5,    money:200,     talent:0} },
+  { id:"auto_sell",    cat:"Divers",       icon:"🤝", name:"Vendeur Automatique",      desc:"Embaucher le Vendeur Junior",               cond:s=>(s.upgrades?.find(u=>u.id==="vendeur")?.lvl??0)>=1,          reward:{rep:40,   money:3000,    talent:0} },
+  { id:"prestige_prep",cat:"Divers",       icon:"🎯", name:"Prêt au Départ",           desc:"Atteindre le niveau 50 de garage",          cond:s=>s.garageLevel>=50,                                           reward:{rep:100,  money:20000,   talent:0} },
+
+  // ── VENTES CUMULÉES (toutes parties) ────────────────
+  { id:"total_sold_500",  cat:"Ventes",       icon:"🚗", name:"Demi-Millier Cumulé",       desc:"Vendre 500 voitures au total (tous prestiges)",    cond:s=>(s.totalCarsSold??0)>=500,       reward:{rep:100,  money:10000,   talent:0} },
+  { id:"total_sold_2k",   cat:"Ventes",       icon:"🚙", name:"Deux Mille Cumulés",        desc:"Vendre 2 000 voitures au total",                   cond:s=>(s.totalCarsSold??0)>=2000,      reward:{rep:300,  money:40000,   talent:1} },
+  { id:"total_sold_10k",  cat:"Ventes",       icon:"🏎️", name:"Dix Mille Cumulés",        desc:"Vendre 10 000 voitures au total",                  cond:s=>(s.totalCarsSold??0)>=10000,     reward:{rep:800,  money:150000,  talent:2} },
+  { id:"total_sold_50k",  cat:"Ventes",       icon:"🏁", name:"Cinquante Mille Cumulés",   desc:"Vendre 50 000 voitures au total",                  cond:s=>(s.totalCarsSold??0)>=50000,     reward:{rep:3000, money:800000,  talent:3} },
+  { id:"total_sold_200k", cat:"Ventes",       icon:"👑", name:"Deux Cent Mille Cumulés",   desc:"Vendre 200 000 voitures au total",                 cond:s=>(s.totalCarsSold??0)>=200000,    reward:{rep:10000,money:3000000, talent:5} },
+
+  // ── ARGENT CUMULÉ ────────────────────────────────────
+  { id:"earned_500m",     cat:"Argent",       icon:"🏦", name:"Demi-Milliard Gagné",       desc:"Avoir gagné 500 000 000 € au total",               cond:s=>(s.totalMoneyEarned??0)>=500000000,    reward:{rep:1500, money:0,       talent:2} },
+  { id:"earned_5b",       cat:"Argent",       icon:"🏦", name:"Cinq Milliards Gagnés",     desc:"Avoir gagné 5 000 000 000 € au total",             cond:s=>(s.totalMoneyEarned??0)>=5000000000,   reward:{rep:5000, money:0,       talent:3} },
+  { id:"earned_50b",      cat:"Argent",       icon:"🏦", name:"Cinquante Milliards",       desc:"Avoir gagné 50 000 000 000 € au total",            cond:s=>(s.totalMoneyEarned??0)>=50000000000,  reward:{rep:15000,money:0,       talent:5} },
+  { id:"passive_5k",      cat:"Argent",       icon:"📊", name:"Rente de Milliardaire",     desc:"Atteindre 5 000 €/s de revenu passif",             cond:s=>s.moneyPerSec>=5000,             reward:{rep:2000, money:500000,  talent:2} },
+  { id:"passive_20k",     cat:"Argent",       icon:"📊", name:"Banque Centrale",           desc:"Atteindre 20 000 €/s de revenu passif",            cond:s=>s.moneyPerSec>=20000,            reward:{rep:8000, money:2000000, talent:4} },
+  { id:"money_10b",       cat:"Argent",       icon:"💎", name:"Dix Milliards en Caisse",   desc:"Avoir 10 000 000 000 € en caisse",                 cond:s=>s.money>=10000000000,            reward:{rep:5000, money:0,       talent:3} },
+
+  // ── RÉPUTATION HAUTE ────────────────────────────────
+  { id:"rep_500k",        cat:"Réputation",   icon:"🔱", name:"Superstar Mondiale",        desc:"Atteindre 500 000 REP",                            cond:s=>s.rep>=500000,                   reward:{rep:0,    money:2000000, talent:3} },
+  { id:"rep_1m",          cat:"Réputation",   icon:"🔱", name:"Dieu de l'Asphalte",        desc:"Atteindre 1 000 000 REP",                          cond:s=>s.rep>=1000000,                  reward:{rep:0,    money:5000000, talent:5} },
+  { id:"rep_5m",          cat:"Réputation",   icon:"⚜️", name:"Intouchable",               desc:"Atteindre 5 000 000 REP",                          cond:s=>s.rep>=5000000,                  reward:{rep:0,    money:20000000,talent:8} },
+
+  // ── NIVEAU GARAGE HIGH ───────────────────────────────
+  { id:"lvl_200",         cat:"Garage",       icon:"🌆", name:"Méga Complexe",             desc:"Atteindre le niveau 200",                          cond:s=>s.garageLevel>=200,              reward:{rep:5000, money:2000000, talent:3} },
+  { id:"lvl_300",         cat:"Garage",       icon:"🌇", name:"Corporation",               desc:"Atteindre le niveau 300",                          cond:s=>s.garageLevel>=300,              reward:{rep:12000,money:5000000, talent:5} },
+  { id:"lvl_500",         cat:"Garage",       icon:"🌃", name:"Monopole de l'Auto",        desc:"Atteindre le niveau 500",                          cond:s=>s.garageLevel>=500,              reward:{rep:30000,money:15000000,talent:8} },
+
+  // ── RÉPARATIONS CUMULÉES ────────────────────────────
+  { id:"total_rep_5k",    cat:"Atelier",      icon:"🛠️", name:"Cinq Mille Réparations",   desc:"Effectuer 5 000 réparations au total",             cond:s=>(s.totalRepairs??0)>=5000,       reward:{rep:500,  money:100000,  talent:1} },
+  { id:"total_rep_20k",   cat:"Atelier",      icon:"⚙️", name:"Vingt Mille Réparations",  desc:"Effectuer 20 000 réparations au total",            cond:s=>(s.totalRepairs??0)>=20000,      reward:{rep:2000, money:500000,  talent:2} },
+  { id:"total_rep_100k",  cat:"Atelier",      icon:"⚙️", name:"Cent Mille Réparations",   desc:"Effectuer 100 000 réparations au total",           cond:s=>(s.totalRepairs??0)>=100000,     reward:{rep:8000, money:2000000, talent:5} },
+  { id:"speed_5x",        cat:"Atelier",      icon:"🚀", name:"Vitesse Lumière",           desc:"Multiplicateur de vitesse ≥ 5×",                   cond:s=>(s.speedMult??1)*(s.talentSpeedMult??1)>=5,  reward:{rep:2000, money:500000,  talent:3} },
+  { id:"speed_10x",       cat:"Atelier",      icon:"🚀", name:"Distorsion Temporelle",     desc:"Multiplicateur de vitesse ≥ 10×",                  cond:s=>(s.speedMult??1)*(s.talentSpeedMult??1)>=10, reward:{rep:8000, money:2000000, talent:5} },
+  { id:"auto_10ps",       cat:"Atelier",      icon:"🤖", name:"Atelier Fantôme",           desc:"Atteindre 10 s/s de réparation automatique",       cond:s=>(s.repairAuto??0)+(s.talentRepairAuto??0)>=10,  reward:{rep:500,  money:50000,   talent:1} },
+  { id:"auto_50ps",       cat:"Atelier",      icon:"🤖", name:"Intelligence Artificielle", desc:"Atteindre 50 s/s de réparation automatique",       cond:s=>(s.repairAuto??0)+(s.talentRepairAuto??0)>=50,  reward:{rep:3000, money:500000,  talent:3} },
+  { id:"click_200k",      cat:"Atelier",      icon:"🥊", name:"Dieu du Clic",              desc:"Effectuer 200 000 clics de réparation",            cond:s=>(s.totalClickRepairs??0)>=200000,  reward:{rep:2000, money:200000,  talent:2} },
+  { id:"click_1m",        cat:"Atelier",      icon:"🥊", name:"Millionnaire du Clic",      desc:"Effectuer 1 000 000 clics de réparation",          cond:s=>(s.totalClickRepairs??0)>=1000000, reward:{rep:8000, money:1000000, talent:4} },
+
+  // ── DIAGNOSTIC CUMULÉ ───────────────────────────────
+  { id:"total_diag_50k",  cat:"Diagnostic",   icon:"🧠", name:"Cinquante Mille Scans",     desc:"Effectuer 50 000 diagnostics au total",            cond:s=>(s.totalAnalyses??0)>=50000,     reward:{rep:2000, money:300000,  talent:2} },
+  { id:"total_diag_200k", cat:"Diagnostic",   icon:"🧠", name:"Deux Cent Mille Scans",     desc:"Effectuer 200 000 diagnostics au total",           cond:s=>(s.totalAnalyses??0)>=200000,    reward:{rep:8000, money:1000000, talent:4} },
+  { id:"diag_reward3",    cat:"Diagnostic",   icon:"💡", name:"Scanner Légendaire",        desc:"Avoir +500 € par diagnostic",                      cond:s=>s.diagReward>=500,               reward:{rep:1000, money:100000,  talent:2} },
+  { id:"diag_reward4",    cat:"Diagnostic",   icon:"💡", name:"Oracle Mécanique",          desc:"Avoir +1 000 € par diagnostic",                    cond:s=>s.diagReward>=1000,              reward:{rep:5000, money:500000,  talent:4} },
+
+  // ── STOCK HIGH END ───────────────────────────────────
+  { id:"part_qty50",      cat:"Stock",        icon:"📦", name:"Entrepôt Débordant",        desc:"Avoir 50 unités d'une même pièce en stock",        cond:s=>Object.values(s.parts??{}).some(p=>p.qty>=50),   reward:{rep:500,  money:50000,   talent:1} },
+  { id:"part_qty200",     cat:"Stock",        icon:"📦", name:"Revendeur Grossiste",       desc:"Avoir 200 unités d'une même pièce en stock",       cond:s=>Object.values(s.parts??{}).some(p=>p.qty>=200),  reward:{rep:2000, money:200000,  talent:2} },
+  { id:"part_slots_max",  cat:"Stock",        icon:"🚛", name:"Hub Logistique",            desc:"Avoir 10 slots de livraison simultanés",           cond:s=>(s.upgrades?.find(u=>u.id==="slots_livraison")?.lvl??0)>=9, reward:{rep:500,money:80000,talent:1} },
+
+  // ── PRESTIGE HIGH END ────────────────────────────────
+  { id:"prestige_20",     cat:"Prestige",     icon:"♾️", name:"Cycle Infini",              desc:"Effectuer 20 prestiges",                           cond:s=>(s.prestigeCount??0)>=20,        reward:{rep:0,    money:0,       talent:15} },
+  { id:"prestige_50",     cat:"Prestige",     icon:"♾️", name:"Au-Delà du Temps",          desc:"Effectuer 50 prestiges",                           cond:s=>(s.prestigeCount??0)>=50,        reward:{rep:0,    money:0,       talent:30} },
+  { id:"heritage_50",     cat:"Prestige",     icon:"🏛️", name:"Maître Héritier",           desc:"Dépenser 50 points Héritage",                      cond:s=>(s.heritageSpent??0)>=50,        reward:{rep:5000, money:500000,  talent:4} },
+  { id:"heritage_80",     cat:"Prestige",     icon:"⚜️", name:"Arbre Généalogique Complet",desc:"Dépenser 80 points Héritage",                      cond:s=>(s.heritageSpent??0)>=80,        reward:{rep:15000,money:2000000, talent:8} },
+
+  // ── SHOWROOM HIGH END ────────────────────────────────
+  { id:"show_cap10",      cat:"Showroom",     icon:"🏪", name:"Grand Showroom",            desc:"Avoir 10 emplacements showroom",                   cond:s=>(s.showroomCap??3)+(s.talentShowroomSlots??0)>=10,          reward:{rep:400,  money:80000,   talent:1} },
+  { id:"show_sold_SSS",   cat:"Showroom",     icon:"💎", name:"Collectionneur d'Hypercars",desc:"Réparer et avoir eu une voiture SSS en showroom",  cond:s=>s._lastRepairedTier==="SSS"&&s.showroom?.some(c=>c.tier==="SSS"), reward:{rep:3000,money:500000,talent:2} },
+
+  // ── AMÉLIORATIONS HIGH END ───────────────────────────
+  { id:"up_300",          cat:"Améliorations",icon:"🔩", name:"Optimisation Totale",       desc:"300 niveaux d'améliorations au total",             cond:s=>s.upgrades?.reduce((a,u)=>a+u.lvl,0)>=300,  reward:{rep:2000, money:300000,  talent:2} },
+  { id:"up_500",          cat:"Améliorations",icon:"💡", name:"Génie de la Mécanique",     desc:"500 niveaux d'améliorations au total",             cond:s=>s.upgrades?.reduce((a,u)=>a+u.lvl,0)>=500,  reward:{rep:8000, money:1000000, talent:4} },
+  { id:"up_all_maxed",    cat:"Améliorations",icon:"🏆", name:"Maître Absolu",             desc:"Toutes les améliorations au niveau maximum",       cond:s=>s.upgrades?.filter(u=>u.maxLvl).every(u=>u.lvl>=(u.maxLvl??0)), reward:{rep:5000,money:2000000,talent:6} },
+
+  // ── TALENTS HIGH END ─────────────────────────────────
+  { id:"tal_300",         cat:"Talents",      icon:"🌟", name:"Transcendance",             desc:"300 rangs de talents dépensés",                    cond:s=>Object.values(s.talents??{}).reduce((a,v)=>a+v,0)>=300,  reward:{rep:3000, money:500000,  talent:2} },
+  { id:"tal_max_all",     cat:"Talents",      icon:"💫", name:"Maîtrise Totale",           desc:"Maxer les 15 talents à leur rang maximum",         cond:s=>{const t=s.talents??{};return ["passive_1","passive_2","sale_1","sale_2","showroom_1","rare_bonus_1","speed_1","speed_2","click_1","multi_repair_1","parts_2","diag_1","diag_2","diag_3"].every(id=>(t[id]??0)>=20)&&(t["parts_1"]??0)>=10;}, reward:{rep:20000,money:10000000,talent:10} },
+
+  // ── COMBOS & DÉFIS ───────────────────────────────────
+  { id:"combo_rich_fast", cat:"Défis",        icon:"⚡", name:"Riche et Rapide",           desc:"Avoir 1M€ ET vitesse ≥ 3× en même temps",         cond:s=>s.money>=1000000&&(s.speedMult??1)*(s.talentSpeedMult??1)>=3,                        reward:{rep:500,  money:0,       talent:1} },
+  { id:"combo_full_boch", cat:"Défis",        icon:"🔵", name:"Full Bochmann",             desc:"Avoir 20 pièces différentes en stock Bochmann",    cond:s=>Object.values(s.parts??{}).filter(p=>p.supplier==="bochmann"&&p.qty>0).length>=20, reward:{rep:1000, money:200000,  talent:2} },
+  { id:"combo_no_click",  cat:"Défis",        icon:"🤝", name:"Le Patron ne Touche Plus",  desc:"Avoir 20+ s/s répa auto ET réputation 10 000+",   cond:s=>(s.repairAuto??0)+(s.talentRepairAuto??0)>=20&&s.rep>=10000,                        reward:{rep:0,    money:500000,  talent:2} },
+  { id:"combo_tier_speed",cat:"Défis",        icon:"🏁", name:"Turbo Légendaire",          desc:"Avoir réparé une SSS+ ET vitesse ≥ 5×",           cond:s=>s._lastRepairedTier==="SSS+"&&(s.speedMult??1)*(s.talentSpeedMult??1)>=5,           reward:{rep:5000, money:1000000, talent:4} },
+  { id:"combo_diag_pass", cat:"Défis",        icon:"📡", name:"Machine à Diagnostics",     desc:"Avoir 500€/diag ET 500€/s passif",                 cond:s=>s.diagReward>=500&&s.moneyPerSec>=500,                                              reward:{rep:2000, money:300000,  talent:2} },
+  { id:"combo_prestige_ss",cat:"Défis",       icon:"🔄", name:"Prestige de Luxe",          desc:"Effectuer un prestige avec tier SS débloqué",      cond:s=>(s.prestigeCount??0)>=1&&s.rep>=70000,                                              reward:{rep:0,    money:500000,  talent:2} },
+
+  // ── SESSIONS LONGUES ─────────────────────────────────
+  { id:"session_24h",     cat:"Divers",       icon:"🌙", name:"Nuit Blanche",              desc:"Jouer 24 heures au total",                         cond:s=>Date.now()-(s.sessionStart??Date.now())>=86400000,   reward:{rep:500,  money:50000,   talent:1} },
+  { id:"session_100h",    cat:"Divers",       icon:"🏆", name:"Vétéran",                   desc:"Jouer 100 heures au total",                        cond:s=>Date.now()-(s.sessionStart??Date.now())>=360000000,  reward:{rep:3000, money:500000,  talent:2} },
 ];
 
 // State des succès (débloqués)
@@ -2720,18 +3941,28 @@ document.getElementById("btnToggleAchNotif")?.addEventListener("click", () => {
 // Init bouton au chargement
 updateAchNotifBtn();
 
+// Liste des succès pas encore débloqués — se réduit dynamiquement
+let _pendingAchievements = null;
+function resetPendingAchievements(){
+  _pendingAchievements = ACHIEVEMENTS.filter(a => !state.achievements?.[a.id]);
+}
+
 function checkAchievements(){
   // Mise à jour flags spéciaux
   if(state.money < 10) state._wasBroke = true;
 
-  for(const ach of ACHIEVEMENTS){
-    if(state.achievements[ach.id]) continue; // déjà débloqué
+  // Init lazy si besoin
+  if(!_pendingAchievements) resetPendingAchievements();
+
+  const unlocked = [];
+  for(const ach of _pendingAchievements){
     try {
       if(!ach.cond(state)) continue;
     } catch(e){ continue; }
 
     // Débloquer
     state.achievements[ach.id] = Date.now();
+    unlocked.push(ach.id);
 
     // Appliquer récompenses
     if(ach.reward.rep)    state.rep    += ach.reward.rep;
@@ -2746,6 +3977,11 @@ function checkAchievements(){
       _achPopupQueue.push(ach);
       showNextAchievementPopup();
     }
+  }
+
+  // Purger les succès débloqués de la liste pending
+  if(unlocked.length > 0){
+    _pendingAchievements = _pendingAchievements.filter(a => !state.achievements[a.id]);
   }
 }
 
@@ -2891,6 +4127,11 @@ if(achievementsBackdrop) achievementsBackdrop.addEventListener("click", closeAch
 requestAnimationFrame(tick);
 setInterval(save, 30000);
 setInterval(() => { if(currentUser) pushLeaderboard(); }, 60000); // classement : 1x/min
+
+// Évite le spike de dt quand l'onglet redevient visible après une longue absence
+document.addEventListener("visibilitychange", () => {
+  if(document.visibilityState === "visible") last = performance.now();
+});
 
 // Fallback : si onAuthStateChange ne répond pas dans les 5s, on charge quand même depuis localStorage
 setTimeout(() => {
