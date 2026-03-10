@@ -1,4 +1,29 @@
 // =====================
+// CONFIG — Constantes centralisées
+// Modifier ici plutôt que de chercher dans le code
+// =====================
+const CONFIG = {
+  // Progression offline
+  OFFLINE_MAX_SEC:    4 * 3600,  // max 4h de rattrapage offline
+  OFFLINE_STEP_SEC:   30,        // chunks de 30s pour le catchup
+  // Sauvegarde
+  CLOUD_SAVE_INTERVAL: 60000,    // cloud toutes les 60s (quota Supabase gratuit)
+  LB_PUSH_INTERVAL:    60000,    // classement : 1x/min
+  // Succès
+  ACH_CHECK_INTERVAL: 2,         // vérification toutes les 2s
+  // Anti-clic
+  CLICK_COOLDOWN_MS:  50,
+  // Milestones de niveau
+  LEVEL_MILESTONES: new Set([10, 25, 50, 75, 100, 150, 200]),
+};
+
+// =====================
+// DEBUG — Mettre à true pour activer les logs de développement
+// =====================
+const DEBUG = false;
+function dbg(...args){ if(DEBUG) console.log(...args); }
+
+// =====================
 // STATE
 // =====================
 const state = {
@@ -68,25 +93,25 @@ const state = {
     { id:"diagpro", tab:"tools", icon:"🧠", name:"Station Diag Pro",      lvl:0, desc:"+20€ par diag", cost:12000 },
 
     // ÉQUIPE
-    { id:"stagiaire",      tab:"team", icon:"🧑‍🔧", name:"Stagiaire Accueil",   lvl:0, desc:"Diagnostique auto toutes les 12s (min 6s au niv.max)", cost: 2500, maxLvl:10 },
-    { id:"receptionnaire", tab:"team", icon:"📋",    name:"Réceptionnaire",       lvl:0, desc:"Accélère le diagnostic auto jusqu'à 1s (prérequis : Stagiaire niv.10)", cost: 20000, maxLvl:10 },
-    { id:"vendeur",        tab:"team", icon:"👔",    name:"Vendeur Junior",        lvl:0, desc:"Vend auto toutes les 15s (min 8s au niv.max)",          cost: 6000, maxLvl:10 },
-    { id:"vendeur_confirme",tab:"team",icon:"🤵",    name:"Vendeur Confirmé",      lvl:0, desc:"Accélère la vente auto jusqu'à 1s (prérequis : Vendeur Junior niv.10)", cost: 30000, maxLvl:10 },
-    { id:"apprenti",   tab:"team", icon:"🔩",    name:"Apprenti Mécanicien",lvl:0, desc:"+0.15s/s de réparation auto par rang",                   cost: 4000 },
-    { id:"mecanicien", tab:"team", icon:"🛠️",   name:"Mécanicien",         lvl:0, desc:"+0.5s/s de réparation auto par rang",                    cost: 15000 },
+    { id:"stagiaire",        tab:"team", icon:"🧑‍🔧", name:"Stagiaire Accueil",    lvl:0, desc:"Diagnostique auto toutes les 12s (min 6s au niv.max)",                    cost:15000,  maxLvl:10 },
+    { id:"receptionnaire",   tab:"team", icon:"📋",    name:"Réceptionnaire",        lvl:0, desc:"Accélère le diagnostic auto jusqu'à 1s (prérequis : Stagiaire niv.10)", cost:120000, maxLvl:10 },
+    { id:"vendeur",          tab:"team", icon:"👔",    name:"Vendeur Junior",         lvl:0, desc:"Vend auto toutes les 15s (min 8s au niv.max)",                          cost:25000,  maxLvl:10 },
+    { id:"vendeur_confirme", tab:"team", icon:"🤵",    name:"Vendeur Confirmé",       lvl:0, desc:"Accélère la vente auto jusqu'à 1s (prérequis : Vendeur Junior niv.10)", cost:200000, maxLvl:10 },
+    { id:"apprenti",         tab:"team", icon:"🔩",    name:"Apprenti Mécanicien",   lvl:0, desc:"+0.15s/s de réparation auto par rang",                                  cost:12000 },
+    { id:"mecanicien",       tab:"team", icon:"🛠️",   name:"Mécanicien",             lvl:0, desc:"+0.5s/s de réparation auto par rang",                                   cost:80000 },
 
     // AFFAIRES — revenus passifs
-    { id:"loc_outils",   tab:"deals", icon:"🔑",  name:"Location d'Outils",      lvl:0, desc:"+2 €/s de revenu passif",   cost: 3000 },
-    { id:"contrat_taxi", tab:"deals", icon:"🚕",  name:"Contrat Taxi Local",      lvl:0, desc:"+5 €/s de revenu passif",   cost: 8000 },
-    { id:"assurance",    tab:"deals", icon:"📋",  name:"Partenariat Assurance",   lvl:0, desc:"+10 €/s de revenu passif",  cost: 20000 },
-    { id:"atelier_nuit", tab:"deals", icon:"🌙",  name:"Atelier de Nuit",         lvl:0, desc:"+20 €/s de revenu passif",  cost: 50000 },
-    { id:"franchise",    tab:"deals", icon:"🏢",  name:"Franchise Régionale",     lvl:0, desc:"+50 €/s de revenu passif",  cost: 150000 },
-    { id:"showroom_slot", tab:"deals", icon:"🖼️", name:"Extension Showroom",      lvl:0, desc:"+2 emplacements showroom (max 4 achats → 11 max)", cost: 8000, maxLvl:4 },
+    { id:"loc_outils",   tab:"deals", icon:"🔑",  name:"Location d'Outils",      lvl:0, desc:"+2 €/s de revenu passif",   cost:6000 },
+    { id:"contrat_taxi", tab:"deals", icon:"🚕",  name:"Contrat Taxi Local",      lvl:0, desc:"+5 €/s de revenu passif",   cost:8000 },
+    { id:"assurance",    tab:"deals", icon:"📋",  name:"Partenariat Assurance",   lvl:0, desc:"+10 €/s de revenu passif",  cost:20000 },
+    { id:"atelier_nuit", tab:"deals", icon:"🌙",  name:"Atelier de Nuit",         lvl:0, desc:"+20 €/s de revenu passif",  cost:50000 },
+    { id:"franchise",    tab:"deals", icon:"🏢",  name:"Franchise Régionale",     lvl:0, desc:"+50 €/s de revenu passif",  cost:150000 },
+    { id:"showroom_slot",tab:"deals", icon:"🖼️", name:"Extension Showroom",      lvl:0, desc:"+2 emplacements showroom (max 4 achats → 11 max)", cost:35000, maxLvl:4 },
 
     // PIÈCES DÉTACHÉES
-    { id:"magasinier",        tab:"stock", icon:"📦", name:"Magasinier",             lvl:0, desc:"-20% délai livraison par rang", cost:5000,  maxLvl:3 },
-    { id:"logiciel_stock",    tab:"stock", icon:"📊", name:"Logiciel Stock",         lvl:0, desc:"Niv.1: alertes rupture · Niv.2: seuils configurables · Niv.3: commandes auto", cost:12000, maxLvl:3 },
-    { id:"slots_livraison",   tab:"stock", icon:"🚛", name:"Slots Livraison",        lvl:0, desc:"Niv.1→9 : +1 livraison simultanée par rang (max 10)", cost:6000, maxLvl:9 },
+    { id:"magasinier",      tab:"stock", icon:"📦", name:"Magasinier",      lvl:0, desc:"-20% délai livraison par rang",                                               cost:40000, maxLvl:3 },
+    { id:"logiciel_stock",  tab:"stock", icon:"📊", name:"Logiciel Stock",  lvl:0, desc:"Niv.1: alertes rupture · Niv.2: seuils configurables · Niv.3: commandes auto", cost:80000, maxLvl:3 },
+    { id:"slots_livraison", tab:"stock", icon:"🚛", name:"Slots Livraison", lvl:0, desc:"Niv.1→9 : +1 livraison simultanée par rang (max 10)",                         cost:20000, maxLvl:9 },
   ],
 };
 
@@ -133,22 +158,36 @@ function updateGarageLevel(){
   if(newLevel !== state.garageLevel){
     state.garageLevel = newLevel;
 
-      garageProgressFill.style.transition = "none";
-  setTimeout(() => {
-    garageProgressFill.style.transition = "width .25s ease";
-  }, 50);
+    garageProgressFill.style.transition = "none";
+    setTimeout(() => {
+      garageProgressFill.style.transition = "width .25s ease";
+    }, 50);
+
+    // Flash level up sur le compteur de niveau
+    const lvlEl = document.querySelector(".topProgress__lvl");
+    if(lvlEl){
+      lvlEl.classList.remove("topProgress__lvl--levelup");
+      void lvlEl.offsetWidth;
+      lvlEl.classList.add("topProgress__lvl--levelup");
+      setTimeout(() => lvlEl.classList.remove("topProgress__lvl--levelup"), 700);
+    }
+
+    // P2 — Popup milestone pour les niveaux importants
+    if(CONFIG.LEVEL_MILESTONES.has(state.garageLevel)){
+      setTimeout(() => showMilestonePopup(state.garageLevel), 400);
+    }
 
     // ✅ points de talent: 1 par niveau atteint (diff)
-  const granted = state.talentLevelGranted ?? 1;
-  if(state.garageLevel > granted){
-    const gained = state.garageLevel - granted;
-    state.talentPoints += gained;
-    state.talentLevelGranted = state.garageLevel;
-  }
+    const granted = state.talentLevelGranted ?? 1;
+    if(state.garageLevel > granted){
+      const gained = state.garageLevel - granted;
+      state.talentPoints += gained;
+      state.talentLevelGranted = state.garageLevel;
+    }
     // Optionnel : bonus à chaque montée de niveau (à toi de choisir)
     // state.garageCap += 1;
 
-    renderAll(); // rafraîchit UI + badge etc.
+    _needsFullRender = true; // rafraîchit UI + badge etc.
   }
 }
 
@@ -159,9 +198,9 @@ function updateGarageLevel(){
 const TIERS = {
   F:    { label:"F",    color:"#8ca8c0", bg:"rgba(140,168,192,.12)", border:"rgba(140,168,192,.22)", desc:"Épave",      repReq:0,       repGain:1   },
   E:    { label:"E",    color:"#a0b890", bg:"rgba(160,184,144,.12)", border:"rgba(160,184,144,.22)", desc:"Populaire",  repReq:0,       repGain:2   },
-  D:    { label:"D",    color:"#c4b870", bg:"rgba(196,184,112,.12)", border:"rgba(196,184,112,.22)", desc:"Commune",    repReq:150,     repGain:3   },
-  C:    { label:"C",    color:"#4dff9a", bg:"rgba(77,255,154,.10)",  border:"rgba(77,255,154,.22)",  desc:"Correcte",   repReq:600,     repGain:6   },
-  B:    { label:"B",    color:"#7ab0ff", bg:"rgba(80,140,255,.10)",  border:"rgba(80,140,255,.22)",  desc:"Sportive",   repReq:2500,    repGain:12  },
+  D:    { label:"D",    color:"#c4b870", bg:"rgba(196,184,112,.12)", border:"rgba(196,184,112,.22)", desc:"Commune",    repReq:500,     repGain:3   },
+  C:    { label:"C",    color:"#4dff9a", bg:"rgba(77,255,154,.10)",  border:"rgba(77,255,154,.22)",  desc:"Correcte",   repReq:1500,    repGain:6   },
+  B:    { label:"B",    color:"#7ab0ff", bg:"rgba(80,140,255,.10)",  border:"rgba(80,140,255,.22)",  desc:"Sportive",   repReq:5000,    repGain:12  },
   A:    { label:"A",    color:"#a07aff", bg:"rgba(120,80,255,.10)",  border:"rgba(120,80,255,.22)",  desc:"Rare",       repReq:8000,    repGain:20  },
   S:    { label:"S",    color:"#ffc83a", bg:"rgba(255,200,50,.10)",  border:"rgba(255,200,50,.22)",  desc:"Prestige",   repReq:25000,   repGain:40  },
   SS:   { label:"SS",   color:"#ff8c40", bg:"rgba(255,140,64,.12)",  border:"rgba(255,140,64,.28)",  desc:"Collection", repReq:70000,   repGain:80  },
@@ -212,6 +251,10 @@ function hasStockAlert(){
 // Refs cachées pour renderActive (appelé à chaque frame)
 let _activeBarFill = null;
 let _activeMetaEl  = null;
+let _showroomJustAdded = false; // flag pour animer le premier item du showroom
+let _isOfflineCatchup  = false; // flag pour bloquer renderAll pendant le catchup offline
+let _autoSellFlash     = false; // G2 — flag pour flash showroom quand vente auto
+let _activeJustStarted = false; // V1 — flag pour animation entrée slot actif
 let _autoOrderTimer = 0;
 function processAutoOrders(dt = 0){
   if(getLogicielLvl() < 3) return;
@@ -614,14 +657,36 @@ function showToast(msg){
   _toastTimeout = setTimeout(() => { toast.style.opacity = "0"; }, 3000);
 }
 
+// Texte flottant (+argent, +REP, etc.)
+function spawnFloatText(text, type, originEl){
+  const el = document.createElement("div");
+  el.className = `floatText floatText--${type}`;
+  el.textContent = text;
+  // originEl peut être un Element DOM ou un objet {x, y} de coordonnées précalculées
+  if(originEl && typeof originEl.x === "number"){
+    // Coordonnées déjà calculées (utile quand l'élément est retiré du DOM avant le setTimeout)
+    el.style.left = originEl.x + "px";
+    el.style.top  = originEl.y + "px";
+  } else if(originEl && originEl.getBoundingClientRect){
+    const r = originEl.getBoundingClientRect();
+    el.style.left = (r.left + r.width/2) + "px";
+    el.style.top  = (r.top  - 8) + "px";
+  } else {
+    el.style.left = "50%";
+    el.style.top  = "40%";
+    el.style.transform = "translateX(-50%)";
+  }
+  document.body.appendChild(el);
+  el.addEventListener("animationend", () => el.remove());
+}
+
 // Traite les livraisons en cours (appelé dans tick)
 function processOrders(dt){
   if(!state.orders || !state.orders.length) return;
-  const now = Date.now();
   const arrived = [];
   state.orders = state.orders.filter(order => {
     order.timeLeft -= dt;
-    if(order.timeLeft <= 0 || now >= order.deliveryAt){
+    if(order.timeLeft <= 0){
       arrived.push(order);
       return false;
     }
@@ -639,7 +704,10 @@ function processOrders(dt){
     if(order.supplierId === "euroline" && (order.originalDelay ?? order.timeLeft + dt) <= 10){
       state._fastDelivery = true;
     }
-    showToast(`📦 Livraison reçue : ${PARTS_CATALOG.find(p=>p.id===order.partId)?.name ?? order.partId} ×${order.qty}`);
+    // Pas de toast pendant le catchup offline (évite le spam)
+    if(!_isOfflineCatchup){
+      showToast(`📦 Livraison reçue : ${PARTS_CATALOG.find(p=>p.id===order.partId)?.name ?? order.partId} ×${order.qty}`);
+    }
   }
 }
 
@@ -1378,7 +1446,7 @@ const HERITAGE_PERKS = [
 
   // ══ BRANCHE COMMERCE (vert/or) ════════════════════════
   { id:"com_start_1",    branch:"Commerce", icon:"💵", name:"Capital de Départ",
-    desc:"+500€ à chaque nouveau prestige par rang",
+    desc:"+2000€ à chaque nouveau prestige par rang",
     maxRank:5, costPerRank:1,
     requires:[] },
 
@@ -1502,7 +1570,7 @@ function applyHeritageBonuses(){
     if(p.id === "meca_ultimate") b.repSpeed  *= 1.5;
 
     // Commerce
-    if(p.id === "com_start_1")   b.startMoney     += rank * 500;
+    if(p.id === "com_start_1")   b.startMoney     += rank * 2000;
     if(p.id === "com_sale_1")    b.saleBonus      += rank * 0.05;
     if(p.id === "com_passive_1") b.passiveBonus   += rank * 5;
     if(p.id === "com_diag_1")    b.diagBonus      += rank * 10;
@@ -1523,7 +1591,12 @@ function applyHeritageBonuses(){
 
 function doPrestige(){
   if(!canPrestige()) return;
-  // Applique les bonuses héritage EN PREMIER pour que calcHeritagePoints les prenne en compte
+  // L1 — ORDRE CRITIQUE — ne pas changer sans vérification :
+  // 1. applyHeritageBonuses() EN PREMIER → calcHeritagePoints() s'appuie dessus
+  // 2. Persist des valeurs AVANT Object.assign
+  // 3. rebuildUpgradeMap() AVANT applyTalentEffects() → les talents lisent _upgradeMap
+  // 4. applyTalentEffects() AVANT recalcRepairAuto()
+  // 5. renderAll() EN DERNIER
   applyHeritageBonuses();
   const pts = calcHeritagePoints();
 
@@ -1599,14 +1672,21 @@ function doPrestige(){
   });
 
   applyGarageName();
-  applyTalentEffects();
+  rebuildUpgradeMap();   // ← EN PREMIER : calcDealsPassive() dans applyTalentEffects lit _upgradeMap
+  applyTalentEffects();  //   sans ça, moneyPerSec garde les valeurs de l'ancienne partie
   recalcRepairAuto();
-  rebuildUpgradeMap();
   resetPendingAchievements();
   updateGarageLevel();
   updateTopbarProfile();
   renderAll();
   renderPrestigeNotif();
+  // V2 — Confetti prestige
+  if(typeof confetti !== "undefined"){
+    setTimeout(() => confetti({
+      particleCount: 150, spread: 90, origin: { y: 0.4 },
+      colors: ["#ff8c40","#ffc83a","#ff4d70","#ffffff"]
+    }), 200);
+  }
   save();
 
   showPrestigePopup(pts, persistCount);
@@ -1615,9 +1695,12 @@ function doPrestige(){
 // Coût de base d'un upgrade (pour reset au prestige)
 const UPGRADE_BASE_COSTS = {
   manual:94, toolbox:268, obd:337, impact:800, nego:1000, comp:3500,
-  lift:5000, impact2:7500, diagpro:12000, stagiaire:2500, vendeur:6000,
-  apprenti:4000, mecanicien:15000, loc_outils:3000, contrat_taxi:8000,
-  assurance:20000, atelier_nuit:50000, franchise:150000, showroom_slot:8000,
+  lift:5000, impact2:7500, diagpro:12000,
+  stagiaire:15000, receptionnaire:120000, vendeur:25000, vendeur_confirme:200000,
+  apprenti:12000, mecanicien:80000,
+  loc_outils:6000, contrat_taxi:8000, assurance:20000, atelier_nuit:50000,
+  franchise:150000, showroom_slot:35000,
+  magasinier:40000, logiciel_stock:80000, slots_livraison:20000,
 };
 function getBaseUpgradeCost(id){ return UPGRADE_BASE_COSTS[id] ?? 100; }
 
@@ -1701,9 +1784,10 @@ function renderTalentsUI(){
   }
 }
 
-talentListEl.addEventListener("click", (e) => {
+talentListEl.addEventListener("pointerdown", (e) => {
   const btn = e.target.closest("[data-talent-buy]");
   if(!btn) return;
+  e.preventDefault();
 
   const id = btn.getAttribute("data-talent-buy");
   const t = TALENTS.find(x => x.id === id);
@@ -1717,6 +1801,15 @@ talentListEl.addEventListener("click", (e) => {
 
   state.talentPoints -= 1;
   state.talents[id] = rank + 1;
+
+  // Animation sur la carte talent
+  const card = btn.closest(".talentCard");
+  if(card){
+    card.classList.remove("talentCard--justunlocked");
+    void card.offsetWidth;
+    card.classList.add("talentCard--justunlocked");
+    setTimeout(() => card.classList.remove("talentCard--justunlocked"), 600);
+  }
 
   applyTalentEffects();
   renderAll();
@@ -1928,6 +2021,15 @@ function formatMoney(n){
   return Math.floor(n).toLocaleString("fr-FR")                         + " €";
 }
 
+// U1 — Formateur de temps global (utilisé dans renderActive, renderQueue, etc.)
+function formatTime(s){
+  if(s === null || s === undefined || !isFinite(s)) return "—";
+  s = Math.max(0, Math.round(s));
+  if(s >= 3600) return `${Math.floor(s/3600)}h ${Math.floor((s%3600)/60)}m ${s%60}s`;
+  if(s >= 60)   return `${Math.floor(s/60)}m ${s%60}s`;
+  return `${s}s`;
+}
+
 // Cache des dernières valeurs affichées — évite les micro-tremblements DOM à 60fps
 const _topCache = {};
 function setIfChanged(el, val){
@@ -1939,6 +2041,19 @@ function setIfChanged(el, val){
 }
 
 function renderTop(){
+  // Money glow quand ça monte
+  const prevMoney = moneyEl._lastMoney ?? 0;
+  if(state.money > prevMoney + 1){
+    const moneyBox = moneyEl.closest(".money");
+    if(moneyBox){
+      moneyBox.classList.remove("money--gain");
+      void moneyBox.offsetWidth;
+      moneyBox.classList.add("money--gain");
+      setTimeout(() => moneyBox.classList.remove("money--gain"), 560);
+    }
+  }
+  moneyEl._lastMoney = state.money;
+
   setIfChanged(moneyEl,       formatMoney(state.money));
   setIfChanged(moneyPerSecEl, formatMoney(state.moneyPerSec) + "/s");
   setIfChanged(repEl,         state.rep);
@@ -1950,17 +2065,26 @@ function renderTop(){
 
   const mult = (state.speedMult ?? 1) * (state.talentSpeedMult ?? 1);
   setIfChanged(repairAutoEl,  ((state.repairAuto + (state.talentRepairAuto ?? 0)) * mult).toFixed(2));
-  setIfChanged(repairClickEl, (state.repairClick * mult).toFixed(2));
+  const clickEff = ((state.repairClick + (state.talentClickBonus ?? 0)) * mult).toFixed(2);
+  setIfChanged(repairClickEl, clickEff);
+  // G1 — Mettre à jour le sous-texte du bouton réparer avec la puissance effective
+  const repBtnSub = document.getElementById("repairClickEff");
+  if(repBtnSub) setIfChanged(repBtnSub, clickEff + "s / clic");
 
   // Point de notification talents
   const dot = document.getElementById("talentNotifDot");
   if(dot) dot.style.display = state.talentPoints > 0 ? "block" : "none";
+
+  // U2 — Badge alerte stock mis à jour à chaque frame (pas seulement renderAll)
+  const stockTab = document.querySelector(".tab[data-tab='stock']");
+  if(stockTab){
+    let sdot = stockTab.querySelector(".stockAlertDot");
+    if(!sdot){ sdot = document.createElement("span"); sdot.className = "stockAlertDot"; stockTab.appendChild(sdot); }
+    sdot.style.display = hasStockAlert() ? "inline-block" : "none";
+  }
 }
 
 function renderQueue(){
-  // Invalidate les refs cachées de renderActive (le DOM va être reconstruit)
-  _activeBarFill = null;
-  _activeMetaEl  = null;
   // Occupés = voiture en atelier + voitures en file
   const occupied = (state.active ? 1 : 0) + state.queue.length;
   queueCountEl.textContent = occupied;
@@ -1990,6 +2114,15 @@ function renderQueue(){
         const hasMissingParts = car.failure?.parts?.length && !checkPartsAvailability(car.failure.parts).ok;
         const barColor = hasMissingParts ? "#ff8c40" : "";
         slot.className = "garageSlot garageSlot--active";
+        // V3 — Bordure gauche colorée selon le tier de la voiture
+        slot.style.setProperty("--tier-color", t.color);
+        // V1 — Animation d'entrée : classe --entering retirée après 400ms
+        if(_activeJustStarted){
+          _activeJustStarted = false;
+          slot.classList.add("garageSlot--entering");
+          requestAnimationFrame(() => requestAnimationFrame(() => slot.classList.remove("garageSlot--entering")));
+          setTimeout(() => slot.classList.remove("garageSlot--entering"), 450);
+        }
         slot.innerHTML = `
           <div class="garageSlot__num">🔧</div>
           <div class="garageSlot__body">
@@ -2069,6 +2202,9 @@ function renderQueue(){
 
     garageSlotsEl.appendChild(slot);
   }
+  // Rafraîchir les refs de renderActive après rebuild DOM
+  _activeBarFill = garageSlotsEl.querySelector(".garageSlot--active .garageSlot__barFill");
+  _activeMetaEl  = garageSlotsEl.querySelector(".garageSlot--active .garageSlot__meta");
 }
 
 function renderActive(){
@@ -2092,19 +2228,38 @@ function renderActive(){
   const left  = Math.max(0, car.timeRemaining);
   const pct   = total > 0 ? (1 - (left / total)) : 1;
   repairBarEl.style.width = `${(pct * 100).toFixed(1)}%`;
+  // Pulse quand > 85% terminé
+  repairBarEl.classList.toggle("garageSlot__barFill--almostDone", pct >= 0.85);
 
   // Mettre à jour la mini barre dans le slot actif de la grille (refs cachées)
   if(!_activeBarFill) _activeBarFill = garageSlotsEl?.querySelector(".garageSlot--active .garageSlot__barFill");
   if(!_activeMetaEl)  _activeMetaEl  = garageSlotsEl?.querySelector(".garageSlot--active .garageSlot__meta");
-  if(_activeBarFill) _activeBarFill.style.width = `${(pct * 100).toFixed(1)}%`;
+  if(_activeBarFill){
+    _activeBarFill.style.width = `${(pct * 100).toFixed(1)}%`;
+    _activeBarFill.classList.toggle("garageSlot__barFill--almostDone", pct >= 0.85);
+  }
   const t = TIERS[car.tier] || TIERS["F"];
-  if(_activeMetaEl) _activeMetaEl.textContent = `${t.desc} · ${formatMoney(car.baseValue)} · ${(pct*100).toFixed(0)}%`;
+  // U1 — Temps restant formaté lisiblement (ex: 1h 23m 45s)
+  const timeLeft = Math.max(0, car.timeRemaining ?? 0);
+  if(_activeMetaEl) _activeMetaEl.textContent = `${t.desc} · ${formatMoney(car.baseValue)} · ⏱️ ${formatTime(timeLeft)} · ${(pct*100).toFixed(0)}%`;
 }
 
 function renderShowroom(){
   showroomListEl.innerHTML = "";
   const cap = getShowroomCap();
   const count = state.showroom.length;
+
+  // G2 — Flash sur le titre showroom quand vente auto
+  if(_autoSellFlash){
+    _autoSellFlash = false;
+    const showroomHead = document.querySelector(".col--right .panel__head");
+    if(showroomHead){
+      showroomHead.classList.remove("panel__head--sold");
+      void showroomHead.offsetWidth;
+      showroomHead.classList.add("panel__head--sold");
+      setTimeout(() => showroomHead.classList.remove("panel__head--sold"), 800);
+    }
+  }
   const isFull = count >= cap;
 
   // Indicateur cap dans le titre showroom
@@ -2124,14 +2279,15 @@ function renderShowroom(){
   showroomEmptyEl.style.display = "none";
   showroomListEl.style.display = "block";
 
-  for(const car of state.showroom){
+  for(let i = 0; i < state.showroom.length; i++){
+    const car = state.showroom[i];
     const saleValue = calcSaleValue(car);
     const t = TIERS[car.tier] || TIERS["F"];
     const fail = car.failure ? FAILURE_CATEGORIES[car.failure.category] : null;
     const qfx = car.partsQuality ? getQualityEffects(Math.round(car.partsQuality)) : null;
     const supp = car.partsSupplier ? SUPPLIERS[car.partsSupplier] : null;
     const div = document.createElement("div");
-    div.className = "sItem";
+    div.className = "sItem" + (i === 0 && _showroomJustAdded ? " sItem--new" : "");
     div.innerHTML = `
       <div style="min-width:0;flex:1">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -2148,16 +2304,14 @@ function renderShowroom(){
     `;
     showroomListEl.appendChild(div);
   }
+  _showroomJustAdded = false;
 }
 
 function renderUpgrades(){
   // Ne pas recréer le DOM si l'utilisateur est en train d'éditer un champ dans le panel
-  // Exception : l'onglet stock gère lui-même ses inputs (bouton Enregistrer)
-  if(state.activeTab !== "stock"){
-    const focused = document.activeElement;
-    if(focused && upgradeListEl?.contains(focused) && (focused.tagName === "INPUT" || focused.tagName === "SELECT" || focused.tagName === "TEXTAREA")){
-      return;
-    }
+  const focused = document.activeElement;
+  if(focused && upgradeListEl?.contains(focused) && (focused.tagName === "INPUT" || focused.tagName === "SELECT" || focused.tagName === "TEXTAREA")){
+    return;
   }
 
   upgradeListEl.innerHTML = "";
@@ -2204,6 +2358,7 @@ function renderUpgrades(){
         <div class="item__txt">
           <div class="item__name">${u.name} <span class="pill">niv. ${u.lvl}</span></div>
           <div class="item__desc">${u.desc}</div>
+          ${!isMaxed ? `<div class="item__nextcost">→ Niv.${u.lvl+2} : ${formatMoney(Math.ceil(u.cost*1.25))}${state.money < Math.ceil(u.cost*1.25) && prereqMet ? ` <span class="item__nextcost--miss">(-${formatMoney(Math.ceil(u.cost*1.25) - state.money)})</span>` : ''}</div>` : ''}
           ${prereqHtml}
           ${maxLvlHtml}
         </div>
@@ -2226,6 +2381,13 @@ let _stockOrderPart = null; // partId en cours de commande
 
 function renderStockUI(){
   const el = upgradeListEl;
+
+  // Ne pas reconstruire si l'utilisateur édite un champ dans la vue courante
+  const focused = document.activeElement;
+  if(focused && el.contains(focused) && (focused.tagName === "INPUT" || focused.tagName === "SELECT" || focused.tagName === "TEXTAREA")){
+    return;
+  }
+
   el.innerHTML = "";
 
   // --- HEADER NAVIGATION ---
@@ -2602,6 +2764,7 @@ function renderStockUpgradesView(el){
         <div class="item__txt">
           <div class="item__name">${u.name} <span class="pill">niv. ${u.lvl}</span></div>
           <div class="item__desc">${u.desc}</div>
+          ${!isMaxed ? `<div class="item__nextcost">→ Niv.${u.lvl+2} : ${formatMoney(Math.ceil(u.cost*1.25))}${state.money < Math.ceil(u.cost*1.25) && prereqMet ? ` <span class="item__nextcost--miss">(-${formatMoney(Math.ceil(u.cost*1.25) - state.money)})</span>` : ''}</div>` : ''}
           ${maxLvlHtml}
         </div>
       </div>
@@ -2629,7 +2792,8 @@ document.querySelector(".tabs").addEventListener("click", (e) => {
 });
 
 function renderAll(){
-  applyTalentEffects();
+  // applyTalentEffects() est appelé UNIQUEMENT quand les talents changent (achat, prestige, load)
+  // PAS ici — sinon c'est recalculé à chaque render
   // Sync visuel de l'onglet actif
   document.querySelectorAll(".tab").forEach(t => {
     t.classList.toggle("tab--active", t.getAttribute("data-tab") === state.activeTab);
@@ -2659,6 +2823,9 @@ let _heritageFilter = "Tous";
 function renderPrestigeNotif(){
   const dot = document.getElementById("prestigeNotifDot");
   if(dot) dot.style.display = canPrestige() ? "block" : "none";
+  // Pulse le bouton prestige quand disponible
+  const btn = document.querySelector(".btn--prestige");
+  if(btn) btn.classList.toggle("available", canPrestige());
 }
 
 function renderPrestigeModal(){
@@ -2692,6 +2859,10 @@ function renderPrestigeModal(){
         <span>${state.rep.toLocaleString("fr-FR")}/50 000</span>
       </div>
     </div>
+    ${!can ? `<div class="prestige__missing">
+      ${state.garageLevel < 50 ? `<div class="prestige__missing-line">🔒 Encore <b>${50 - state.garageLevel} niveau${50 - state.garageLevel > 1 ? 'x' : ''}</b> de garage manquant${50 - state.garageLevel > 1 ? 's' : ''}</div>` : ''}
+      ${state.rep < 50000 ? `<div class="prestige__missing-line">🔒 Encore <b>${(50000 - state.rep).toLocaleString("fr-FR")} REP</b> manquants</div>` : ''}
+    </div>` : ''}
     <button class="prestige__btn ${can ? '' : 'prestige__btn--locked'}" id="btnDoPrestige" ${can ? '' : 'disabled'}>
       ${can ? '🔥 LANCER LE PRESTIGE' : '🔒 Conditions non remplies'}
     </button>
@@ -2862,6 +3033,7 @@ function tryStartNextRepair(){
   const next = state.queue.shift();
   if(!next) return;
   state.active = next;
+  _activeJustStarted = true; // V1 — animation d'entrée dans le slot actif
 }
 
 // Temps de réparation estimé en tenant compte de tous les multiplicateurs actifs
@@ -2905,10 +3077,12 @@ function finishRepair(){
   }
 
   state.showroom.unshift(car);
+  _showroomJustAdded = true;
   state.active = null;
   state.totalRepairs = (state.totalRepairs ?? 0) + 1;
   tryStartNextRepair();
-  renderAll();
+  // Ne pas renderAll pendant le catchup offline (sera fait une seule fois après)
+  if(!_isOfflineCatchup) _needsFullRender = true;
 }
 
 function applyRepairTime(seconds){
@@ -2928,47 +3102,62 @@ function applyRepairTime(seconds){
 // =====================
 // Cooldown minimum entre deux clics : 150ms (~6-7 clics/s max)
 // Un humain rapide fait 8-10 clics/s max, on laisse de la marge
-const CLICK_COOLDOWN_MS = 50;
+// CLICK_COOLDOWN_MS est dans CONFIG.CLICK_COOLDOWN_MS
 let _lastRepairClick  = 0;
 let _lastAnalyzeClick = 0;
 
 btnAnalyze.addEventListener("click", () => {
   const now = Date.now();
-  if(now - _lastAnalyzeClick < CLICK_COOLDOWN_MS) return; // trop rapide = ignoré
+  if(now - _lastAnalyzeClick < CONFIG.CLICK_COOLDOWN_MS) return; // trop rapide = ignoré
   _lastAnalyzeClick = now;
 
   const occupied = (state.active ? 1 : 0) + state.queue.length;
   if (occupied >= state.garageCap) return;
 
   const diagGain = Math.round((state.diagReward + (state.talentDiagBonus ?? 0)) * (state.talentDiagMult ?? 1));
-  state.money += diagGain;
-  state.totalMoneyEarned = (state.totalMoneyEarned ?? 0) + diagGain;
+  if(isFinite(diagGain) && diagGain > 0) {
+    state.money += diagGain;
+    state.totalMoneyEarned = (state.totalMoneyEarned ?? 0) + diagGain;
+    spawnFloatText("+" + formatMoney(diagGain), "diag", document.getElementById("btnAnalyze"));
+  }
   state.totalAnalyses = (state.totalAnalyses ?? 0) + 1;
   state.queue.push(makeCar());
   tryStartNextRepair();
-  renderAll();
+  _needsFullRender = true;
 });
 
 btnRepairClick.addEventListener("click", () => {
   const now = Date.now();
-  if(now - _lastRepairClick < CLICK_COOLDOWN_MS) return; // trop rapide = ignoré
+  if(now - _lastRepairClick < CONFIG.CLICK_COOLDOWN_MS) return;
   _lastRepairClick = now;
 
   const mult = (state.speedMult ?? 1) * (state.talentSpeedMult ?? 1);
   const clickAmt = (state.repairClick + (state.talentClickBonus ?? 0)) * mult;
   applyRepairTime(clickAmt);
   state.totalClickRepairs = (state.totalClickRepairs ?? 0) + 1;
+
+  // Animation ripple + shake
+  btnRepairClick.classList.remove("clicked");
+  void btnRepairClick.offsetWidth; // reflow pour relancer
+  btnRepairClick.classList.add("clicked");
+  setTimeout(() => btnRepairClick.classList.remove("clicked"), 350);
+
   renderActive();
 });
 
 let _lastSellClick = 0;
 showroomListEl.addEventListener("click", (e) => {
   const now = Date.now();
-  if(now - _lastSellClick < CLICK_COOLDOWN_MS) return;
+  if(now - _lastSellClick < CONFIG.CLICK_COOLDOWN_MS) return;
   _lastSellClick = now;
 
   const btn = e.target.closest("[data-sell]");
   if(!btn) return;
+
+  // Capturer la position du bouton IMMÉDIATEMENT avant la vente
+  // car le re-render supprime l'élément du DOM → getBoundingClientRect() retournerait {0,0}
+  const btnRect = btn.getBoundingClientRect();
+  const btnPos  = { x: btnRect.left + btnRect.width / 2, y: btnRect.top - 8 };
 
   const id = btn.getAttribute("data-sell");
   const idx = state.showroom.findIndex(c => c.id === id);
@@ -2976,11 +3165,18 @@ showroomListEl.addEventListener("click", (e) => {
 
   const car = state.showroom[idx];
   const saleValue = calcSaleValue(car);
-  state.money += saleValue;
-  state.totalMoneyEarned = (state.totalMoneyEarned ?? 0) + saleValue;
+  if(isFinite(saleValue)) {
+    state.money += saleValue;
+    state.totalMoneyEarned = (state.totalMoneyEarned ?? 0) + saleValue;
+    spawnFloatText("+" + formatMoney(saleValue), "money", btnPos);
+  }
   const tierData = TIERS[car.tier] || TIERS["F"];
   const repMult = state.heritageBonuses?.repGainMult ?? 1.0;
-  state.rep += Math.round(tierData.repGain * repMult);
+  const repGain = Math.round(tierData.repGain * repMult);
+  if(isFinite(repGain)) {
+    state.rep += repGain;
+    setTimeout(() => spawnFloatText("+" + repGain + " REP", "rep", btnPos), 120);
+  }
 
   state.carsSold += 1;
   state.totalCarsSold = (state.totalCarsSold ?? 0) + 1;
@@ -2988,12 +3184,27 @@ showroomListEl.addEventListener("click", (e) => {
 
   state.showroom.splice(idx, 1);
 
-  renderAll();
+  _needsFullRender = true;
 });
 
-upgradeListEl.addEventListener("click", (e) => {
+const UPGRADE_MULT = {
+  manual:1.25, toolbox:1.25, obd:1.25, impact:1.25, comp:1.25, impact2:1.25, diagpro:1.25,
+  nego:1.25, lift:1.25,
+  loc_outils:1.28, contrat_taxi:1.28, assurance:1.28, atelier_nuit:1.30, franchise:1.32,
+  showroom_slot:1.30,
+  stagiaire:1.35, receptionnaire:1.40, vendeur:1.35, vendeur_confirme:1.40,
+  apprenti:1.30, mecanicien:1.35,
+  magasinier:1.40, logiciel_stock:1.45, slots_livraison:1.35,
+};
+
+// L1 — Achat upgrade : après achat, rebuildUpgradeMap() est appelé AVANT applyTalentEffects()
+// et AVANT recalcRepairAuto(). Ne pas inverser l'ordre.
+upgradeListEl.addEventListener("pointerdown", (e) => {
+  // pointerdown se déclenche dès le premier contact, avant que le tick
+  // puisse recréer le DOM entre mousedown et mouseup (ce qui annulait le click)
   const btn = e.target.closest("[data-buy]");
   if(!btn) return;
+  e.preventDefault(); // évite le double-déclenchement éventuel avec click
 
   const id = btn.getAttribute("data-buy");
   const u = getUpgrade(id);
@@ -3024,11 +3235,59 @@ if(id === "showroom_slot") state.showroomCap = (state.showroomCap ?? 3) + 2;
 if(id === "apprenti" || id === "mecanicien") recalcRepairAuto();
 
   // coût scale
-  u.cost = Math.ceil(u.cost * 1.25);
+  u.cost = Math.ceil(u.cost * (UPGRADE_MULT[id] ?? 1.25));
 
   rebuildUpgradeMap();
-  renderAll();
+  applyTalentEffects();  // recalcule moneyPerSec (revenus passifs) immédiatement après achat
+
+  // Sauvegarde immédiate après achat — évite le rollback si la page se ferme
+  // avant le prochain autosave (60s). Le pending queue gère la concurrence.
+  save();
+
+
+
+  _needsFullRender = true;
 });
+
+// ─── recalcUpgradeEffects ─────────────────────────────────────────────────────
+// Recalcule TOUS les effets dérivés des upgrades depuis leurs niveaux sauvegardés.
+// Appelé après applySaveSnapshot() et après doPrestige().
+// Règle : repart des valeurs de base héritage, puis rejoue chaque upgrade lvl fois.
+function recalcUpgradeEffects(){
+  const b = state.heritageBonuses ?? {};
+
+  // Repartir des valeurs de base (héritage inclus)
+  state.diagReward   = 1 + (b.diagBonus    ?? 0);
+  state.repairClick  = 0.5 + (b.clickBonus ?? 0);
+  state.speedMult    = b.repSpeed           ?? 1.0;
+  state.saleBonusPct = b.saleBonus          ?? 0;
+  state.garageCap    = 1;   // sera incrémenté par lift
+  state.showroomCap  = 3;   // sera incrémenté par showroom_slot
+
+  // Rejouer les effets de chaque upgrade selon son niveau actuel
+  for(const u of state.upgrades){
+    const lvl = u.lvl || 0;
+    if(lvl === 0) continue;
+    switch(u.id){
+      case "manual":       state.diagReward   += 1    * lvl; break;
+      case "obd":          state.diagReward   += 5    * lvl; break;
+      case "diagpro":      state.diagReward   += 20   * lvl; break;
+      case "toolbox":      state.repairClick  += 0.05 * lvl; break;
+      case "impact":       state.repairClick  += 0.08 * lvl; break;
+      case "impact2":      state.repairClick  += 0.12 * lvl; break;
+      case "nego":         state.saleBonusPct += 0.05 * lvl; break;
+      case "lift":         state.garageCap    += lvl;        break;
+      case "showroom_slot":state.showroomCap  += 2    * lvl; break;
+      case "comp":
+        // speedMult est multiplicatif : (1.10)^lvl
+        state.speedMult *= Math.pow(1.10, lvl);
+        break;
+    }
+  }
+  dbg("[recalcUpgradeEffects] diagReward:", state.diagReward,
+      "repairClick:", state.repairClick, "speedMult:", state.speedMult,
+      "garageCap:", state.garageCap, "showroomCap:", state.showroomCap);
+}
 
 function recalcRepairAuto(){
   const apprentiLvl   = getUpgrade("apprenti")?.lvl   || 0;
@@ -3040,9 +3299,11 @@ function recalcRepairAuto(){
 // =====================
 // IDLE LOOP
 // =====================
+let _needsFullRender = false; // render complet planifié pour le prochain frame
 let last = performance.now();
 let autoAnalyzeTimer = 0;
 let autoSellTimer = 0;
+
 let achCheckTimer = 0;
 let stockTimerAccu = 0;
 
@@ -3054,13 +3315,13 @@ function rebuildUpgradeMap(){
 }
 function getUpgrade(id){ return _upgradeMap[id] ?? state.upgrades.find(u => u.id === id); }
 
-function tick(now){
-  const dt = Math.min((now - last) / 1000, 5); // max 5s pour éviter les spikes d'onglet inactif
-  last = now;
-
+// Logique pure du tick — utilisable offline et dans le loop normal
+function applyTickLogic(dt){
   const passiveGain = state.moneyPerSec * dt;
-  state.money += passiveGain;
-  state.totalMoneyEarned = (state.totalMoneyEarned ?? 0) + passiveGain;
+  if(isFinite(passiveGain)) {
+    state.money += passiveGain;
+    state.totalMoneyEarned = (state.totalMoneyEarned ?? 0) + passiveGain;
+  }
 
   // Traitement des livraisons de pièces
   processOrders(dt);
@@ -3075,41 +3336,86 @@ function tick(now){
     tryStartNextRepair();
   }
 
-  // --- LOGIQUE D'AUTOMATISATION ---
+  // --- LOGIQUE D'AUTOMATISATION (sans DOM) ---
   const stagiaireLvl      = getUpgrade("stagiaire")?.lvl      || 0;
   const receptionnaireLvl = getUpgrade("receptionnaire")?.lvl || 0;
-  if (stagiaireLvl > 0) {
+  if(stagiaireLvl > 0){
     autoAnalyzeTimer += dt;
-    // Stagiaire seul : 12s → 6s min. Réceptionnaire réduit encore jusqu'à 1s min
     let delay = Math.max(6, 12 - (stagiaireLvl * 0.6));
-    if (receptionnaireLvl > 0) delay = Math.max(1, delay - (receptionnaireLvl * 0.5));
-    if (autoAnalyzeTimer >= delay) {
-      autoAnalyzeTimer = 0;
+    if(receptionnaireLvl > 0) delay = Math.max(1, delay - (receptionnaireLvl * 0.5));
+    while(autoAnalyzeTimer >= delay){
+      autoAnalyzeTimer -= delay;
       const occupied = (state.active ? 1 : 0) + state.queue.length;
-      if (occupied < state.garageCap) {
-        document.getElementById("btnAnalyze").click();
+      const MAX_QUEUE = state.garageCap * 10; // max 10 voitures en attente par slot
+      if(occupied < state.garageCap && state.queue.length < MAX_QUEUE){
+        // Logique pure : pas de .click() DOM
+        const diagGain = Math.round((state.diagReward + (state.talentDiagBonus ?? 0)) * (state.talentDiagMult ?? 1));
+        if(isFinite(diagGain) && diagGain > 0){
+          state.money += diagGain;
+          state.totalMoneyEarned = (state.totalMoneyEarned ?? 0) + diagGain;
+        }
+        state.totalAnalyses = (state.totalAnalyses ?? 0) + 1;
+        state.queue.push(makeCar());
+        tryStartNextRepair();
+        _needsFullRender = true;
       }
     }
   }
 
   const vendeurLvl         = getUpgrade("vendeur")?.lvl          || 0;
   const vendeurConfirmeLvl = getUpgrade("vendeur_confirme")?.lvl || 0;
-  if (vendeurLvl > 0 && state.showroom.length > 0) {
+  if(vendeurLvl > 0 && state.showroom.length > 0){
     autoSellTimer += dt;
-    // Vendeur seul : 15s → 8s min. Vendeur Confirmé réduit encore jusqu'à 1s min
     let delay = Math.max(8, 15 - (vendeurLvl * 0.7));
-    if (vendeurConfirmeLvl > 0) delay = Math.max(1, delay - (vendeurConfirmeLvl * 0.7));
-    if (autoSellTimer >= delay) {
-      autoSellTimer = 0;
-      const firstCarSellBtn = document.querySelector("#showroomList .sell");
-      if(firstCarSellBtn) firstCarSellBtn.click();
+    if(vendeurConfirmeLvl > 0) delay = Math.max(1, delay - (vendeurConfirmeLvl * 0.7));
+    while(autoSellTimer >= delay){
+      autoSellTimer -= delay;
+      if(state.showroom.length > 0){
+        const car = state.showroom[state.showroom.length - 1];
+        const saleValue = calcSaleValue(car);
+        if(isFinite(saleValue)){
+          state.money += saleValue;
+          state.totalMoneyEarned = (state.totalMoneyEarned ?? 0) + saleValue;
+        }
+        const tierData = TIERS[car.tier] || TIERS["F"];
+        const repMult = state.heritageBonuses?.repGainMult ?? 1.0;
+        const repGain = Math.round(tierData.repGain * repMult);
+        if(isFinite(repGain)) state.rep += repGain;
+        state.carsSold += 1;
+        state.totalCarsSold = (state.totalCarsSold ?? 0) + 1;
+        state.showroom.pop();
+        updateGarageLevel();
+        _needsFullRender = true;
+        _autoSellFlash = true; // G2 — signal flash showroom
+      }
     }
   }
 
-  renderTop();
-  renderActive();
+  // Vérification des succès (accumulé)
+  achCheckTimer += dt;
+  if(achCheckTimer >= CONFIG.ACH_CHECK_INTERVAL){
+    achCheckTimer = 0;
+    checkAchievements();
+  }
+}
 
-  // Actualise le stock (timers livraison) toutes les secondes si l'onglet est visible
+function tick(now){
+  const dt = Math.min((now - last) / 1000, 5);
+  last = now;
+
+  applyTickLogic(dt);
+
+  if(_needsFullRender){
+    _needsFullRender = false;
+    renderAll(); // inclut renderTop + renderActive + renderQueue etc.
+  }
+  if(!_needsFullRender){
+    // Pas de changement structurel : juste barre de réparation + argent/rep
+    renderTop();
+    renderActive();
+  }
+
+  // Actualise le stock toutes les secondes si l'onglet est visible
   stockTimerAccu += dt;
   if(stockTimerAccu >= 1){
     stockTimerAccu = 0;
@@ -3126,13 +3432,6 @@ function tick(now){
     btn.disabled = isMaxed || state.money < u.cost;
   });
 
-  // Vérification des succès toutes les 2s
-  achCheckTimer += dt;
-  if(achCheckTimer >= 2){
-    achCheckTimer = 0;
-    checkAchievements();
-  }
-
   requestAnimationFrame(tick);
 }
 
@@ -3140,41 +3439,13 @@ function tick(now){
 // SUPABASE AUTH + CLOUD SAVE
 // =====================
 
-// ⚠️  Remplace ces deux valeurs par tes vraies clés Supabase
-//     Dashboard Supabase → Project Settings → API
 const SUPABASE_URL      = "https://ydruyvfusnrekfllocqq.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlkcnV5dmZ1c25yZWtmbGxvY3FxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2ODE3MDIsImV4cCI6MjA4ODI1NzcwMn0.dgwUXXNHzg0oyQdcnaJNkrIo6S63d6Dw-BDmWqhwS7w";
 
-const _supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-let currentUser = null;
-let _authReady = false; // empêche le tick de sauvegarder avant que la session soit connue
-
-// Unique point d'entrée pour toute la gestion de session
-_supa.auth.onAuthStateChange(async (event, session) => {
-  console.log("[auth] event:", event, "user:", session?.user?.id ?? "null");
-  currentUser = session?.user ?? null;
-  updateAuthUI();
-
-  if(event === "INITIAL_SESSION" || event === "SIGNED_IN"){
-    if(currentUser){
-      await new Promise(r => setTimeout(r, 300));
-      await cloudLoad();
-    } else {
-      localLoad();
-      renderAll();
-    }
-    _authReady = true;
-    tryStartNextRepair();
-  }
-
-  if(event === "SIGNED_OUT"){
-    localSave();
-    updateAuthUI();
-    renderAll();
-  }
-});
-
+// createClient sans navigator.locks — évite les AbortError / lock not released
+// quand plusieurs onglets ou rechargements rapides se marchent dessus.
+// ─── AUTH UI HELPERS ───────────────────────────────────────────────────────────
+// Définies AVANT createClient car onAuthStateChange les appelle immédiatement.
 function updateAuthUI(){
   const btnAuth    = document.getElementById("btnAuth");
   const btnProfile = document.getElementById("btnProfile");
@@ -3193,18 +3464,726 @@ function updateTopbarProfile(){
   const avatarEl = document.getElementById("topbarAvatar");
   const pseudoEl = document.getElementById("topbarPseudo");
   if(avatarEl) avatarEl.textContent = state.profile?.avatar || "🔧";
-  if(pseudoEl) pseudoEl.textContent = state.profile?.pseudo || "Mécanicien";
+  if(pseudoEl) pseudoEl.textContent = state.profile?.pseudo || "M\xe9canicien";
 }
 
 function openAuth(){
   if(currentUser){ _supa.auth.signOut(); return; }
   const modal = document.getElementById("supaAuthModal");
   if(modal){
+    modal.style.zIndex = "10000"; // au-dessus du login wall (z-index:9999)
     modal.style.display = "flex";
     switchAuthView("login");
     document.getElementById("supaAuthEmail")?.focus();
   }
 }
+
+// ─── LOGIN WALL ─────────────────────────────────────────────────────────────────────
+function showLoginWall(){
+  let wall = document.getElementById("loginWall");
+  if(!wall){
+    wall = document.createElement("div");
+    wall.id = "loginWall";
+    wall.style.cssText = [
+      "position:fixed","inset:0","z-index:9999",
+      "background:rgba(10,10,20,0.96)",
+      "display:flex","flex-direction:column",
+      "align-items:center","justify-content:center","gap:20px",
+      "font-family:inherit"
+    ].join(";");
+    wall.innerHTML = `
+      <div style="font-size:3rem">🏎️</div>
+      <div style="font-size:1.5rem;font-weight:700;color:#fff">Garage Turbo</div>
+      <div style="color:#aaa;font-size:0.95rem;text-align:center;max-width:280px">
+        Connecte-toi pour jouer et sauvegarder ta progression dans le cloud.
+      </div>
+      <button id="loginWallBtn" style="
+        margin-top:8px;padding:12px 32px;border:none;border-radius:10px;
+        background:linear-gradient(135deg,#ffc832,#ff8c00);
+        color:#111;font-weight:700;font-size:1rem;cursor:pointer;
+      ">🔑 Se connecter / S\'inscrire</button>
+    `;
+    document.body.appendChild(wall);
+    wall.querySelector("#loginWallBtn").addEventListener("click", openAuth);
+  }
+  wall.style.display = "flex";
+}
+
+function hideLoginWall(){
+  const wall = document.getElementById("loginWall");
+  if(wall) wall.style.display = "none";
+}
+
+// ─── SAVE INDICATOR ─────────────────────────────────────────────────────────────
+function showSaveIndicator(msg){
+  const btn = document.getElementById("btnSave");
+  if(!btn) return;
+  const orig = btn.textContent;
+  btn.textContent = msg;
+  setTimeout(() => btn.textContent = orig, 2500);
+}
+
+// ─── LOCAL SAVE/LOAD : DÉSACTIVÉS (cloud-only) ───────────────────────────────────────
+function localSave(){ /* cloud-only — intentionnellement vide */ }
+function localLoad(){ /* cloud-only — intentionnellement vide */ }
+
+// =============================================================================
+// save-snapshot.js
+// Garage Turbo — Couche de sérialisation de la progression du joueur
+//
+// Ce fichier est la SEULE source de vérité pour le format de sauvegarde.
+// Il ne connaît ni Supabase, ni Steam, ni localStorage.
+// Il lit et écrit uniquement dans `state` (global de app.js).
+//
+// DÉPENDANCES GLOBALES ATTENDUES (app.js) :
+//   state, CONFIG, applyGarageName, rebuildUpgradeMap, applyTalentEffects,
+//   applyHeritageBonuses, applyHeritageBonusesToState, recalcRepairAuto,
+//   resetPendingAchievements, updateGarageLevel, applyTickLogic,
+//   _isOfflineCatchup, showToast
+// =============================================================================
+
+// Version courante du format de save.
+// À incrémenter à chaque changement de schéma (ajout/renommage de champ).
+const SAVE_VERSION = 3;
+
+// ─── buildSaveSnapshot ───────────────────────────────────────────────────────
+// Sérialise l'état courant du jeu en un objet JSON pur.
+// Ne doit contenir aucune référence à des fonctions, DOM, ou objets cycliques.
+function buildSaveSnapshot() {
+  return {
+    // Versioning — TOUJOURS présent, TOUJOURS en premier
+    v:       SAVE_VERSION,
+    savedAt: Date.now(),
+
+    // ── Profil joueur ──────────────────────────────────────────────────────
+    profile: {
+      pseudo:  state.profile?.pseudo  ?? "Mécanicien",
+      avatar:  state.profile?.avatar  ?? "🔧",
+      country: state.profile?.country ?? "FR",
+      banner:  state.profile?.banner  ?? "#1a2a4a",
+    },
+    garageName: state.garageName ?? "Garage Turbo",
+
+    // ── Économie ───────────────────────────────────────────────────────────
+    money:           state.money           ?? 100,
+    rep:             state.rep             ?? 0,
+    carsSold:        state.carsSold        ?? 0,
+    totalMoneyEarned: state.totalMoneyEarned ?? 0,
+    totalRepairs:     state.totalRepairs    ?? 0,
+    totalAnalyses:    state.totalAnalyses   ?? 0,
+    totalClickRepairs: state.totalClickRepairs ?? 0,
+    totalCarsSold:    state.totalCarsSold   ?? 0,
+    sessionStart:     state.sessionStart    ?? Date.now(),
+
+    // ── Niveau garage ──────────────────────────────────────────────────────
+    garageLevel: state.garageLevel ?? 1,
+    garageCap:   state.garageCap   ?? 1,
+    showroomCap: state.showroomCap ?? 3,
+
+    // ── Talents ────────────────────────────────────────────────────────────
+    talentPoints:       state.talentPoints       ?? 0,
+    talentLevelGranted: state.talentLevelGranted ?? 1,
+    talents:            state.talents            ?? {},
+
+    // ── Upgrades ───────────────────────────────────────────────────────────
+    // On ne sérialise que les données variables (lvl, cost) — pas les métadonnées
+    // statiques (name, icon, desc…) qui sont déjà dans le state initial.
+    upgrades: (state.upgrades ?? []).map(u => ({
+      id:   u.id,
+      lvl:  u.lvl  ?? 0,
+      cost: u.cost ?? 0,
+    })),
+
+    // ── File d'attente & showroom ──────────────────────────────────────────
+    queue:    state.queue    ?? [],
+    active:   state.active   ?? null,
+    showroom: state.showroom ?? [],
+
+    // ── Prestige & héritage ────────────────────────────────────────────────
+    prestigeCount:  state.prestigeCount  ?? 0,
+    heritagePoints: state.heritagePoints ?? 0,
+    heritageSpent:  state.heritageSpent  ?? 0,
+    heritagePerks:  state.heritagePerks  ?? {},
+
+    // ── Stock & commandes ──────────────────────────────────────────────────
+    parts:         state.parts         ?? {},
+    orders:        state.orders        ?? [],
+    stockSettings: state.stockSettings ?? {},
+    stockGlobal:   state.stockGlobal   ?? {},
+
+    // ── Succès ─────────────────────────────────────────────────────────────
+    achievements: state.achievements ?? {},
+
+    // ── Flags internes ─────────────────────────────────────────────────────
+    _hasSaved: true,
+  };
+}
+
+// ─── migrateSaveSnapshot ─────────────────────────────────────────────────────
+// Prend un snapshot brut (quelle que soit sa version) et le met à jour
+// vers SAVE_VERSION. Chaque bloc if(data.v < N) est une migration atomique.
+// Règle : on ne supprime jamais un champ ici — on ajoute ou renomme uniquement.
+function migrateSaveSnapshot(raw) {
+  // Copie défensive pour ne jamais muter l'objet reçu
+  const data = Object.assign({}, raw);
+
+  // Pas de v → très ancienne save (avant versioning) → traiter comme v1
+  if(typeof data.v !== "number") data.v = 1;
+
+  // ── v1 → v2 : introduction du système de stock ────────────────────────────
+  if(data.v < 2) {
+    data.parts         = data.parts         ?? {};
+    data.orders        = data.orders        ?? [];
+    data.stockSettings = data.stockSettings ?? {};
+    data.stockGlobal   = data.stockGlobal   ?? {};
+    data.v = 2;
+  }
+
+  // ── v2 → v3 : statistiques globales + sessionStart ────────────────────────
+  if(data.v < 3) {
+    data.totalMoneyEarned  = data.totalMoneyEarned  ?? 0;
+    data.totalRepairs      = data.totalRepairs      ?? 0;
+    data.totalAnalyses     = data.totalAnalyses     ?? 0;
+    data.totalClickRepairs = data.totalClickRepairs ?? 0;
+    data.totalCarsSold     = data.totalCarsSold     ?? data.carsSold ?? 0;
+    data.sessionStart      = data.sessionStart      ?? Date.now();
+    // profile.banner introduit en v3
+    if(data.profile && !data.profile.banner) data.profile.banner = "#1a2a4a";
+    data.v = 3;
+  }
+
+  // ── v3 → v4 (exemple futur) ───────────────────────────────────────────────
+  // if(data.v < 4) {
+  //   data.newField = data.newField ?? defaultValue;
+  //   data.v = 4;
+  // }
+
+  return data;
+}
+
+// ─── applySaveSnapshot ───────────────────────────────────────────────────────
+// Applique un snapshot (après migration) dans le state global.
+// Toujours appeler migrateSaveSnapshot() avant d'appeler cette fonction.
+// Effectue le catchup offline si savedAt est présent.
+function applySaveSnapshot(raw) {
+  // 1. Migrer vers la version courante avant tout
+  const data = migrateSaveSnapshot(raw);
+
+  // 2. Profil
+  state.profile = {
+    pseudo:  data.profile?.pseudo  ?? "Mécanicien",
+    avatar:  data.profile?.avatar  ?? "🔧",
+    country: data.profile?.country ?? "FR",
+    banner:  data.profile?.banner  ?? "#1a2a4a",
+  };
+  state.garageName = data.garageName ?? state.garageName;
+
+  // 3. Économie
+  state.money           = data.money           ?? state.money;
+  state.rep             = data.rep             ?? state.rep;
+  state.carsSold        = data.carsSold        ?? state.carsSold;
+  state.totalMoneyEarned  = data.totalMoneyEarned  ?? 0;
+  state.totalRepairs      = data.totalRepairs      ?? 0;
+  state.totalAnalyses     = data.totalAnalyses     ?? 0;
+  state.totalClickRepairs = data.totalClickRepairs ?? 0;
+  state.totalCarsSold     = data.totalCarsSold     ?? 0;
+  state.sessionStart      = data.sessionStart      ?? Date.now();
+
+  // 4. Niveau garage
+  state.garageLevel = data.garageLevel ?? state.garageLevel;
+  state.garageCap   = data.garageCap   ?? state.garageCap;
+  state.showroomCap = data.showroomCap ?? state.showroomCap;
+
+  // 5. Talents
+  state.talentPoints       = data.talentPoints       ?? state.talentPoints;
+  state.talentLevelGranted = data.talentLevelGranted ?? state.talentLevelGranted;
+  state.talents            = data.talents            ?? {};
+
+  // 6. Upgrades — merge par id pour ne pas casser les nouvelles définitions
+  if(Array.isArray(data.upgrades)) {
+    data.upgrades.forEach(saved => {
+      const base = state.upgrades.find(u => u.id === saved.id);
+      if(base) {
+        base.lvl  = saved.lvl  ?? 0;
+        base.cost = saved.cost ?? base.cost;
+      }
+    });
+  }
+
+  // 7. File d'attente, voiture active, showroom
+  state.queue    = data.queue    ?? [];
+  state.active   = data.active   ?? null;
+  state.showroom = data.showroom ?? [];
+
+  // 8. Prestige & héritage
+  state.prestigeCount  = data.prestigeCount  ?? 0;
+  state.heritagePoints = data.heritagePoints ?? 0;
+  state.heritageSpent  = data.heritageSpent  ?? 0;
+  state.heritagePerks  = data.heritagePerks  ?? {};
+
+  // 9. Stock & commandes
+  state.parts         = data.parts         ?? {};
+  state.orders        = data.orders        ?? [];
+  state.stockSettings = data.stockSettings ?? {};
+  state.stockGlobal   = data.stockGlobal   ?? {};
+
+  // 10. Succès
+  state.achievements = data.achievements ?? {};
+
+  // 11. Flags internes
+  state._hasSaved = data._hasSaved ?? false;
+
+  // 12. Recalcul des effets dérivés — ordre critique (voir commentaire doPrestige)
+  applyGarageName();
+  applyHeritageBonuses();       // ← doit précéder applyHeritageBonusesToState
+  applyHeritageBonusesToState();
+  rebuildUpgradeMap();          // ← doit précéder applyTalentEffects et recalcUpgradeEffects
+  recalcUpgradeEffects();       // ← repart des niveaux sauvegardés, recalcule diagReward/repairClick/speedMult etc.
+  applyTalentEffects();         // ← doit précéder recalcRepairAuto
+  recalcRepairAuto();
+  resetPendingAchievements();
+  updateGarageLevel();
+
+  // 13. Catchup offline : compenser le temps écoulé depuis la dernière save
+  if(data.savedAt && typeof data.savedAt === "number") {
+    const offlineSec = Math.max(0, (Date.now() - data.savedAt) / 1000);
+    if(offlineSec > 5) {
+      const catchupSec = Math.min(offlineSec, CONFIG.OFFLINE_MAX_SEC);
+      const STEP = CONFIG.OFFLINE_STEP_SEC;
+      let remaining = catchupSec;
+      _isOfflineCatchup = true;
+      try {
+        while(remaining > 0) {
+          const dt = Math.min(remaining, STEP);
+          applyTickLogic(dt);
+          remaining -= dt;
+        }
+      } finally {
+        _isOfflineCatchup = false;
+      }
+      if(catchupSec >= 60) {
+        const mins = Math.floor(catchupSec / 60);
+        setTimeout(() => showToast(`⏱️ Progression hors-ligne : ${mins} min rattrapées`), 500);
+      }
+    }
+  }
+}
+
+
+// =============================================================================
+// save-repository.js
+// Garage Turbo — Contrat et implémentation Supabase de la persistance
+//
+// Ce fichier définit :
+//   1. SaveRepository  : interface JSDoc (contrat que toute implémentation doit respecter)
+//   2. SupabaseSaveRepository : implémentation pour Supabase (web)
+//
+// Ajouts futurs dans ce même fichier ou dans des fichiers séparés :
+//   - SteamSaveRepository  (Steam Cloud via Greenworks)
+//   - FileSaveRepository   (fichier local, NW.js / Electron)
+//   - MemorySaveRepository (tests unitaires)
+// =============================================================================
+
+// ─── Interface SaveRepository (JSDoc) ────────────────────────────────────────
+/**
+ * @interface SaveRepository
+ *
+ * Contrat de stockage de la progression d'un joueur.
+ * Aucune implémentation concrète ne doit être appelée directement par le
+ * game core — toujours passer par SaveService.
+ *
+ * @typedef {Object} SaveSnapshot
+ * @property {number} v        - Version du format
+ * @property {number} savedAt  - Timestamp Date.now() de la dernière sauvegarde
+ * ... (voir save-snapshot.js pour la structure complète)
+ */
+class SaveRepository {
+  /**
+   * Charge le snapshot de progression du joueur.
+   * @param {string} userId
+   * @returns {Promise<SaveSnapshot|null>} null si aucune save existante
+   */
+  async load(userId) {   // eslint-disable-line no-unused-vars
+    throw new Error("SaveRepository.load() non implémenté");
+  }
+
+  /**
+   * Crée ou met à jour le snapshot de progression du joueur.
+   * @param {string}       userId
+   * @param {SaveSnapshot} snapshot
+   * @returns {Promise<void>}
+   */
+  async upsert(userId, snapshot) {   // eslint-disable-line no-unused-vars
+    throw new Error("SaveRepository.upsert() non implémenté");
+  }
+
+  /**
+   * Supprime la progression du joueur.
+   * Utilisé pour la réinitialisation / RGPD.
+   * @param {string} userId
+   * @returns {Promise<void>}
+   */
+  async delete(userId) {   // eslint-disable-line no-unused-vars
+    throw new Error("SaveRepository.delete() non implémenté");
+  }
+}
+
+// ─── SupabaseSaveRepository ───────────────────────────────────────────────────
+/**
+ * Implémentation de SaveRepository pour Supabase.
+ *
+ * Schéma attendu de la table `saves` :
+ *   user_id    UUID  PRIMARY KEY REFERENCES auth.users
+ *   save_data  JSONB NOT NULL
+ *   updated_at TIMESTAMPTZ DEFAULT now()
+ *
+ * Row Level Security recommandée :
+ *   CREATE POLICY "own_save" ON saves USING (auth.uid() = user_id);
+ */
+class SupabaseSaveRepository extends SaveRepository {
+  /** @param {import('@supabase/supabase-js').SupabaseClient} client */
+  constructor(client) {
+    super();
+    this._client = client;
+  }
+
+  async load(userId) {
+    const { data, error } = await this._client
+      .from("saves")
+      .select("save_data")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if(error) throw error;
+    return data?.save_data ?? null;
+  }
+
+  async upsert(userId, snapshot) {
+    const { error } = await this._client
+      .from("saves")
+      .upsert(
+        {
+          user_id:    userId,
+          save_data:  snapshot,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id" }
+      );
+
+    if(error) throw error;
+  }
+
+  async delete(userId) {
+    const { error } = await this._client
+      .from("saves")
+      .delete()
+      .eq("user_id", userId);
+
+    if(error) throw error;
+  }
+}
+
+// ─── SteamSaveRepository (squelette prêt pour le port Steam) ─────────────────
+/**
+ * Implémentation de SaveRepository pour Steam Cloud.
+ * Nécessite Greenworks (Node.js bindings Steamworks) via NW.js ou Electron.
+ * Le userId Steam est ignoré — Steam identifie le joueur nativement.
+ *
+ * À activer lors du port Steam :
+ *   const saveRepo = new SteamSaveRepository(require('greenworks'));
+ */
+class SteamSaveRepository extends SaveRepository {
+  /** @param {object} greenworks - require('greenworks') */
+  constructor(greenworks) {
+    super();
+    this._gw = greenworks;
+  }
+
+  async load(_userId) {
+    return new Promise((resolve) => {
+      this._gw.readTextFromFile(
+        "save.json",
+        (raw) => {
+          try { resolve(JSON.parse(raw)); }
+          catch { resolve(null); }
+        },
+        () => resolve(null)   // fichier absent = nouvelle partie
+      );
+    });
+  }
+
+  async upsert(_userId, snapshot) {
+    return new Promise((resolve, reject) => {
+      this._gw.saveTextToFile(
+        "save.json",
+        JSON.stringify(snapshot),
+        resolve,
+        (err) => reject(new Error(err))
+      );
+    });
+  }
+
+  async delete(_userId) {
+    return new Promise((resolve, reject) => {
+      this._gw.deleteFile(
+        "save.json",
+        resolve,
+        (err) => reject(new Error(err))
+      );
+    });
+  }
+}
+
+
+// =============================================================================
+// save-service.js
+// Garage Turbo — Orchestrateur de la sauvegarde
+//
+// SaveService est l'UNIQUE point d'entrée pour charger et sauvegarder
+// la progression. Il :
+//   - gère les flags de concurrence (loading / saving)
+//   - délègue la sérialisation à save-snapshot.js
+//   - délègue la persistance à SaveRepository
+//   - ne connaît ni Supabase, ni Steam, ni le DOM
+//
+// DÉPENDANCES GLOBALES ATTENDUES (app.js) :
+//   buildSaveSnapshot, applySaveSnapshot,
+//   renderAll, tryStartNextRepair, showSaveIndicator
+// =============================================================================
+
+class SaveService {
+  /**
+   * @param {SaveRepository} repository - Une instance de SupabaseSaveRepository,
+   *   SteamSaveRepository, etc.
+   */
+  constructor(repository) {
+    if(!repository) throw new Error("SaveService: repository requis");
+
+    this._repo    = repository;
+    this._loading     = false;  // un cloudLoad est en cours
+    this._saving      = false;  // un cloudSave est en cours
+    this._ready       = false;  // true après le premier load (succès ou échec)
+    this._pendingSave = false;  // un save a été demandé pendant qu'un autre tournait
+  }
+
+  // ── Accesseurs ──────────────────────────────────────────────────────────────
+
+  /** @returns {boolean} true dès que le premier load est terminé */
+  get isReady()   { return this._ready;   }
+
+  /** @returns {boolean} true pendant un load actif */
+  get isLoading() { return this._loading; }
+
+  /** @returns {boolean} true pendant un save actif */
+  get isSaving()  { return this._saving;  }
+
+  // ── load ────────────────────────────────────────────────────────────────────
+  /**
+   * Charge la progression depuis le repository.
+   * Appelé UNE SEULE FOIS à la connexion (protégé par _initialLoadDone dans app.js).
+   * Met _ready = true dans le finally, qu'il y ait eu une erreur ou non.
+   *
+   * @param {string} userId
+   */
+  async load(userId) {
+    if(this._loading) {
+      dbg("[SaveService] load() déjà en cours — ignoré");
+      return;
+    }
+
+    this._loading = true;
+    dbg("[SaveService] load() pour user:", userId);
+    showSaveIndicator("☁️ Chargement...");
+
+    try {
+      const snapshot = await this._repo.load(userId);
+
+      if(snapshot) {
+        dbg("[SaveService] snapshot trouvé, application...");
+        const currentTab = state.activeTab; // préserver l'onglet actif
+        applySaveSnapshot(snapshot);
+        if(currentTab) state.activeTab = currentTab;
+        updateTopbarProfile(); // rafraîchit le pseudo/avatar dès que le profil est chargé
+        showSaveIndicator("☁️ Partie chargée");
+      } else {
+        dbg("[SaveService] aucun snapshot — nouvelle partie");
+      }
+
+      renderAll();
+    } catch(e) {
+      // Supabase cold start, réseau instable, etc.
+      // On laisse le jeu démarrer en état initial — pas de blocage.
+      console.error("[SaveService] load() erreur:", e.message);
+      showSaveIndicator("⚠️ Cloud indisponible");
+      renderAll();
+    } finally {
+      this._loading = false;
+      this._ready   = true;   // autosave peut maintenant s'activer
+      tryStartNextRepair();
+    }
+  }
+
+  // ── save ────────────────────────────────────────────────────────────────────
+  /**
+   * Sauvegarde la progression courante dans le repository.
+   * Silencieux si : pas encore prêt, déjà en cours, ou un load est actif.
+   *
+   * @param {string} userId
+   */
+  async save(userId) {
+    if(!this._ready)  { dbg("[SaveService] save() ignoré — pas encore prêt"); return; }
+    if(this._loading) { dbg("[SaveService] save() ignoré — load en cours");    return; }
+
+    // Si un save tourne déjà, on mémorise qu'un nouveau save est nécessaire.
+    // Le finally du save en cours le déclenchera automatiquement.
+    if(this._saving) {
+      this._pendingSave = true;
+      dbg("[SaveService] save() — pending enregistré");
+      return;
+    }
+
+    this._saving = true;
+    this._pendingSave = false;
+    dbg("[SaveService] save() pour user:", userId);
+
+    try {
+      // Snapshot capturé AVANT le await — reflète l'état exact au moment du clic.
+      const snapshot = buildSaveSnapshot();
+      await this._repo.upsert(userId, snapshot);
+      dbg("[SaveService] save() ✅ succès");
+      showSaveIndicator("☁️ Sauvegardé");
+    } catch(e) {
+      console.error("[SaveService] save() erreur:", e.message);
+      showSaveIndicator("⚠️ Erreur cloud");
+    } finally {
+      this._saving = false;
+      // Si un save a été demandé pendant qu'on tournait, on le relance immédiatement.
+      if(this._pendingSave) {
+        this._pendingSave = false;
+        dbg("[SaveService] save() — exécution du pending save");
+        this.save(userId);
+      }
+    }
+  }
+
+  // ── reset ───────────────────────────────────────────────────────────────────
+  /**
+   * Réinitialise les flags internes du service.
+   * À appeler lors d'une déconnexion (SIGNED_OUT) pour autoriser
+   * un prochain load propre à la reconnexion.
+   */
+  reset() {
+    this._loading     = false;
+    this._saving      = false;
+    this._ready       = false;
+    this._pendingSave = false;
+    dbg("[SaveService] reset()");
+  }
+}
+
+
+const _supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    lock: async (_name, _acquireTimeout, fn) => fn(), // bypass lock inter-onglets
+    persistSession:     true,   // session stockée localement (pas la progression)
+    detectSessionInUrl: true,
+    storageKey:         "garage-turbo-auth",
+  }
+});
+
+// ─── INSTANCIATION DE SAVSERVICE ──────────────────────────────────────────
+// _saveService est l'unique point d'entrée pour load/save de progression.
+// Pour passer à Steam : new SaveService(new SteamSaveRepository(greenworks))
+const _saveRepo    = new SupabaseSaveRepository(_supa);
+const _saveService = new SaveService(_saveRepo);
+
+
+// ─── FLAGS DE CONCURRENCE ─────────────────────────────────────────────
+let currentUser      = null;
+let _authReady       = false;  // true dès que SaveService.load() a terminé (succès ou erreur)
+let _initialLoadDone = false;  // empêche un double load INITIAL_SESSION + SIGNED_IN
+
+// ─── SAVE ARCHITECTURE ────────────────────────────────────────────────────
+// SaveSnapshot + SaveRepository + SaveService sont définis dans les sections
+// ci-dessous. L'instance globale _saveService est créée après _supa.
+
+// ─── save() — point d'entrée manuel + beforeunload ────────────────────────
+// Appellé par doPrestige(), saveProfile(), beforeunload, visibilitychange.
+// Délègue à SaveService — ne touche plus _supa directement.
+function save() {
+  if(!currentUser) return;
+  state._hasSaved = true;
+  _saveService.save(currentUser.id);
+}
+
+// ─── AUTH STATE MACHINE ──────────────────────────────────────────────────────
+// Règles :
+// • INITIAL_SESSION  → premier événement au chargement (utilisateur déjà connecté ou non)
+// • SIGNED_IN        → connexion manuelle (ou refresh de token)
+// • SIGNED_OUT       → déconnexion
+//
+// On évite d'appeler cloudLoad dans le callback directement avec await car le SDK
+// gotrue peut se retrouver à attendre la fin du callback pour relâcher son lock interne.
+// Solution : on déclenche cloudLoad via setTimeout(0) pour sortir du callstack du SDK.
+_supa.auth.onAuthStateChange((event, session) => {
+  dbg("[auth] event:", event, "user:", session?.user?.id ?? "null");
+  currentUser = session?.user ?? null;
+  updateAuthUI();
+
+  if(event === "INITIAL_SESSION"){
+    if(currentUser){
+      // Session existante au chargement → charger la progression
+      hideLoginWall();
+      if(!_initialLoadDone){
+        _initialLoadDone = true;
+        setTimeout(() => _saveService.load(currentUser.id).then(() => { _authReady = true; }), 0);
+      }
+    } else {
+      // Pas de session → bloquer le jeu
+      _authReady = false;
+      showLoginWall();
+    }
+    return;
+  }
+
+  if(event === "SIGNED_IN"){
+    if(!_initialLoadDone){
+      // Connexion manuelle (pas un refresh de token après INITIAL_SESSION)
+      _initialLoadDone = true;
+      hideLoginWall();
+      setTimeout(() => _saveService.load(currentUser.id).then(() => { _authReady = true; }), 0);
+    }
+    // Si _initialLoadDone est déjà true, c'est un refresh de token silencieux → ignorer
+    return;
+  }
+
+  if(event === "SIGNED_OUT"){
+    _authReady       = false;
+    _initialLoadDone = false;
+    _saveService.reset();
+    currentUser      = null;
+    updateAuthUI();
+    showLoginWall();
+    return;
+  }
+});
+
+// ─── FALLBACK : si onAuthStateChange ne se déclenche pas dans les 6s ─────────
+// (réseau coupé, Supabase totalement KO)
+setTimeout(() => {
+  if(!_authReady && !currentUser){
+    dbg("[init] auth timeout — affichage login wall");
+    showLoginWall();
+  }
+}, 6000);
+
+// btnSave supprimé du header
+const btnAuth = document.getElementById("btnAuth");
+if(btnAuth) btnAuth.addEventListener("click", openAuth);
+
+// =====================
+// AUTH MODAL — connexion / inscription
+// =====================
 
 function switchAuthView(view){
   const loginView  = document.getElementById("authViewLogin");
@@ -3213,8 +4192,8 @@ function switchAuthView(view){
   const btns       = document.querySelectorAll(".authToggle__btn");
   const msgEl      = document.getElementById("supaAuthMsg");
 
-  loginView.style.display  = view === "login"  ? "flex" : "none";
-  signupView.style.display = view === "signup" ? "flex" : "none";
+  if(loginView)  loginView.style.display  = view === "login"  ? "flex" : "none";
+  if(signupView) signupView.style.display = view === "signup" ? "flex" : "none";
 
   btns.forEach(b => b.classList.toggle("authToggle__btn--active", b.dataset.view === view));
   if(slider) slider.classList.toggle("authToggle__slider--right", view === "signup");
@@ -3225,27 +4204,26 @@ function setAuthMsg(msg, type = ""){
   const el = document.getElementById("supaAuthMsg");
   if(!el) return;
   el.textContent = msg;
-  el.className = "authMsg" + (type ? ` authMsg--${type}` : "");
+  el.className   = "authMsg" + (type ? ` authMsg--${type}` : "");
 }
 
-// Force du mot de passe
 function checkPwdStrength(pwd){
   const fill  = document.getElementById("pwdStrengthFill");
   const label = document.getElementById("pwdStrengthLabel");
   if(!fill || !label) return;
   let score = 0;
-  if(pwd.length >= 6)  score++;
-  if(pwd.length >= 10) score++;
-  if(/[A-Z]/.test(pwd)) score++;
-  if(/[0-9]/.test(pwd)) score++;
+  if(pwd.length >= 6)          score++;
+  if(pwd.length >= 10)         score++;
+  if(/[A-Z]/.test(pwd))       score++;
+  if(/[0-9]/.test(pwd))       score++;
   if(/[^A-Za-z0-9]/.test(pwd)) score++;
   const levels = [
-    { w:"0%",   c:"transparent",  t:"" },
-    { w:"25%",  c:"#ff4444",      t:"Très faible" },
-    { w:"45%",  c:"#ff8c00",      t:"Faible" },
-    { w:"65%",  c:"#ffc832",      t:"Moyen" },
-    { w:"85%",  c:"#4ade80",      t:"Fort" },
-    { w:"100%", c:"#31d6ff",      t:"Très fort 🔥" },
+    { w:"0%",   c:"transparent", t:"" },
+    { w:"25%",  c:"#ff4444",     t:"Très faible" },
+    { w:"45%",  c:"#ff8c00",     t:"Faible" },
+    { w:"65%",  c:"#ffc832",     t:"Moyen" },
+    { w:"85%",  c:"#4ade80",     t:"Fort" },
+    { w:"100%", c:"#31d6ff",     t:"Très fort 🔥" },
   ];
   const lvl = levels[Math.min(score, 5)];
   fill.style.width      = lvl.w;
@@ -3263,58 +4241,40 @@ async function supaAuthSubmit(mode){
     const { error } = await _supa.auth.signInWithPassword({ email, password: pwd });
     if(error){ setAuthMsg("❌ " + error.message, "error"); return; }
     document.getElementById("supaAuthModal").style.display = "none";
-
+    setAuthMsg("");
   } else {
-    const pseudo   = document.getElementById("signupPseudo")?.value?.trim();
-    const email    = document.getElementById("signupEmail")?.value?.trim();
-    const pwd      = document.getElementById("signupPwd")?.value;
-    const pwdConf  = document.getElementById("signupPwdConfirm")?.value;
-
-    if(!pseudo)           { setAuthMsg("Un pseudo est requis.", "error"); return; }
-    if(pseudo.length < 2) { setAuthMsg("Le pseudo doit faire au moins 2 caractères.", "error"); return; }
-    if(!email)            { setAuthMsg("Email requis.", "error"); return; }
-    if(!pwd || pwd.length < 6){ setAuthMsg("Mot de passe trop court (min. 6 caractères).", "error"); return; }
-    if(pwd !== pwdConf)   { setAuthMsg("Les mots de passe ne correspondent pas.", "error"); return; }
-
+    const pseudo = document.getElementById("signupPseudo")?.value?.trim();
+    const email  = document.getElementById("signupEmail")?.value?.trim();
+    const pwd    = document.getElementById("signupPwd")?.value;
+    const pwdC   = document.getElementById("signupPwdConfirm")?.value;
+    if(!pseudo)        { setAuthMsg("Pseudo requis.",                  "error"); return; }
+    if(!email || !pwd) { setAuthMsg("Email et mot de passe requis.",   "error"); return; }
+    if(pwd !== pwdC)   { setAuthMsg("Les mots de passe ne correspondent pas.", "error"); return; }
+    if(pwd.length < 6) { setAuthMsg("Mot de passe trop court (min 6 caractères).", "error"); return; }
     setAuthMsg("⏳ Création du compte…");
-    const { error } = await _supa.auth.signUp({ email, password: pwd });
+    const { error } = await _supa.auth.signUp({
+      email, password: pwd,
+      options: { data: { pseudo: pseudo.substring(0, 20) } }
+    });
     if(error){ setAuthMsg("❌ " + error.message, "error"); return; }
-
-    // Pré-remplir le pseudo dans le profil
-    state.profile = { ...state.profile, pseudo: pseudo.substring(0, 20) };
-    updateTopbarProfile();
-
-    setAuthMsg("✅ Compte créé ! Connecte-toi maintenant.", "success");
-    setTimeout(() => switchAuthView("login"), 1800);
+    // Pré-remplir le pseudo depuis l'inscription
+    state.profile.pseudo = pseudo.substring(0, 20);
+    document.getElementById("supaAuthModal").style.display = "none";
+    setAuthMsg("");
+    showToast("✅ Compte créé ! Vérifie ton email si demandé.");
   }
 }
 
 async function supaResetPassword(){
   const email = document.getElementById("supaAuthEmail")?.value?.trim();
   if(!email){ setAuthMsg("Entre ton email d'abord.", "error"); return; }
-  await _supa.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin });
-  setAuthMsg("✅ Email de réinitialisation envoyé !", "success");
+  setAuthMsg("⏳ Envoi du lien…");
+  const { error } = await _supa.auth.resetPasswordForEmail(email);
+  if(error){ setAuthMsg("❌ " + error.message, "error"); return; }
+  setAuthMsg("✅ Lien envoyé ! Vérifie ta boîte mail.", "success");
 }
 
-// Toggle afficher/masquer mot de passe
-document.getElementById("togglePwdLogin")?.addEventListener("click", () => {
-  const inp = document.getElementById("supaAuthPwd");
-  if(inp) inp.type = inp.type === "password" ? "text" : "password";
-});
-document.getElementById("togglePwdSignup")?.addEventListener("click", () => {
-  const inp = document.getElementById("signupPwd");
-  if(inp) inp.type = inp.type === "password" ? "text" : "password";
-});
-
-// Barre force mot de passe
-document.getElementById("signupPwd")?.addEventListener("input", (e) => checkPwdStrength(e.target.value));
-
-// Toggle login/signup
-document.getElementById("authToggle")?.addEventListener("click", e => {
-  const btn = e.target.closest(".authToggle__btn");
-  if(btn) switchAuthView(btn.dataset.view);
-});
-
+// ─── Listeners modale auth ────────────────────────────────────────────────────
 document.getElementById("supaAuthClose")?.addEventListener("click", () => {
   document.getElementById("supaAuthModal").style.display = "none";
 });
@@ -3324,203 +4284,37 @@ document.getElementById("supaAuthBackdrop")?.addEventListener("click", () => {
 document.getElementById("supaAuthBtnLogin")?.addEventListener("click",  () => supaAuthSubmit("login"));
 document.getElementById("supaAuthBtnSignup")?.addEventListener("click", () => supaAuthSubmit("signup"));
 document.getElementById("supaAuthBtnReset")?.addEventListener("click",  supaResetPassword);
+
+// Enter pour se connecter
 document.getElementById("supaAuthPwd")?.addEventListener("keydown", (e) => {
   if(e.key === "Enter") supaAuthSubmit("login");
 });
-document.getElementById("signupPwdConfirm")?.addEventListener("keydown", (e) => {
-  if(e.key === "Enter") supaAuthSubmit("signup");
+document.getElementById("supaAuthEmail")?.addEventListener("keydown", (e) => {
+  if(e.key === "Enter") supaAuthSubmit("login");
 });
 
-// =====================
-// SAVE / LOAD — Supabase direct + LocalStorage fallback
-// =====================
-const SAVE_KEY = "garage_idle_save_v3";
+// Toggle afficher/masquer mot de passe
+document.getElementById("togglePwdLogin")?.addEventListener("click", () => {
+  const input = document.getElementById("supaAuthPwd");
+  if(!input) return;
+  input.type = input.type === "password" ? "text" : "password";
+});
+document.getElementById("togglePwdSignup")?.addEventListener("click", () => {
+  const input = document.getElementById("signupPwd");
+  if(!input) return;
+  input.type = input.type === "password" ? "text" : "password";
+});
 
-// Données à sauvegarder
-function buildSavePayload(){
-  return {
-    garageLevel:        state.garageLevel,
-    garageCap:          state.garageCap,
-    garageName:         state.garageName,
-    showroomCap:        state.showroomCap ?? 3,
-    money:              state.money,
-    moneyPerSec:        state.moneyPerSec,
-    rep:                state.rep,
-    carsSold:           state.carsSold,
-    diagReward:         state.diagReward,
-    repairClick:        state.repairClick,
-    repairAuto:         state.repairAuto,
-    speedMult:          state.speedMult,
-    saleBonusPct:       state.saleBonusPct,
-    talentPoints:       state.talentPoints,
-    talentLevelGranted: state.talentLevelGranted,
-    talents:            state.talents,
-    upgrades:           state.upgrades,
-    showroom:           state.showroom,
-    queue:              state.queue,
-    activeTab:          state.activeTab,
-    totalMoneyEarned:   state.totalMoneyEarned,
-    totalRepairs:       state.totalRepairs,
-    totalAnalyses:      state.totalAnalyses,
-    totalClickRepairs:  state.totalClickRepairs,
-    totalCarsSold:      state.totalCarsSold,
-    parts:              state.parts ?? {},
-    orders:             state.orders ?? [],
-    stockSettings:      state.stockSettings ?? {},
-    stockGlobal:        state.stockGlobal ?? {},
-    sessionStart:       state.sessionStart,
-    profile:            state.profile,
-    achievements:       state.achievements,
-    prestigeCount:      state.prestigeCount,
-    heritagePoints:     state.heritagePoints,
-    heritageSpent:      state.heritageSpent,
-    heritagePerks:      state.heritagePerks,
-    heritageBonuses:    state.heritageBonuses,
-    _hasSaved:          state._hasSaved,
-    _wasBroke:          state._wasBroke,
-    _lastRepairedTier:  state._lastRepairedTier,
-  };
-}
+// Indicateur force du mot de passe à l'inscription
+document.getElementById("signupPwd")?.addEventListener("input", (e) => {
+  checkPwdStrength(e.target.value);
+});
 
-// Applique les données chargées dans le state
-function applySaveData(data){
-  const baseUpgrades = JSON.parse(JSON.stringify(state.upgrades));
-  Object.assign(state, data);
-
-  // Fusion intelligente des upgrades (préserve les nouvelles amélis)
-  if(data.upgrades){
-    state.upgrades = baseUpgrades.map(baseItem => {
-      const saved = data.upgrades.find(x => x.id === baseItem.id);
-      if(saved){ baseItem.lvl = saved.lvl; baseItem.cost = saved.cost; }
-      return baseItem;
-    });
-  }
-
-  // Sécurités
-  if(typeof state.carsSold !== "number")          state.carsSold = 0;
-  if(typeof state.talentPoints !== "number")      state.talentPoints = 0;
-  if(typeof state.talents !== "object" || !state.talents) state.talents = {};
-  if(typeof state.talentLevelGranted !== "number") state.talentLevelGranted = state.garageLevel ?? 1;
-  if(!state.activeTab)  state.activeTab  = "tools";
-  // Ne pas forcer tools — on respecte l'onglet sauvegardé
-  if(!state.garageName) state.garageName = "Garage Turbo";
-  if(!state.profile || typeof state.profile !== "object") state.profile = { pseudo:"Mécanicien", avatar:"🔧", country:"FR", banner:"#1a2a4a" };
-  else {
-    state.profile.pseudo  = state.profile.pseudo  || "Mécanicien";
-    state.profile.avatar  = state.profile.avatar  || "🔧";
-    state.profile.country = state.profile.country || "FR";
-    state.profile.banner  = state.profile.banner  || "#1a2a4a";
-  }
-  if(!state.achievements || typeof state.achievements !== "object") state.achievements = {};
-  if(!state.parts  || typeof state.parts  !== "object") state.parts  = {};
-  if(!Array.isArray(state.orders)) state.orders = [];
-  if(!state.stockSettings || typeof state.stockSettings !== "object") state.stockSettings = {};
-  if(!state.stockGlobal   || typeof state.stockGlobal   !== "object") state.stockGlobal   = {};
-  if(typeof state.prestigeCount  !== "number") state.prestigeCount  = 0;
-  if(typeof state.heritagePoints !== "number") state.heritagePoints = 0;
-  if(typeof state.heritageSpent  !== "number") state.heritageSpent  = 0;
-  if(!state.heritagePerks   || typeof state.heritagePerks   !== "object") state.heritagePerks   = {};
-  if(!state.heritageBonuses || typeof state.heritageBonuses !== "object") state.heritageBonuses = { startMoney:0, repSpeed:1.0, saleBonus:0, passiveBonus:0, repGainMult:1.0, talentBonus:0, diagBonus:0, prestigeGainMult:1.0 };
-  if(!state._hasSaved)         state._hasSaved         = false;
-  if(!state._wasBroke)         state._wasBroke         = false;
-  if(!state._lastRepairedTier) state._lastRepairedTier = "";
-
-  applyGarageName();
-  applyTalentEffects();
-  recalcRepairAuto();
-  rebuildUpgradeMap();
-  resetPendingAchievements();
-  updateGarageLevel();
-  updateTopbarProfile();
-}
-function localSave(){
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify(buildSavePayload())); } catch(e){}
-}
-function localLoad(){
-  try {
-    const raw = localStorage.getItem(SAVE_KEY);
-    if(raw) applySaveData(JSON.parse(raw));
-  } catch(e){ console.error("Erreur load local:", e); }
-}
-
-let cloudSaving = false;
-async function cloudSave(){
-  if(!currentUser || cloudSaving) return;
-  cloudSaving = true;
-  console.log("[cloudSave] sauvegarde pour user:", currentUser.id);
-  try {
-    const { error } = await _supa
-      .from("saves")
-      .upsert(
-        { user_id: currentUser.id, save_data: buildSavePayload(), updated_at: new Date().toISOString() },
-        { onConflict: "user_id" }
-      );
-    if(error) throw error;
-    console.log("[cloudSave] ✅ succès");
-    showSaveIndicator("☁️ Sauvegardé");
-
-  } catch(e){
-    console.error("[cloudSave] ❌ erreur:", e);
-    showSaveIndicator("⚠️ Erreur cloud");
-  } finally { cloudSaving = false; }
-}
-
-async function cloudLoad(){
-  if(!currentUser) { console.warn("[cloudLoad] pas de currentUser"); return; }
-  console.log("[cloudLoad] user:", currentUser.id);
-  try {
-    // Timeout de sécurité 8s pour éviter le freeze
-    const fetchPromise = _supa
-      .from("saves")
-      .select("save_data")
-      .eq("user_id", currentUser.id)
-      .maybeSingle();
-
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("timeout")), 8000)
-    );
-
-    const { data, error } = await Promise.race([fetchPromise, timeoutPromise]);
-    console.log("[cloudLoad] data:", data, "error:", error);
-    if(error) throw error;
-    if(data?.save_data){
-      console.log("[cloudLoad] save trouvée, application...");
-      const currentTab = state.activeTab; // préserver l'onglet actif
-      applySaveData(data.save_data);
-      if(currentTab) state.activeTab = currentTab;
-      localSave();
-      showSaveIndicator("☁️ Partie chargée");
-    } else {
-      console.warn("[cloudLoad] aucune save trouvée pour cet user");
-    }
-    renderAll();
-  } catch(e){
-    console.error("[cloudLoad] erreur:", e.message);
-    // Fallback sur le localStorage si le cloud ne répond pas
-    console.warn("[cloudLoad] fallback localStorage");
-    localLoad();
-    renderAll();
-  }
-}
-
-function showSaveIndicator(msg){
-  const btn = document.getElementById("btnSave");
-  if(!btn) return;
-  const orig = btn.textContent;
-  btn.textContent = msg;
-  setTimeout(() => btn.textContent = orig, 2000);
-}
-
-function save(){
-  if(!_authReady) return; // ne pas sauvegarder avant que la session soit connue
-  state._hasSaved = true;
-  localSave();
-  if(currentUser) cloudSave();
-}
-
-// btnSave supprimé du header
-const btnAuth = document.getElementById("btnAuth");
-if(btnAuth) btnAuth.addEventListener("click", openAuth);
+// Switch Connexion / Inscription via les onglets
+document.getElementById("authToggle")?.addEventListener("click", (e) => {
+  const btn = e.target.closest(".authToggle__btn");
+  if(btn?.dataset?.view) switchAuthView(btn.dataset.view);
+});
 
 // =====================
 // PROFIL
@@ -3661,6 +4455,13 @@ if(profileBackdrop) profileBackdrop.addEventListener("click", () => {
 const btnProfileSave = document.getElementById("btnProfileSave");
 if(btnProfileSave) btnProfileSave.addEventListener("click", saveProfile);
 
+// Déconnexion — bouton dans la modale profil
+const btnLogout = document.getElementById("btnLogout");
+if(btnLogout) btnLogout.addEventListener("click", () => {
+  document.getElementById("profileModal").style.display = "none";
+  _supa.auth.signOut();
+});
+
 // Mise à jour preview en temps réel sur frappe pseudo
 document.getElementById("profilePseudo")?.addEventListener("input", updateProfilePreview);
 document.getElementById("profileCountry")?.addEventListener("change", updateProfilePreview);
@@ -3672,7 +4473,7 @@ document.getElementById("profileCountry")?.addEventListener("change", updateProf
 // =====================
 const ACHIEVEMENTS = [
   // ── VENTES ──────────────────────────────────────────
-  { id:"sell_1",       cat:"Ventes",       icon:"🚗", name:"Premier Client",           desc:"Vendre 1 voiture",                          cond:s=>s.carsSold>=1,         reward:{rep:5,    money:100,     talent:1} },
+  { id:"sell_1",       cat:"Ventes",       icon:"🚗", name:"Premier Client",           desc:"Vendre 1 voiture",                          cond:s=>s.carsSold>=1,         reward:{rep:5,    money:0,     talent:0} },
   { id:"sell_10",      cat:"Ventes",       icon:"🚗", name:"Petit Commerce",            desc:"Vendre 10 voitures",                        cond:s=>s.carsSold>=10,        reward:{rep:15,   money:500,     talent:0} },
   { id:"sell_25",      cat:"Ventes",       icon:"🚙", name:"En Rythme",                 desc:"Vendre 25 voitures",                        cond:s=>s.carsSold>=25,        reward:{rep:25,   money:1000,    talent:0} },
   { id:"sell_50",      cat:"Ventes",       icon:"🚙", name:"Vendeur Confirmé",          desc:"Vendre 50 voitures",                        cond:s=>s.carsSold>=50,        reward:{rep:40,   money:2500,    talent:0} },
@@ -3686,41 +4487,41 @@ const ACHIEVEMENTS = [
   { id:"sell_50000",   cat:"Ventes",       icon:"👑", name:"Légende Vivante",           desc:"Vendre 50 000 voitures",                    cond:s=>s.carsSold>=50000,     reward:{rep:15000,money:3000000, talent:5} },
 
   // ── ARGENT ──────────────────────────────────────────
-  { id:"money_500",    cat:"Argent",       icon:"💶", name:"Premiers Sous",             desc:"Avoir 500 € en caisse",                     cond:s=>s.money>=500,          reward:{rep:5,    money:0,       talent:0} },
-  { id:"money_1k",     cat:"Argent",       icon:"💰", name:"Premier Billet",            desc:"Avoir 1 000 € en caisse",                   cond:s=>s.money>=1000,         reward:{rep:10,   money:0,       talent:0} },
-  { id:"money_5k",     cat:"Argent",       icon:"💰", name:"Petite Réserve",            desc:"Avoir 5 000 € en caisse",                   cond:s=>s.money>=5000,         reward:{rep:15,   money:0,       talent:0} },
-  { id:"money_10k",    cat:"Argent",       icon:"💰", name:"Petite Épargne",            desc:"Avoir 10 000 € en caisse",                  cond:s=>s.money>=10000,        reward:{rep:25,   money:0,       talent:0} },
-  { id:"money_50k",    cat:"Argent",       icon:"💵", name:"Cinquante Mille",           desc:"Avoir 50 000 € en caisse",                  cond:s=>s.money>=50000,        reward:{rep:60,   money:0,       talent:0} },
-  { id:"money_100k",   cat:"Argent",       icon:"💵", name:"Cent Mille",                desc:"Avoir 100 000 € en caisse",                 cond:s=>s.money>=100000,       reward:{rep:120,  money:0,       talent:0} },
-  { id:"money_500k",   cat:"Argent",       icon:"💵", name:"Demi-Million",              desc:"Avoir 500 000 € en caisse",                 cond:s=>s.money>=500000,       reward:{rep:300,  money:0,       talent:0} },
-  { id:"money_1m",     cat:"Argent",       icon:"💎", name:"Millionnaire",              desc:"Avoir 1 000 000 € en caisse",               cond:s=>s.money>=1000000,      reward:{rep:600,  money:0,       talent:1} },
-  { id:"money_10m",    cat:"Argent",       icon:"💎", name:"Dizaine de Millions",       desc:"Avoir 10 000 000 € en caisse",              cond:s=>s.money>=10000000,     reward:{rep:2000, money:0,       talent:2} },
-  { id:"money_1b",     cat:"Argent",       icon:"💎", name:"Milliardaire",              desc:"Avoir 1 000 000 000 € en caisse",           cond:s=>s.money>=1000000000,   reward:{rep:8000, money:0,       talent:3} },
-  { id:"passive_5",    cat:"Argent",       icon:"📈", name:"Premiers Intérêts",         desc:"Atteindre 5 €/s de revenu passif",          cond:s=>s.moneyPerSec>=5,      reward:{rep:10,   money:2000,    talent:0} },
-  { id:"passive_10",   cat:"Argent",       icon:"📈", name:"Rente Modeste",             desc:"Atteindre 10 €/s de revenu passif",         cond:s=>s.moneyPerSec>=10,     reward:{rep:25,   money:5000,    talent:0} },
-  { id:"passive_50",   cat:"Argent",       icon:"📈", name:"Flux Régulier",             desc:"Atteindre 50 €/s de revenu passif",         cond:s=>s.moneyPerSec>=50,     reward:{rep:60,   money:15000,   talent:0} },
-  { id:"passive_100",  cat:"Argent",       icon:"📈", name:"Flux Continu",              desc:"Atteindre 100 €/s de revenu passif",        cond:s=>s.moneyPerSec>=100,    reward:{rep:150,  money:30000,   talent:0} },
+  { id:"money_500",    cat:"Argent",       icon:"💶", name:"Premiers Sous",             desc:"Avoir 500 € en caisse",                     cond:s=>s.money>=500,          reward:{rep:0,    money:0,       talent:0} },
+  { id:"money_1k",     cat:"Argent",       icon:"💰", name:"Premier Billet",            desc:"Avoir 1 000 € en caisse",                   cond:s=>s.money>=1000,         reward:{rep:0,   money:0,       talent:0} },
+  { id:"money_5k",     cat:"Argent",       icon:"💰", name:"Petite Réserve",            desc:"Avoir 5 000 € en caisse",                   cond:s=>s.money>=5000,         reward:{rep:0,   money:0,       talent:0} },
+  { id:"money_10k",    cat:"Argent",       icon:"💰", name:"Petite Épargne",            desc:"Avoir 10 000 € en caisse",                  cond:s=>s.money>=10000,        reward:{rep:0,   money:0,       talent:0} },
+  { id:"money_50k",    cat:"Argent",       icon:"💵", name:"Cinquante Mille",           desc:"Avoir 50 000 € en caisse",                  cond:s=>s.money>=50000,        reward:{rep:0,   money:500,       talent:0} },
+  { id:"money_100k",   cat:"Argent",       icon:"💵", name:"Cent Mille",                desc:"Avoir 100 000 € en caisse",                 cond:s=>s.money>=100000,       reward:{rep:0,  money:1000,       talent:0} },
+  { id:"money_500k",   cat:"Argent",       icon:"💵", name:"Demi-Million",              desc:"Avoir 500 000 € en caisse",                 cond:s=>s.money>=500000,       reward:{rep:0,  money:3000,       talent:0} },
+  { id:"money_1m",     cat:"Argent",       icon:"💎", name:"Millionnaire",              desc:"Avoir 1 000 000 € en caisse",               cond:s=>s.money>=1000000,      reward:{rep:0,  money:5000,       talent:1} },
+  { id:"money_10m",    cat:"Argent",       icon:"💎", name:"Dizaine de Millions",       desc:"Avoir 10 000 000 € en caisse",              cond:s=>s.money>=10000000,     reward:{rep:500, money:0,       talent:2} },
+  { id:"money_1b",     cat:"Argent",       icon:"💎", name:"Milliardaire",              desc:"Avoir 1 000 000 000 € en caisse",           cond:s=>s.money>=1000000000,   reward:{rep:2000, money:0,       talent:3} },
+  { id:"passive_5",    cat:"Argent",       icon:"📈", name:"Premiers Intérêts",         desc:"Atteindre 5 €/s de revenu passif",          cond:s=>s.moneyPerSec>=5,      reward:{rep:0,   money:200,    talent:0} },
+  { id:"passive_10",   cat:"Argent",       icon:"📈", name:"Rente Modeste",             desc:"Atteindre 10 €/s de revenu passif",         cond:s=>s.moneyPerSec>=10,     reward:{rep:0,   money:500,    talent:0} },
+  { id:"passive_50",   cat:"Argent",       icon:"📈", name:"Flux Régulier",             desc:"Atteindre 50 €/s de revenu passif",         cond:s=>s.moneyPerSec>=50,     reward:{rep:30,   money:15000,   talent:0} },
+  { id:"passive_100",  cat:"Argent",       icon:"📈", name:"Flux Continu",              desc:"Atteindre 100 €/s de revenu passif",        cond:s=>s.moneyPerSec>=100,    reward:{rep:80,  money:30000,   talent:0} },
   { id:"passive_500",  cat:"Argent",       icon:"📊", name:"Rente Confortable",         desc:"Atteindre 500 €/s de revenu passif",        cond:s=>s.moneyPerSec>=500,    reward:{rep:400,  money:80000,   talent:1} },
   { id:"passive_1k",   cat:"Argent",       icon:"📊", name:"Machine à Cash",            desc:"Atteindre 1 000 €/s de revenu passif",      cond:s=>s.moneyPerSec>=1000,   reward:{rep:1000, money:200000,  talent:2} },
-  { id:"earned_1m",    cat:"Argent",       icon:"🏦", name:"Un Million Gagné",          desc:"Avoir gagné 1 000 000 € au total",          cond:s=>(s.totalMoneyEarned??0)>=1000000,   reward:{rep:300,  money:0,       talent:0} },
-  { id:"earned_100m",  cat:"Argent",       icon:"🏦", name:"Cent Millions Gagnés",      desc:"Avoir gagné 100 000 000 € au total",        cond:s=>(s.totalMoneyEarned??0)>=100000000, reward:{rep:2000, money:0,       talent:2} },
+  { id:"earned_1m",    cat:"Argent",       icon:"🏦", name:"Un Million Gagné",          desc:"Avoir gagné 1 000 000 € au total",          cond:s=>(s.totalMoneyEarned??0)>=1000000,   reward:{rep:0,  money:20000,       talent:0} },
+  { id:"earned_100m",  cat:"Argent",       icon:"🏦", name:"Cent Millions Gagnés",      desc:"Avoir gagné 100 000 000 € au total",        cond:s=>(s.totalMoneyEarned??0)>=100000000, reward:{rep:200, money:0,       talent:1} },
 
   // ── RÉPUTATION ──────────────────────────────────────
-  { id:"rep_10",       cat:"Réputation",   icon:"⭐", name:"Débutant Connu",            desc:"Atteindre 10 REP",                          cond:s=>s.rep>=10,             reward:{rep:0,    money:200,     talent:0} },
-  { id:"rep_50",       cat:"Réputation",   icon:"⭐", name:"Bouche à Oreille",          desc:"Atteindre 50 REP",                          cond:s=>s.rep>=50,             reward:{rep:0,    money:500,     talent:0} },
-  { id:"rep_100",      cat:"Réputation",   icon:"⭐", name:"Réputation Locale",         desc:"Atteindre 100 REP",                         cond:s=>s.rep>=100,            reward:{rep:0,    money:1000,    talent:0} },
-  { id:"rep_500",      cat:"Réputation",   icon:"🌟", name:"Garage Reconnu",            desc:"Atteindre 500 REP",                         cond:s=>s.rep>=500,            reward:{rep:0,    money:4000,    talent:0} },
-  { id:"rep_2000",     cat:"Réputation",   icon:"🌟", name:"Expert Régional",           desc:"Atteindre 2 000 REP",                       cond:s=>s.rep>=2000,           reward:{rep:0,    money:12000,   talent:0} },
-  { id:"rep_10000",    cat:"Réputation",   icon:"💫", name:"Célébrité Nationale",       desc:"Atteindre 10 000 REP",                      cond:s=>s.rep>=10000,          reward:{rep:0,    money:60000,   talent:1} },
-  { id:"rep_50000",    cat:"Réputation",   icon:"💫", name:"Icône Mondiale",            desc:"Atteindre 50 000 REP",                      cond:s=>s.rep>=50000,          reward:{rep:0,    money:250000,  talent:2} },
-  { id:"rep_200000",   cat:"Réputation",   icon:"🔱", name:"Légende de l'Asphalte",     desc:"Atteindre 200 000 REP",                     cond:s=>s.rep>=200000,         reward:{rep:0,    money:1000000, talent:3} },
+  { id:"rep_10",       cat:"Réputation",   icon:"⭐", name:"Débutant Connu",            desc:"Atteindre 10 REP",                          cond:s=>s.rep>=10,             reward:{rep:0,    money:0,     talent:0} },
+  { id:"rep_50",       cat:"Réputation",   icon:"⭐", name:"Bouche à Oreille",          desc:"Atteindre 50 REP",                          cond:s=>s.rep>=50,             reward:{rep:0,    money:0,     talent:0} },
+  { id:"rep_100",      cat:"Réputation",   icon:"⭐", name:"Réputation Locale",         desc:"Atteindre 100 REP",                         cond:s=>s.rep>=100,            reward:{rep:0,    money:200,    talent:0} },
+  { id:"rep_500",      cat:"Réputation",   icon:"🌟", name:"Garage Reconnu",            desc:"Atteindre 500 REP",                         cond:s=>s.rep>=500,            reward:{rep:0,    money:1000,    talent:0} },
+  { id:"rep_2000",     cat:"Réputation",   icon:"🌟", name:"Expert Régional",           desc:"Atteindre 2 000 REP",                       cond:s=>s.rep>=2000,           reward:{rep:0,    money:5000,   talent:0} },
+  { id:"rep_10000",    cat:"Réputation",   icon:"💫", name:"Célébrité Nationale",       desc:"Atteindre 10 000 REP",                      cond:s=>s.rep>=10000,          reward:{rep:0,    money:80000,   talent:1} },
+  { id:"rep_50000",    cat:"Réputation",   icon:"💫", name:"Icône Mondiale",            desc:"Atteindre 50 000 REP",                      cond:s=>s.rep>=50000,          reward:{rep:0,    money:300000,  talent:1} },
+  { id:"rep_200000",   cat:"Réputation",   icon:"🔱", name:"Légende de l'Asphalte",     desc:"Atteindre 200 000 REP",                     cond:s=>s.rep>=200000,         reward:{rep:0,    money:1000000, talent:2} },
 
   // ── TIERS ────────────────────────────────────────────
-  { id:"tier_D",       cat:"Tiers",        icon:"🔓", name:"Véhicules Communs",         desc:"Débloquer le tier D",                       cond:s=>s.rep>=80,             reward:{rep:10,   money:1000,    talent:0} },
-  { id:"tier_C",       cat:"Tiers",        icon:"🔓", name:"Compactes Sportives",       desc:"Débloquer le tier C",                       cond:s=>s.rep>=300,            reward:{rep:20,   money:3000,    talent:0} },
-  { id:"tier_B",       cat:"Tiers",        icon:"🔓", name:"Sportives & Youngtimers",   desc:"Débloquer le tier B",                       cond:s=>s.rep>=1500,           reward:{rep:50,   money:12000,   talent:0} },
-  { id:"tier_A",       cat:"Tiers",        icon:"🔓", name:"Luxe & SUV Premium",        desc:"Débloquer le tier A",                       cond:s=>s.rep>=6000,           reward:{rep:100,  money:40000,   talent:0} },
-  { id:"tier_S",       cat:"Tiers",        icon:"🌠", name:"Sportives Prestige",        desc:"Débloquer le tier S",                       cond:s=>s.rep>=20000,          reward:{rep:200,  money:120000,  talent:1} },
+  { id:"tier_D",       cat:"Tiers",        icon:"🔓", name:"Véhicules Communs",         desc:"Débloquer le tier D",                       cond:s=>s.rep>=500,             reward:{rep:0,   money:0,    talent:0} },
+  { id:"tier_C",       cat:"Tiers",        icon:"🔓", name:"Compactes Sportives",       desc:"Débloquer le tier C",                       cond:s=>s.rep>=1500,            reward:{rep:0,   money:500,    talent:0} },
+  { id:"tier_B",       cat:"Tiers",        icon:"🔓", name:"Sportives & Youngtimers",   desc:"Débloquer le tier B",                       cond:s=>s.rep>=5000,           reward:{rep:20,   money:1000,   talent:0} },
+  { id:"tier_A",       cat:"Tiers",        icon:"🔓", name:"Luxe & SUV Premium",        desc:"Débloquer le tier A",                       cond:s=>s.rep>=8000,           reward:{rep:50,  money:40000,   talent:0} },
+  { id:"tier_S",       cat:"Tiers",        icon:"🌠", name:"Sportives Prestige",        desc:"Débloquer le tier S",                       cond:s=>s.rep>=25000,          reward:{rep:100,  money:120000,  talent:1} },
   { id:"tier_SS",      cat:"Tiers",        icon:"🌠", name:"Supercars",                 desc:"Débloquer le tier SS",                      cond:s=>s.rep>=70000,          reward:{rep:500,  money:400000,  talent:2} },
   { id:"tier_SSS",     cat:"Tiers",        icon:"💥", name:"Hypercars Rares",           desc:"Débloquer le tier SSS",                     cond:s=>s.rep>=200000,         reward:{rep:1000, money:1200000, talent:3} },
   { id:"tier_SSSp",    cat:"Tiers",        icon:"💥", name:"Mythiques",                 desc:"Débloquer le tier SSS+",                    cond:s=>s.rep>=600000,         reward:{rep:5000, money:5000000, talent:5} },
@@ -3809,7 +4610,7 @@ const ACHIEVEMENTS = [
   { id:"heritage_30",  cat:"Prestige",     icon:"🏛️", name:"Dynastique",               desc:"Dépenser 30 points Héritage",               cond:s=>(s.heritageSpent??0)>=30,   reward:{rep:2000, money:200000,  talent:2} },
 
   // ── SHOWROOM ─────────────────────────────────────────
-  { id:"show_1",       cat:"Showroom",     icon:"🚘", name:"Première Expo",            desc:"Avoir 1 voiture au showroom",               cond:s=>s.showroom?.length>=1,      reward:{rep:5,    money:200,     talent:0} },
+  { id:"show_1",       cat:"Showroom",     icon:"🚘", name:"Première Expo",            desc:"Avoir 1 voiture au showroom",               cond:s=>s.showroom?.length>=1,      reward:{rep:5,    money:0,     talent:0} },
   { id:"show_3",       cat:"Showroom",     icon:"🚘", name:"Petite Expo",              desc:"Avoir 3 voitures au showroom",              cond:s=>s.showroom?.length>=3,      reward:{rep:20,   money:1000,    talent:0} },
   { id:"show_full",    cat:"Showroom",     icon:"🏪", name:"Showroom Plein",           desc:"Remplir complètement le showroom",          cond:s=>s.showroom?.length>0&&s.showroom.length>=(s.showroomCap??3)+(s.talentShowroomSlots??0), reward:{rep:50,money:5000,talent:0} },
   { id:"show_S",       cat:"Showroom",     icon:"🏆", name:"Voiture de Prestige",      desc:"Avoir une voiture tier S au showroom",      cond:s=>s.showroom?.some(c=>c.tier==="S"),    reward:{rep:150,  money:15000,   talent:0} },
@@ -3818,15 +4619,15 @@ const ACHIEVEMENTS = [
   { id:"show_SSSp",    cat:"Showroom",     icon:"💎", name:"Mythique en Vitrine",      desc:"Avoir une voiture SSS+ au showroom",        cond:s=>s.showroom?.some(c=>c.tier==="SSS+"), reward:{rep:8000, money:2000000, talent:3} },
 
   // ── DIVERS ────────────────────────────────────────────
-  { id:"session_1h",   cat:"Divers",       icon:"⏱️", name:"Joueur Assidu",            desc:"Jouer 1 heure au total",                    cond:s=>Date.now()-(s.sessionStart??Date.now())>=3600000,            reward:{rep:20,   money:1000,    talent:0} },
-  { id:"session_5h",   cat:"Divers",       icon:"⏱️", name:"Passionné",               desc:"Jouer 5 heures au total",                   cond:s=>Date.now()-(s.sessionStart??Date.now())>=18000000,           reward:{rep:80,   money:8000,    talent:0} },
-  { id:"save_first",   cat:"Divers",       icon:"💾", name:"Données Sécurisées",       desc:"Sauvegarder la partie",                     cond:s=>s._hasSaved===true,                                          reward:{rep:5,    money:100,     talent:0} },
-  { id:"name_change",  cat:"Divers",       icon:"✏️", name:"Mon Garage, Mes Règles",  desc:"Renommer ton garage",                       cond:s=>s.garageName!=="Garage Turbo",                               reward:{rep:10,   money:500,     talent:0} },
-  { id:"profile_set",  cat:"Divers",       icon:"👤", name:"Identité Établie",         desc:"Personnaliser ton profil",                  cond:s=>s.profile?.pseudo!=="Mécanicien"&&s.profile?.pseudo!=null,   reward:{rep:15,   money:500,     talent:0} },
-  { id:"full_garage",  cat:"Divers",       icon:"🔥", name:"Garage Complet",           desc:"Remplir tous les emplacements",             cond:s=>{const occ=(s.active?1:0)+(s.queue?.length??0);return occ>0&&occ>=s.garageCap;}, reward:{rep:20,money:1000,talent:0} },
+  { id:"session_1h",   cat:"Divers",       icon:"⏱️", name:"Joueur Assidu",            desc:"Jouer 1 heure au total",                    cond:s=>Date.now()-(s.sessionStart??Date.now())>=3600000,            reward:{rep:0,   money:10000,    talent:0} },
+  { id:"session_5h",   cat:"Divers",       icon:"⏱️", name:"Passionné",               desc:"Jouer 5 heures au total",                   cond:s=>Date.now()-(s.sessionStart??Date.now())>=18000000,           reward:{rep:0,   money:50000,    talent:0} },
+  { id:"save_first",   cat:"Divers",       icon:"💾", name:"Données Sécurisées",       desc:"Sauvegarder la partie",                     cond:s=>s._hasSaved===true,                                          reward:{rep:0,    money:0,     talent:0} },
+  { id:"name_change",  cat:"Divers",       icon:"✏️", name:"Mon Garage, Mes Règles",  desc:"Renommer ton garage",                       cond:s=>s.garageName!=="Garage Turbo",                               reward:{rep:0,   money:0,     talent:0} },
+  { id:"profile_set",  cat:"Divers",       icon:"👤", name:"Identité Établie",         desc:"Personnaliser ton profil",                  cond:s=>s.profile?.pseudo!=="Mécanicien"&&s.profile?.pseudo!=null,   reward:{rep:0,   money:0,     talent:0} },
+  { id:"full_garage",  cat:"Divers",       icon:"🔥", name:"Garage Complet",           desc:"Remplir tous les emplacements",             cond:s=>{const occ=(s.active?1:0)+(s.queue?.length??0);return occ>0&&occ>=s.garageCap;}, reward:{rep:0,money:0,talent:0} },
   { id:"rich_repair",  cat:"Divers",       icon:"💸", name:"Réparer du Luxe",          desc:"Réparer une voiture de tier A ou +",        cond:s=>["A","S","SS","SSS","SSS+"].includes(s._lastRepairedTier??""),reward:{rep:50,   money:5000,    talent:0} },
-  { id:"broke",        cat:"Divers",       icon:"😅", name:"Dans le Rouge",            desc:"Passer sous 10 €",                          cond:s=>s._wasBroke===true,                                          reward:{rep:5,    money:200,     talent:0} },
-  { id:"auto_sell",    cat:"Divers",       icon:"🤝", name:"Vendeur Automatique",      desc:"Embaucher le Vendeur Junior",               cond:s=>(s.upgrades?.find(u=>u.id==="vendeur")?.lvl??0)>=1,          reward:{rep:40,   money:3000,    talent:0} },
+  { id:"broke",        cat:"Divers",       icon:"😅", name:"Dans le Rouge",            desc:"Passer sous 10 €",                          cond:s=>s._wasBroke===true,                                          reward:{rep:0,    money:0,     talent:0} },
+  { id:"auto_sell",    cat:"Divers",       icon:"🤝", name:"Vendeur Automatique",      desc:"Embaucher le Vendeur Junior",               cond:s=>(s.upgrades?.find(u=>u.id==="vendeur")?.lvl??0)>=1,          reward:{rep:0,   money:500,    talent:0} },
   { id:"prestige_prep",cat:"Divers",       icon:"🎯", name:"Prêt au Départ",           desc:"Atteindre le niveau 50 de garage",          cond:s=>s.garageLevel>=50,                                           reward:{rep:100,  money:20000,   talent:0} },
 
   // ── VENTES CUMULÉES (toutes parties) ────────────────
@@ -3904,8 +4705,8 @@ const ACHIEVEMENTS = [
   { id:"combo_prestige_ss",cat:"Défis",       icon:"🔄", name:"Prestige de Luxe",          desc:"Effectuer un prestige avec tier SS débloqué",      cond:s=>(s.prestigeCount??0)>=1&&s.rep>=70000,                                              reward:{rep:0,    money:500000,  talent:2} },
 
   // ── SESSIONS LONGUES ─────────────────────────────────
-  { id:"session_24h",     cat:"Divers",       icon:"🌙", name:"Nuit Blanche",              desc:"Jouer 24 heures au total",                         cond:s=>Date.now()-(s.sessionStart??Date.now())>=86400000,   reward:{rep:500,  money:50000,   talent:1} },
-  { id:"session_100h",    cat:"Divers",       icon:"🏆", name:"Vétéran",                   desc:"Jouer 100 heures au total",                        cond:s=>Date.now()-(s.sessionStart??Date.now())>=360000000,  reward:{rep:3000, money:500000,  talent:2} },
+  { id:"session_24h",     cat:"Divers",       icon:"🌙", name:"Nuit Blanche",              desc:"Jouer 24 heures au total",                         cond:s=>Date.now()-(s.sessionStart??Date.now())>=86400000,   reward:{rep:0,  money:50000,   talent:1} },
+  { id:"session_100h",    cat:"Divers",       icon:"🏆", name:"Vétéran",                   desc:"Jouer 100 heures au total",                        cond:s=>Date.now()-(s.sessionStart??Date.now())>=360000000,  reward:{rep:0, money:500000,  talent:2} },
 ];
 
 // State des succès (débloqués)
@@ -3916,7 +4717,7 @@ if(!state._lastRepairedTier) state._lastRepairedTier = "";
 
 let _achPopupQueue   = [];
 let _achPopupShowing = false;
-let _achNotifsEnabled = localStorage.getItem("garage_ach_notifs") !== "false"; // true par défaut
+let _achNotifsEnabled = (() => { try { return localStorage.getItem("garage_ach_notifs") !== "false"; } catch(e){ return true; } })();
 
 function updateAchNotifBtn(){
   const btn = document.getElementById("btnToggleAchNotif");
@@ -3934,7 +4735,7 @@ function updateAchNotifBtn(){
 
 document.getElementById("btnToggleAchNotif")?.addEventListener("click", () => {
   _achNotifsEnabled = !_achNotifsEnabled;
-  localStorage.setItem("garage_ach_notifs", _achNotifsEnabled);
+  try { localStorage.setItem("garage_ach_notifs", _achNotifsEnabled); } catch(e){}
   updateAchNotifBtn();
 });
 
@@ -4034,11 +4835,73 @@ function showNextAchievementPopup(){
   popup.style.display = "flex";
   requestAnimationFrame(() => popup.classList.add("achievementPopup--show"));
 
+  // V2 — Confetti pour les succès prestige et tier SSS+
+  if(typeof confetti !== "undefined"){
+    const isGold = ach.cat === "Prestige" || ach.id === "tier_SSSp" || ach.reward.talent >= 3;
+    if(isGold){
+      setTimeout(() => confetti({
+        particleCount: 100, spread: 70, origin: { y: 0.35 },
+        colors: ["#ffc83a","#ff8c40","#ffffff","#a07aff"]
+      }), 100);
+    }
+  }
+
   setTimeout(() => {
     popup.classList.remove("achievementPopup--show");
     setTimeout(() => {
       popup.style.display = "none";
       _achPopupShowing = false;
+      showNextAchievementPopup();
+    }, 350);
+  }, 3500);
+}
+
+// P2 — Popup de milestone (niveaux marquants)
+const MILESTONE_LABELS = {
+  10:  { icon:"🏠", label:"Garage Opérationnel",  color:"#48c78e" },
+  25:  { icon:"🏗️", label:"Expansion Majeure",     color:"#7ab0ff" },
+  50:  { icon:"🏗️", label:"Centre Auto",           color:"#a07aff" },
+  75:  { icon:"🏢", label:"Groupe Automobile",      color:"#ffc83a" },
+  100: { icon:"🏢", label:"Complexe Automobile",    color:"#ff8c40" },
+  150: { icon:"🌆", label:"Empire Industriel",      color:"#ff4d70" },
+  200: { icon:"👑", label:"Légende de l'Asphalte",  color:"#ffffff" },
+};
+
+function showMilestonePopup(level){
+  const m = MILESTONE_LABELS[level];
+  if(!m) return;
+  // Réutilise le popup achievement existant avec un style spécial
+  const popup = document.getElementById("achievementPopup");
+  if(!popup || _achPopupShowing) return;
+  _achPopupShowing = true;
+
+  const iconEl    = document.getElementById("popupIcon");
+  const nameEl    = document.getElementById("popupName");
+  const descEl    = document.getElementById("popupDesc");
+  const rewardEl  = document.getElementById("popupRewards");
+  if(iconEl)   iconEl.textContent  = m.icon;
+  if(nameEl){  nameEl.textContent  = `Niveau ${level} !`; nameEl.style.color = m.color; }
+  if(descEl)   descEl.textContent  = m.label;
+  if(rewardEl){ rewardEl.innerHTML = `<span class="achievementPopup__rewardPill" style="background:${m.color}22;color:${m.color};border:1px solid ${m.color}44">🏆 Jalon atteint</span>`; }
+
+  const sweep = popup.querySelector(".achievementPopup__sweep");
+  if(sweep){ sweep.style.animation="none"; void sweep.offsetWidth; sweep.style.animation=""; }
+  const fill = document.getElementById("popupProgressFill");
+  if(fill){ fill.style.animation="none"; void fill.offsetWidth; fill.style.animation="achDrain 3.5s linear forwards"; }
+
+  // V2 — Confetti sur les milestones
+  if(typeof confetti !== "undefined"){
+    confetti({ particleCount: 80, spread: 60, origin: { y: 0.3 }, colors: [m.color, "#ffffff", "#ffc83a"] });
+  }
+
+  popup.style.display = "flex";
+  requestAnimationFrame(() => popup.classList.add("achievementPopup--show"));
+  setTimeout(() => {
+    popup.classList.remove("achievementPopup--show");
+    setTimeout(() => {
+      popup.style.display = "none";
+      _achPopupShowing = false;
+      if(nameEl) nameEl.style.color = ""; // reset couleur
       showNextAchievementPopup();
     }, 350);
   }, 3500);
@@ -4125,22 +4988,60 @@ if(achievementsBackdrop) achievementsBackdrop.addEventListener("click", closeAch
 
 // init
 requestAnimationFrame(tick);
-setInterval(save, 30000);
-setInterval(() => { if(currentUser) pushLeaderboard(); }, 60000); // classement : 1x/min
+// LocalSave interval supprimé — cloud only
+setInterval(() => { if(_authReady && currentUser) _saveService.save(currentUser.id); }, CONFIG.CLOUD_SAVE_INTERVAL);
+setInterval(() => { if(currentUser) pushLeaderboard(); }, CONFIG.LB_PUSH_INTERVAL);
+
+// Sauvegarde d'urgence à la fermeture de page (persist savedAt pour le catchup au reload)
+window.addEventListener("beforeunload", () => { save(); });
 
 // Évite le spike de dt quand l'onglet redevient visible après une longue absence
 document.addEventListener("visibilitychange", () => {
-  if(document.visibilityState === "visible") last = performance.now();
+  if(document.visibilityState === "hidden"){
+    // Enregistre l'heure de départ en arrière-plan
+    last = performance.now();
+    save();
+  } else {
+    // Retour sur l'onglet : calculer le temps écoulé et l'appliquer
+    const now = performance.now();
+    const offlineSec = (now - last) / 1000;
+
+    if(offlineSec > 2){
+      // Plafond : max 4h de progression offline (évite les abus)
+      const catchup = Math.min(offlineSec, 4 * 3600);
+
+      // Appliquer en plusieurs petits ticks pour ne pas saturer la logique
+      const STEP = 30; // chunks de 30s
+      let remaining = catchup;
+      _isOfflineCatchup = true;
+      try {
+        while(remaining > 0){
+          const dt = Math.min(remaining, STEP);
+          applyTickLogic(dt);
+          remaining -= dt;
+        }
+      } finally {
+        _isOfflineCatchup = false;
+      }
+
+      // Notif si gain significatif
+      if(catchup >= 60){
+        const mins = Math.floor(catchup / 60);
+        showToast(`⏱️ Progression hors-ligne : ${mins} min rattrapées`);
+      }
+
+      renderAll();
+    }
+
+    last = now;
+  }
 });
 
-// Fallback : si onAuthStateChange ne répond pas dans les 5s, on charge quand même depuis localStorage
+// Fallback auth timeout — affiche le login wall si Supabase ne répond pas
 setTimeout(() => {
-  if(!_authReady){
-    console.warn("[init] auth timeout — fallback localStorage");
-    localLoad();
-    renderAll();
-    tryStartNextRepair();
-    _authReady = true;
+  if(!_authReady && !currentUser){
+    dbg("[init] auth timeout — affichage login wall");
+    showLoginWall();
   }
 }, 5000);
 
@@ -4167,7 +5068,7 @@ async function pushLeaderboard(){
       total_money:    Math.floor(state.totalMoneyEarned ?? 0),
       updated_at:     new Date().toISOString(),
     }, { onConflict: "user_id" });
-  } catch(e){ console.warn("[leaderboard] push erreur:", e.message); }
+  } catch(e){ dbg("[leaderboard] push erreur:", e.message); }
 }
 
 async function fetchLeaderboard(tab){
@@ -4253,7 +5154,7 @@ async function loadLeaderboard(){
     renderLeaderboardRows(rows, fmt, col);
   } catch(e){
     lbList.innerHTML = `<div style="text-align:center;color:#ff5a5a;padding:40px 0;">Erreur de chargement — réessaie plus tard</div>`;
-    console.warn("[leaderboard] fetch erreur:", e.message);
+    dbg("[leaderboard] fetch erreur:", e.message);
   }
 }
 

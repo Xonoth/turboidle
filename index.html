@@ -11,8 +11,11 @@
 </head>
 <body>
 
-  <!-- MODALS (dans le body) -->
+  <!-- ═══════════════════════════════════════════
+       MODALES — dans le body, avant le layout
+       ═══════════════════════════════════════════ -->
 
+  <!-- TALENTS -->
   <div class="modal" id="talentsModal" style="display:none;">
     <div class="modal__backdrop" id="talentsBackdrop"></div>
     <div class="modal__panel modal__panel--talents">
@@ -21,7 +24,7 @@
           <div class="achModal__titleMain">⭐ Talents</div>
           <div class="achModal__titleSub">Points disponibles : <span id="talentPoints">0</span></div>
         </div>
-        <div style="display:flex;align-items:center;gap:10px">
+        <div class="modal__headActions">
           <button class="btn btn--sm" id="btnTalentsReset">↩ Reset</button>
           <button class="iconbtn" id="btnTalentsClose" title="Fermer">✖️</button>
         </div>
@@ -34,6 +37,7 @@
     </div>
   </div>
 
+  <!-- STATISTIQUES -->
   <div class="modal" id="statsModal" style="display:none;">
     <div class="modal__backdrop" id="statsBackdrop"></div>
     <div class="modal__panel modal__panel--stats">
@@ -48,27 +52,23 @@
     </div>
   </div>
 
-  <!-- SUPABASE AUTH MODAL -->
-  <!-- MODALE AUTH SUPABASE -->
+  <!-- AUTH SUPABASE -->
   <div class="modal" id="supaAuthModal" style="display:none;">
     <div class="modal__backdrop" id="supaAuthBackdrop"></div>
     <div class="authPanel" id="authPanel">
 
-      <!-- HEADER avec logo + close -->
       <button class="authPanel__close" id="supaAuthClose">✖️</button>
       <div class="authPanel__brand">
         <span class="authPanel__brandIcon">🏎️</span>
         <span class="authPanel__brandName">Garage Turbo</span>
       </div>
 
-      <!-- TOGGLE connexion / inscription -->
       <div class="authToggle" id="authToggle">
         <button class="authToggle__btn authToggle__btn--active" data-view="login">Connexion</button>
         <button class="authToggle__btn" data-view="signup">Inscription</button>
         <div class="authToggle__slider" id="authToggleSlider"></div>
       </div>
 
-      <!-- MESSAGE FEEDBACK -->
       <div class="authMsg" id="supaAuthMsg"></div>
 
       <!-- VUE CONNEXION -->
@@ -138,7 +138,7 @@
     </div>
   </div>
 
-  <!-- PRESTIGE MODAL -->
+  <!-- PRESTIGE -->
   <div class="modal" id="prestigeModal" style="display:none;">
     <div class="modal__backdrop" id="prestigeBackdrop"></div>
     <div class="modal__panel modal__panel--prestige">
@@ -149,11 +149,8 @@
         </div>
         <button class="iconbtn" id="btnPrestigeClose" title="Fermer">✖️</button>
       </div>
-      <!-- Info + bouton prestige -->
       <div id="prestigeInfo"></div>
-      <!-- Filtres branches -->
       <div class="heritageFilters" id="heritageFilters"></div>
-      <!-- Grille perks -->
       <div class="heritageGrid" id="heritageGrid"></div>
     </div>
   </div>
@@ -161,17 +158,17 @@
   <!-- CONFIRMATION PRESTIGE -->
   <div class="modal" id="prestigeConfirmModal" style="display:none;z-index:200;">
     <div class="modal__backdrop" id="prestigeConfirmBackdrop"></div>
-    <div class="modal__panel modal__panel--confirm" style="border-color:rgba(255,140,64,.3);box-shadow:0 0 60px rgba(255,140,64,.15)">
+    <div class="modal__panel modal__panel--confirm modal__panel--confirm-prestige">
       <div class="confirmModal__icon">🔥</div>
       <div class="confirmModal__title">Lancer le Prestige ?</div>
       <div class="confirmModal__desc">
         Ton garage repart de zéro.<br>
         Upgrades, argent, REP, voitures perdus.<br>
-        <span id="prestigeConfirmGain" style="color:#ffc83a;font-weight:900;font-size:15px;display:block;margin-top:8px"></span>
+        <span id="prestigeConfirmGain" class="confirmModal__gain"></span>
       </div>
       <div class="confirmModal__actions">
         <button class="btn" id="prestigeConfirmCancel">Annuler</button>
-        <button class="btn" id="prestigeConfirmOk" style="background:rgba(255,140,64,.12);border-color:rgba(255,140,64,.3);color:#ff8c40;font-weight:800;">🔥 Confirmer</button>
+        <button class="btn btn--prestige-confirm" id="prestigeConfirmOk">🔥 Confirmer</button>
       </div>
     </div>
   </div>
@@ -194,7 +191,10 @@
     <div class="modal__panel modal__panel--confirm">
       <div class="confirmModal__icon">⚠️</div>
       <div class="confirmModal__title">Réinitialiser les Talents ?</div>
-      <div class="confirmModal__desc">Tous tes rangs seront remboursés en points.<br>Coût : <span id="resetCostDisplay" style="color:#a78bfa;font-weight:900;">0 €</span></div>
+      <div class="confirmModal__desc">
+        Tous tes rangs seront remboursés en points.<br>
+        Coût : <span id="resetCostDisplay" class="confirmModal__costHighlight">0 €</span>
+      </div>
       <div class="confirmModal__actions">
         <button class="btn" id="btnResetCancel">Annuler</button>
         <button class="btn btn--danger" id="btnResetConfirm">Confirmer le Reset</button>
@@ -202,7 +202,7 @@
     </div>
   </div>
 
-  <!-- SUCCÈS MODAL -->
+  <!-- SUCCÈS -->
   <div class="modal" id="achievementsModal" style="display:none;">
     <div class="modal__backdrop" id="achievementsBackdrop"></div>
     <div class="modal__panel modal__panel--achievements">
@@ -214,7 +214,7 @@
         <div class="achModal__counter">
           <div class="achModal__bar"><div class="achModal__barFill" id="achProgressBar" style="width:0%"></div></div>
           <div class="achModal__fraction" id="achFraction">0%</div>
-          <button class="btn" id="btnToggleAchNotif" title="Activer/Désactiver les notifications de succès" style="font-size:11px;padding:4px 10px;opacity:.8;">🔔 Notifs</button>
+          <button class="btn btn--sm btn--notif-toggle" id="btnToggleAchNotif" title="Activer/Désactiver les notifications de succès">🔔 Notifs</button>
           <button class="iconbtn" id="btnAchievementsClose" title="Fermer">✖️</button>
         </div>
       </div>
@@ -241,12 +241,14 @@
     </div>
   </div>
 
-  <!-- PROFIL MODAL -->
+  <!-- PROFIL -->
   <div class="modal" id="profileModal" style="display:none;">
     <div class="modal__backdrop" id="profileBackdrop"></div>
     <div class="modal__panel modal__panel--profile">
-      <div class="modal__head">
-        <div class="modal__title">👤 Mon Profil</div>
+      <div class="achModal__head">
+        <div class="achModal__title">
+          <div class="achModal__titleMain">👤 Mon Profil</div>
+        </div>
         <button class="iconbtn" id="btnProfileClose" title="Fermer">✖️</button>
       </div>
       <div class="profileCard" id="profilePreview">
@@ -279,43 +281,41 @@
       </div>
       <div class="modal__foot">
         <button class="btn btn--primary" id="btnProfileSave">💾 Sauvegarder le profil</button>
-        <button class="btn" id="btnLogout" style="background:rgba(255,90,90,.1);border-color:rgba(255,90,90,.3);color:#ff5a5a;" onclick="_supa.auth.signOut()">🚪 Déconnexion</button>
+        <button class="btn btn--danger-ghost" id="btnLogout">🚪 Déconnexion</button>
       </div>
     </div>
   </div>
 
-  <!-- MODALE CLASSEMENT MONDIAL -->
+  <!-- CLASSEMENT MONDIAL -->
   <div class="modal" id="leaderboardModal" style="display:none;">
     <div class="modal__backdrop" id="leaderboardBackdrop"></div>
-    <div class="modal__panel" style="width:min(640px,96vw);max-height:88vh;display:flex;flex-direction:column;gap:0;padding:0;overflow:hidden;">
-      <!-- Header -->
-      <div style="padding:24px 28px 16px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+    <div class="modal__panel modal__panel--leaderboard">
+      <div class="lb__head">
         <div>
-          <div style="font-size:18px;font-weight:800;display:flex;align-items:center;gap:10px;">🌍 Classement Mondial</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:3px;" id="lbSubtitle">Top 50 joueurs</div>
+          <div class="lb__title">🌍 Classement Mondial</div>
+          <div class="lb__subtitle" id="lbSubtitle">Top 50 joueurs</div>
         </div>
-        <div style="display:flex;align-items:center;gap:10px;">
-          <button class="btn" id="btnLbRefresh" style="font-size:12px;padding:6px 14px;">🔄 Actualiser</button>
+        <div class="lb__headActions">
+          <button class="btn btn--sm" id="btnLbRefresh">🔄 Actualiser</button>
           <button class="iconbtn" id="btnLeaderboardClose">✖️</button>
         </div>
       </div>
-      <!-- Tabs -->
-      <div style="display:flex;gap:0;border-bottom:1px solid rgba(255,255,255,.07);flex-shrink:0;" id="lbTabs">
+      <div class="lb__tabs" id="lbTabs">
         <button class="lbTab lbTab--active" data-lbtab="prestige">🔥 Prestiges</button>
         <button class="lbTab" data-lbtab="level">⚙️ Niveau</button>
         <button class="lbTab" data-lbtab="money">💰 Argent</button>
         <button class="lbTab" data-lbtab="sold">🚗 Ventes</button>
       </div>
-      <!-- Liste -->
-      <div style="overflow-y:auto;flex:1;padding:16px 20px;" id="lbList">
-        <div style="text-align:center;color:var(--muted);padding:40px 0;" id="lbLoading">Chargement…</div>
+      <div class="lb__list" id="lbList">
+        <div class="lb__loading" id="lbLoading">Chargement…</div>
       </div>
-      <!-- Ma position -->
       <div id="lbMyRow" style="display:none;border-top:1px solid rgba(255,255,255,.07);padding:12px 20px;background:rgba(49,214,255,.05);flex-shrink:0;"></div>
     </div>
   </div>
 
-  <!-- TOP BAR -->
+  <!-- ═══════════════════════════════════════════
+       TOPBAR
+       ═══════════════════════════════════════════ -->
   <header class="topbar">
 
     <div class="brand">
@@ -348,7 +348,7 @@
       <!-- Auth : déconnecté -->
       <button class="iconbtn" id="btnAuth" title="Connexion / Inscription">🔐</button>
 
-      <!-- Profil : connecté (masqué par défaut) -->
+      <!-- Profil : connecté (masqué par défaut, géré par JS) -->
       <button class="profileBtn" id="btnProfile" style="display:none" title="Mon profil">
         <span class="profileBtn__avatar" id="topbarAvatar">🔧</span>
         <span class="profileBtn__pseudo" id="topbarPseudo">Mécanicien</span>
@@ -365,7 +365,9 @@
 
   </header>
 
-  <!-- MAIN GRID -->
+  <!-- ═══════════════════════════════════════════
+       LAYOUT PRINCIPAL
+       ═══════════════════════════════════════════ -->
   <main class="layout">
 
     <!-- GAUCHE -->
@@ -384,7 +386,7 @@
       <div class="panel panel--showroom">
         <div class="panel__head">
           <div class="panel__title">💲 Showroom</div>
-          <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);">
+          <div class="panel__headMeta">
             <span id="showroomCapDisplay">0 / 3</span>
             <span id="showroomFullBadge" style="display:none;background:#ff4444;color:#fff;font-size:10px;font-weight:800;padding:2px 7px;border-radius:6px;letter-spacing:.5px;">PLEIN</span>
           </div>
@@ -415,9 +417,12 @@
           <div class="workbox">
 
             <div class="workbox__center">
-              <button id="btnRepairClick" class="btn btn--ghost btn--repair">
-                🔧 Réparer (clic)
-              </button>
+              <div class="repairBtn__wrap">
+                <button id="btnRepairClick" class="btn btn--ghost btn--repair">
+                  🔧 Réparer (clic)
+                </button>
+                <small id="repairClickEff" class="repairBtn__eff">0.50s / clic</small>
+              </div>
             </div>
 
             <div class="queue">
@@ -430,11 +435,12 @@
               <div class="garageSlots" id="garageSlots"></div>
             </div>
 
-            <span id="activeCarTitle" style="display:none"></span>
-            <span id="activeCarValue" style="display:none"></span>
-            <span id="activeCarTime"  style="display:none"></span>
-            <span id="activeCarTier"  style="display:none"></span>
-            <div  id="repairBar"      style="display:none"></div>
+            <!-- Éléments fantômes conservés : lus par le JS -->
+            <span id="activeCarTitle" class="is-hidden"></span>
+            <span id="activeCarValue" class="is-hidden"></span>
+            <span id="activeCarTime"  class="is-hidden"></span>
+            <span id="activeCarTier"  class="is-hidden"></span>
+            <div  id="repairBar"      class="is-hidden"></div>
 
           </div>
         </div>
@@ -469,13 +475,11 @@
 
   </main>
 
-  <!-- SCRIPTS en bas du body -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- SCRIPTS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.98.0/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
+  <!-- V2 — Confetti pour milestones et prestiges -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js" crossorigin="anonymous"></script>
   <script src="app.js"></script>
-  <script>
-    // Supabase Auth remplace Netlify Identity
-    // Les clés publiques anon sont safe côté front
-  </script>
 
 </body>
 </html>

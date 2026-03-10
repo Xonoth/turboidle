@@ -15,6 +15,7 @@
   --gold:  #ffc83a;
   --purple:#a78bfa;
   --red:   #ff5a5a;
+  --accent:#31d6ff; /* alias cyan pour le leaderboard */
 
   --shadow: 0 20px 50px rgba(0,0,0,.65), 0 0 0 1px rgba(255,255,255,.03);
   --r: 14px;
@@ -156,6 +157,8 @@ body{
   font-size:13px;
   white-space:nowrap;
   box-shadow: 0 0 20px rgba(49,214,255,.08);
+  position:relative;
+  overflow:hidden;
 }
 .btn--repair:hover{
   border-color:rgba(49,214,255,.4);
@@ -216,6 +219,7 @@ body{
   min-height: 120px;
   position:relative;
   overflow:hidden;
+  transition: box-shadow .3s ease, border-color .3s ease;
 }
 /* Fine ligne de couleur en haut */
 .panel::before{
@@ -333,10 +337,13 @@ body{
   border-radius: 12px;
   border: 1px solid rgba(255,255,255,.04);
   background: rgba(0,0,0,.12);
-  display:grid;
-  place-items:center;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
   overflow:hidden;
   position:relative;
+  flex:1;
+  min-height:0;
 }
 .workzone::before{
   content:'';
@@ -486,12 +493,7 @@ body{
   flex:1;
   min-height:0;
 }
-.workzone{
-  flex:1;
-  min-height:0;
-  display:flex;
-  flex-direction:column;
-}
+/* .workzone — voir définition principale ci-dessus */
 .workbox__carinfo{ text-align:center; }
 .workbox__title{font-weight:800; font-size:16px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-family:var(--font-ui); letter-spacing:.5px;}
 .workbox__meta{display:flex; gap:14px; flex-wrap:wrap; justify-content:center; color:var(--muted2); font-size:12px; margin-top:6px;}
@@ -604,6 +606,8 @@ body{
   background:linear-gradient(90deg, #31d6ff, #5aabff);
   box-shadow:0 0 6px rgba(49,214,255,.5);
   transition: width .15s ease;
+  position:relative;
+  overflow:hidden;
 }
 .garageSlot__barFill--wait{
   background:rgba(255,255,255,.08);
@@ -643,8 +647,6 @@ body{
   font-family:var(--font-ui);
 }
 .sItem .tierBadge{ min-width:40px; height:22px; font-size:11px; }
-
-.queue__counter{font-weight:600; color:var(--muted2); margin-left:6px;}
 
 /* ══ PROGRESS BARS ═════════════════════════════════════════ */
 .progress{
@@ -741,6 +743,8 @@ body{
   font-family:var(--font-ui);
   letter-spacing:.5px;
   transition: border-color .15s, background .15s;
+  position:relative;
+  overflow:hidden;
 }
 .sell:hover{ border-color:rgba(46,229,157,.4); background:rgba(46,229,157,.13); }
 
@@ -796,7 +800,10 @@ body{
   will-change:width;
   box-shadow:0 0 8px rgba(49,214,255,.4);
 }
-@media(max-width:900px){ .topProgress{display:none;} }
+@media(max-width:900px){
+  .topProgress{display:none;}
+  .talentGrid{grid-template-columns: 1fr;}
+}
 
 /* ===== TALENTS MODAL ===== */
 .modal{
@@ -1304,9 +1311,7 @@ body{
   border-color:rgba(255,80,80,.5);
   color:#ff9090;
 }
-@media (max-width: 900px){
-  .talentGrid{grid-template-columns: 1fr;}
-}
+/* @media 900px — fusionné avec topProgress ci-dessus */
 /* =========================
    SCROLLBAR PREMIUM
 ========================= */
@@ -1824,6 +1829,7 @@ body{
 .achievementPopup--show{
   opacity:1;
   transform:translate(-50%, -50%) scale(1);
+  animation: achBounceIn .45s cubic-bezier(.2,1.3,.4,1) forwards;
 }
 
 .achievementPopup__inner{
@@ -2010,17 +2016,18 @@ body{
 .notifDot--gold{
   background: #ffc83a;
   box-shadow: 0 0 6px rgba(255,200,58,.7);
+  animation:notifPulseGold 1.8s ease-in-out infinite;
 }
 @keyframes notifPulseGold{
   0%,100%{ box-shadow:0 0 4px rgba(255,200,58,.6); transform:scale(1); }
   50%{     box-shadow:0 0 10px rgba(255,200,58,.9); transform:scale(1.25); }
 }
-.notifDot--gold{ animation:notifPulseGold 1.8s ease-in-out infinite; }
+/* .notifDot--gold animation — fusionnée dans .notifDot--gold */
 
 /* ── Modal Prestige ────────────────────────────── */
 .modal__panel--prestige{
   width: min(1060px, 96vw);
-  height: min(800px, 92vh);
+  height: min(820px, 92vh);
   display:flex;
   flex-direction:column;
   gap:0;
@@ -2042,12 +2049,13 @@ body{
 .prestige__infoRow{
   display:flex;
   gap:0;
-  padding: 14px 24px 0;
+  padding: 10px 24px 0;
   border-bottom:1px solid rgba(255,255,255,.04);
+  flex-shrink:0;
 }
 .prestige__infoBlock{
   flex:1;
-  padding: 10px 0 14px;
+  padding: 8px 0 10px;
   text-align:center;
   border-right:1px solid rgba(255,255,255,.04);
 }
@@ -2070,7 +2078,8 @@ body{
 .prestige__conditions{
   display:flex;
   gap:10px;
-  padding: 12px 24px 0;
+  padding: 10px 24px 0;
+  flex-shrink:0;
 }
 .prestige__cond{
   flex:1;
@@ -2093,7 +2102,7 @@ body{
 }
 
 .prestige__btn{
-  margin: 12px 24px 14px;
+  margin: 8px 24px 10px;
   padding: 13px;
   width: calc(100% - 48px);
   border-radius:10px;
@@ -2108,6 +2117,7 @@ body{
   cursor:pointer;
   transition:background .2s, border-color .2s, box-shadow .2s;
   box-shadow: 0 0 20px rgba(255,140,64,.1);
+  flex-shrink:0;
 }
 .prestige__btn:hover{
   background: linear-gradient(135deg, rgba(255,140,64,.22), rgba(255,80,20,.12));
@@ -2120,6 +2130,28 @@ body{
   color:rgba(255,255,255,.25);
   cursor:not-allowed;
   box-shadow:none;
+}
+
+.prestige__missing{
+  margin: 6px 24px 0;
+  padding: 8px 14px;
+  border-radius: 9px;
+  border: 1px solid rgba(255,77,112,.18);
+  background: rgba(255,77,112,.05);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex-shrink:0;
+}
+.prestige__missing-line{
+  font-size: 12px;
+  color: rgba(255,255,255,.45);
+  font-weight: 600;
+  line-height: 1.4;
+}
+.prestige__missing-line b{
+  color: rgba(255,140,64,.85);
+  font-weight: 800;
 }
 
 /* ── Filtres branches ──────────────────────────── */
@@ -2152,17 +2184,21 @@ body{
 /* ── Grille Héritage ───────────────────────────── */
 .heritageGrid{
   flex:1;
+  min-height:0;
   overflow-y:auto;
+  overflow-x:hidden;
   display:grid;
   grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
-  gap:8px;
+  gap:10px;
   align-content:start;
-  padding:16px 20px;
+  padding:16px 20px 24px;
   scrollbar-width:thin;
-  scrollbar-color:rgba(255,140,64,.1) transparent;
+  scrollbar-color:rgba(255,140,64,.2) transparent;
 }
-.heritageGrid::-webkit-scrollbar{ width:3px; }
-.heritageGrid::-webkit-scrollbar-thumb{ background:rgba(255,140,64,.2); border-radius:3px; }
+.heritageGrid::-webkit-scrollbar{ width:5px; }
+.heritageGrid::-webkit-scrollbar-track{ background:transparent; }
+.heritageGrid::-webkit-scrollbar-thumb{ background:rgba(255,140,64,.25); border-radius:5px; }
+.heritageGrid::-webkit-scrollbar-thumb:hover{ background:rgba(255,140,64,.45); }
 
 /* ── Carte Héritage ────────────────────────────── */
 .heritageCard{
@@ -2174,8 +2210,10 @@ body{
   flex-direction:column;
   gap:10px;
   position:relative;
-  overflow:hidden;
+  overflow:visible;
   transition:border-color .2s, background .2s, transform .15s;
+  height:auto;
+  align-self:start;
 }
 .heritageCard:hover:not(.heritageCard--locked){ transform:translateY(-1px); }
 .heritageCard--locked{ opacity:.3; filter:grayscale(.5); }
@@ -2184,8 +2222,8 @@ body{
 .heritageCard__line{
   position:absolute;
   left:0; top:0; bottom:0;
-  width:2px;
-  border-radius:0 1px 1px 0;
+  width:3px;
+  border-radius:10px 0 0 10px;
 }
 
 .heritageCard__header{
@@ -2748,3 +2786,411 @@ body{
   color:#7ab4ff; transition:all .15s;
 }
 .stockGlobalPanel__save:hover{ background:rgba(74,158,255,.32); color:#acd4ff; }
+
+
+
+
+/* ══════════════════════════════════════════════════════════════
+   ANIMATIONS & VISUAL IMPROVEMENTS — GARAGE TURBO
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── 1. FLOATING TEXT (argent, REP, XP) ─────────────────────── */
+.floatText{
+  position:fixed;
+  pointer-events:none;
+  font-family:var(--font-ui);
+  font-weight:900;
+  font-size:15px;
+  letter-spacing:.5px;
+  z-index:99999;
+  white-space:nowrap;
+  animation: floatUp .95s cubic-bezier(.2,.8,.4,1) forwards;
+  text-shadow: 0 2px 8px rgba(0,0,0,.8);
+}
+.floatText--money{ color:#2ee59d; }
+.floatText--rep  { color:#ffc83a; }
+.floatText--diag { color:#31d6ff; }
+.floatText--bad  { color:#ff5a5a; }
+
+@keyframes floatUp{
+  0%   { opacity:1;   transform:translateY(0) scale(1);    }
+  20%  { opacity:1;   transform:translateY(-10px) scale(1.15); }
+  100% { opacity:0;   transform:translateY(-52px) scale(.85); }
+}
+
+/* ── 2. REPAIR CLICK — RIPPLE + SHAKE ───────────────────────── */
+.btn--repair::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  background:radial-gradient(circle at center, rgba(49,214,255,.35) 0%, transparent 70%);
+  opacity:0;
+  transform:scale(.4);
+  transition:none;
+  pointer-events:none;
+}
+.btn--repair.clicked::after{
+  animation: repairRipple .35s ease-out forwards;
+}
+@keyframes repairRipple{
+  0%   { opacity:1; transform:scale(.4); }
+  100% { opacity:0; transform:scale(2.2); }
+}
+.btn--repair.clicked{
+  animation: repairShake .22s ease-in-out;
+}
+@keyframes repairShake{
+  0%,100%{ transform:translateX(0);   }
+  25%    { transform:translateX(-3px);}
+  75%    { transform:translateX(3px); }
+}
+
+/* ── 3. BARRE DE RÉPARATION — SHIMMER + PULSE FINALE ────────── */
+.garageSlot__barFill::after{
+  content:'';
+  position:absolute;
+  top:0; left:-60%;
+  width:50%;
+  height:100%;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.45), transparent);
+  animation: barShimmer 2s linear infinite;
+}
+@keyframes barShimmer{
+  0%  { left:-60%; }
+  100%{ left:130%; }
+}
+/* Pulse quand proche de la fin (<15%) */
+.garageSlot__barFill--almostDone{
+  animation: barPulse .5s ease-in-out infinite alternate;
+}
+@keyframes barPulse{
+  from{ box-shadow: 0 0 6px rgba(49,214,255,.5);  }
+  to  { box-shadow: 0 0 18px rgba(49,214,255,1),  0 0 30px rgba(49,214,255,.4); }
+}
+
+/* ── 4. VOITURE RÉPARÉE → ENTRÉE SHOWROOM ───────────────────── */
+.sItem--new{
+  animation: slideInItem .4s cubic-bezier(.2,1.2,.4,1) forwards;
+}
+@keyframes slideInItem{
+  0%  { opacity:0; transform:translateX(-18px) scale(.97); }
+  100%{ opacity:1; transform:translateX(0)     scale(1);   }
+}
+
+/* ── 5. BOUTON VENDRE — PULSE INVITE ───────────────────────── */
+.sell::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:radial-gradient(circle at center, rgba(46,229,157,.25) 0%, transparent 70%);
+  opacity:0;
+  transition:opacity .2s;
+  pointer-events:none;
+}
+.sell:hover::before{ opacity:1; }
+.sell:active{ transform:scale(.95); }
+
+/* ── 6. SUCCÈS DÉBLOQUÉ — animation fusionnée dans .achievementPopup--show ── */
+@keyframes achBounceIn{
+  0%  { opacity:0; transform:translateY(24px) scale(.88); }
+  60% { opacity:1; transform:translateY(-4px)  scale(1.03); }
+  100%{ opacity:1; transform:translateY(0)     scale(1); }
+}
+
+/* ── 7. MONEY TOPBAR — GLOW QUAND ÇA MONTE ─────────────────── */
+.money--gain{
+  animation: moneyGlow .55s ease-out;
+}
+@keyframes moneyGlow{
+  0%  { box-shadow: 0 0 0   rgba(46,229,157,0);   }
+  30% { box-shadow: 0 0 22px rgba(46,229,157,.5);  }
+  100%{ box-shadow: 0 0 0   rgba(46,229,157,0);   }
+}
+
+/* ── 8. TABS — ENTRÉE PANEL ─────────────────────────────────── */
+.upgradeList > *:not(.stockNav){
+  animation: panelFadeIn .22s ease-out both;
+}
+@keyframes panelFadeIn{
+  from{ opacity:0; transform:translateY(6px); }
+  to  { opacity:1; transform:translateY(0);   }
+}
+
+/* ── 9. NIVEAU GARAGE — FLASH LEVEL UP ─────────────────────── */
+.topProgress__lvl--levelup{
+  animation: levelUpFlash .7s ease-out;
+}
+@keyframes levelUpFlash{
+  0%  { color:var(--text);  text-shadow:none; }
+  25% { color:#fff;         text-shadow:0 0 20px #31d6ff, 0 0 40px #31d6ff; transform:scale(1.18); }
+  100%{ color:var(--text);  text-shadow:none; transform:scale(1); }
+}
+
+/* ── 10. UPGRADE ACHETÉ — FLASH VERT ───────────────────────── */
+.item--justbought{
+  animation: itemBought .5s ease-out;
+}
+@keyframes itemBought{
+  0%  { background:rgba(46,229,157,.18); border-color:rgba(46,229,157,.5); }
+  100%{ background:rgba(49,214,255,.04); border-color:rgba(255,255,255,.05); }
+}
+
+/* ── 11. TALENT DÉBLOQUÉ ────────────────────────────────────── */
+.talentCard--justunlocked{
+  animation: talentUnlock .6s cubic-bezier(.2,1.2,.4,1);
+}
+@keyframes talentUnlock{
+  0%  { transform:scale(.92); box-shadow:0 0 0 rgba(167,139,250,0); }
+  40% { transform:scale(1.05); box-shadow:0 0 28px rgba(167,139,250,.6); }
+  100%{ transform:scale(1);    box-shadow:0 0 0 rgba(167,139,250,0); }
+}
+
+/* ── 12. QUEUE ITEM — ENTRÉE ────────────────────────────────── */
+.garageSlot--new{
+  animation: slotAppear .35s cubic-bezier(.2,1.1,.4,1) forwards;
+}
+@keyframes slotAppear{
+  0%  { opacity:0; transform:scaleY(.7) translateY(-8px); }
+  100%{ opacity:1; transform:scaleY(1)  translateY(0); }
+}
+
+/* ── 13. PANEL HOVER GLOW — transition fusionnée dans .panel ──────── */
+
+/* ── 14. TOPBAR COUNTER — TICK ANIMATION ───────────────────── */
+.topbar__stat--tick{
+  animation: statTick .25s ease-out;
+}
+@keyframes statTick{
+  0%  { transform:scale(1);    }
+  50% { transform:scale(1.12); }
+  100%{ transform:scale(1);    }
+}
+
+/* ── 15. PRESTIGE BUTTON — PULSE DISPONIBLE ────────────────── */
+.btn--prestige.available{
+  animation: prestigePulse 2s ease-in-out infinite;
+}
+@keyframes prestigePulse{
+  0%,100%{ box-shadow:0 0 8px  rgba(255,200,58,.2); border-color:rgba(255,200,58,.3); }
+  50%    { box-shadow:0 0 24px rgba(255,200,58,.6); border-color:rgba(255,200,58,.7); }
+}
+
+
+
+/* ══════════════════════════════════════════════════════════════
+   UTILITAIRES
+   ══════════════════════════════════════════════════════════════ */
+
+/* Masquage initial — utilisé uniquement sur les éléments fantômes
+   non pilotés par JS (activeCarTitle, activeCarValue, etc.).
+   Ne pas utiliser sur des éléments que JS affiche via style.display. */
+.is-hidden{ display:none !important; }
+/* ══════════════════════════════════════════════════════════════
+   LEADERBOARD — styles extraits des inline du HTML
+   ══════════════════════════════════════════════════════════════ */
+
+.modal__panel--leaderboard{
+  width: min(640px, 96vw);
+  max-height: 88vh;
+  display:flex;
+  flex-direction:column;
+  gap:0;
+  padding:0;
+  overflow:hidden;
+}
+
+.lb__head{
+  padding: 24px 28px 16px;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-shrink:0;
+}
+
+.lb__title{
+  font-size:18px;
+  font-weight:800;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.lb__subtitle{
+  font-size:12px;
+  color:var(--muted);
+  margin-top:3px;
+}
+
+.lb__headActions{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.lb__tabs{
+  display:flex;
+  gap:0;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  flex-shrink:0;
+}
+
+.lb__list{
+  overflow-y:auto;
+  flex:1;
+  padding: 16px 20px;
+}
+
+.lb__loading{
+  text-align:center;
+  color:var(--muted);
+  padding: 40px 0;
+}
+
+.lb__myRow{
+  border-top: 1px solid rgba(255,255,255,.07);
+  padding: 12px 20px;
+  background: rgba(49,214,255,.05);
+  flex-shrink:0;
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   MODIFICATEURS BEM — remplacent les inline styles récurrents
+   ══════════════════════════════════════════════════════════════ */
+
+/* Bouton confirmer prestige (orange) */
+.btn--prestige-confirm{
+  background: rgba(255,140,64,.12);
+  border-color: rgba(255,140,64,.3);
+  color: #ff8c40;
+  font-weight:800;
+}
+.btn--prestige-confirm:hover{
+  background: rgba(255,140,64,.22);
+  border-color: rgba(255,140,64,.5);
+  color: #ffaa60;
+}
+
+/* Bouton danger ghost (déconnexion, actions destructives secondaires) */
+.btn--danger-ghost{
+  background: rgba(255,90,90,.1);
+  border-color: rgba(255,90,90,.3);
+  color: #ff5a5a;
+}
+.btn--danger-ghost:hover{
+  background: rgba(255,90,90,.2);
+  border-color: rgba(255,90,90,.5);
+  color: #ff7070;
+}
+
+/* Bouton toggle notifications (compact) */
+.btn--notif-toggle{
+  font-size:11px;
+  padding: 4px 10px;
+  opacity:.8;
+}
+.btn--notif-toggle:hover{ opacity:1; }
+
+/* Gain prestige confirm — texte doré dans la confirmation */
+.confirmModal__gain{
+  color: #ffc83a;
+  font-weight:900;
+  font-size:15px;
+  display:block;
+  margin-top:8px;
+}
+
+/* Highlight coût dans confirm reset talents */
+.confirmModal__costHighlight{
+  color: #a78bfa;
+  font-weight:900;
+}
+
+/* Badge PLEIN showroom */
+.badge--alert{
+  background: #ff4444;
+  color: #fff;
+  font-size:10px;
+  font-weight:800;
+  padding: 2px 7px;
+  border-radius:6px;
+  letter-spacing:.5px;
+}
+
+/* Méta showroom header */
+.panel__headMeta{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:12px;
+  color:var(--muted);
+}
+
+/* Actions groupées dans les headers de modales */
+.modal__headActions{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   AMÉLIORATIONS — G1 · G2 · V1 · V3 · P3
+   ════════════════════════════════════════════════════════════════ */
+
+/* G1 — Sous-texte puissance effective sous le bouton Réparer */
+.repairBtn__wrap{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.repairBtn__eff{
+  font-size: 11px;
+  color: var(--muted2);
+  font-family: var(--font-ui);
+  letter-spacing: .5px;
+  opacity: .7;
+  transition: color .3s;
+}
+
+/* G2 — Flash sur le header showroom quand vente auto */
+.panel__head--sold{
+  animation: soldFlash .8s ease forwards;
+}
+@keyframes soldFlash{
+  0%   { background: rgba(46,229,157,.18); }
+  100% { background: transparent; }
+}
+
+/* V1 — Animation slide-in du slot actif quand une voiture entre en atelier */
+@keyframes slotEnter{
+  0%   { opacity:0; transform: translateY(-8px) scale(.97); }
+  60%  { opacity:1; transform: translateY(2px)  scale(1.01); }
+  100% { opacity:1; transform: translateY(0)    scale(1);    }
+}
+.garageSlot--entering{
+  animation: slotEnter .4s cubic-bezier(.2,.8,.4,1) forwards;
+}
+
+/* V3 — Bordure gauche du slot actif colorée selon le tier de la voiture
+   La variable --tier-color est injectée par JS sur l'élément .garageSlot--active */
+.garageSlot--active{
+  --tier-color: #31d6ff; /* valeur par défaut cyan si JS pas encore passé */
+}
+.garageSlot--active::before{
+  background: linear-gradient(180deg, var(--tier-color), rgba(0,0,0,0)) !important;
+  opacity: .8;
+}
+
+/* P3 — Prochain coût d'upgrade sous le bouton d'achat */
+.item__nextcost{
+  font-size: 11px;
+  color: var(--muted2);
+  margin-top: 4px;
+  font-family: var(--font-ui);
+}
+.item__nextcost--miss{
+  color: #ff8c40;
+}
