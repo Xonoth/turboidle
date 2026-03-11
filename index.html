@@ -149,9 +149,35 @@
         </div>
         <button class="iconbtn" id="btnPrestigeClose" title="Fermer">✖️</button>
       </div>
-      <div id="prestigeInfo"></div>
-      <div class="heritageFilters" id="heritageFilters"></div>
-      <div class="heritageGrid" id="heritageGrid"></div>
+      <!-- Onglets -->
+      <div class="prestigeTabs" id="prestigeTabs">
+        <button class="prestigeTab prestigeTab--active" data-ptab="prestige">🔥 Prestige</button>
+        <button class="prestigeTab" data-ptab="heritage">✨ Héritage</button>
+      </div>
+      <!-- Panneau Prestige -->
+      <div class="prestigeTabPanel" id="ptab-prestige">
+        <div id="prestigeInfo"></div>
+      </div>
+      <!-- Panneau Héritage -->
+      <div class="prestigeTabPanel prestigeTabPanel--hidden" id="ptab-heritage">
+        <div class="heritageFilters" id="heritageFilters"></div>
+        <div class="heritageGrid" id="heritageGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DÉFIS JOURNALIERS -->
+  <div class="modal" id="challengesModal" style="display:none;">
+    <div class="modal__backdrop" id="challengesBackdrop"></div>
+    <div class="modal__panel modal__panel--challenges">
+      <div class="achModal__head">
+        <div class="achModal__title">
+          <div class="achModal__titleMain">📅 Défis Journaliers</div>
+          <div class="achModal__titleSub">Complète des objectifs quotidiens</div>
+        </div>
+        <button class="iconbtn" id="btnChallengesClose" title="Fermer">✖️</button>
+      </div>
+      <div id="challengesPanel" class="challenges__body"></div>
     </div>
   </div>
 
@@ -355,6 +381,7 @@
       </button>
 
       <button class="btn btn--ghost btn--notif btn--prestige" id="btnPrestige">🔥 Prestige<span class="notifDot notifDot--gold" id="prestigeNotifDot" style="display:none"></span></button>
+      <button class="btn btn--ghost btn--notif btn--challenges" id="btnChallenges">📅 Défis<span class="notifDot notifDot--cyan" id="challengesNotifDot" style="display:none"></span></button>
       <button class="btn btn--ghost btn--notif" id="btnTalents">⭐ Talents<span class="notifDot" id="talentNotifDot" style="display:none"></span></button>
       <button class="repbtn">🏆 <span id="rep">0</span> REP</button>
       <button class="iconbtn" id="btnAchievements" title="Succès">🎖️</button>
@@ -370,10 +397,10 @@
        ═══════════════════════════════════════════ -->
   <main class="layout">
 
-    <!-- GAUCHE -->
-    <section class="col col--left">
+    <!-- GAUCHE = DIAG + SHOWROOM -->
+    <section class="col col--left" data-col="left">
 
-      <div class="panel">
+      <div class="panel panel--diag">
         <div class="panel__head">
           <div class="panel__title">🔍 Diagnostic</div>
         </div>
@@ -383,7 +410,7 @@
         </button>
       </div>
 
-      <div class="panel panel--showroom">
+      <div class="panel panel--showroom col--showroom-panel">
         <div class="panel__head">
           <div class="panel__title">💲 Showroom</div>
           <div class="panel__headMeta">
@@ -401,8 +428,8 @@
 
     </section>
 
-    <!-- CENTRE -->
-    <section class="col col--center">
+    <!-- CENTRE = ATELIER -->
+    <section class="col col--center" data-col="center">
       <div class="panel panel--tall">
 
         <div class="panel__head">
@@ -449,7 +476,7 @@
     </section>
 
     <!-- DROITE -->
-    <section class="col col--right">
+    <section class="col col--right" data-col="right">
       <div class="panel panel--tall">
 
         <div class="panel__head">
@@ -475,11 +502,60 @@
 
   </main>
 
+  <!-- NAV MOBILE -->
+  <nav class="mobileNav" id="mobileNav">
+    <button class="mobileNav__btn mobileNav__btn--active" data-mcol="center">
+      <span class="mobileNav__icon">🛠️</span>
+      <span class="mobileNav__label">Garage</span>
+    </button>
+    <button class="mobileNav__btn" data-mcol="showroom">
+      <span class="mobileNav__icon">💲</span>
+      <span class="mobileNav__label">Showroom</span>
+    </button>
+    <button class="mobileNav__btn" data-mcol="right">
+      <span class="mobileNav__icon">🧰</span>
+      <span class="mobileNav__label">Bureau</span>
+    </button>
+    <button class="mobileNav__btn" id="btnMobileMore" data-mcol="more">
+      <span class="mobileNav__icon">⋯</span>
+      <span class="mobileNav__label">Plus</span>
+    </button>
+  </nav>
+
+  <!-- Menu "Plus" mobile -->
+  <div class="mobileMore" id="mobileMore" style="display:none">
+    <div class="mobileMore__backdrop" id="mobileMoreBackdrop"></div>
+    <div class="mobileMore__panel">
+      <button class="mobileMore__btn" id="mobilePrestige">🔥 Prestige<span class="notifDot notifDot--gold mobileMore__notif" id="mobilePrestigeNotif" style="display:none"></span></button>
+      <button class="mobileMore__btn" id="mobileChallenges">📅 Défis<span class="notifDot notifDot--cyan mobileMore__notif" id="mobileChallengesNotif" style="display:none"></span></button>
+      <button class="mobileMore__btn" id="mobileTalents">⭐ Talents<span class="notifDot mobileMore__notif" id="mobileTalentsNotif" style="display:none"></span></button>
+      <button class="mobileMore__btn" id="mobileAchievements">🎖️ Succès</button>
+      <button class="mobileMore__btn" id="mobileLeaderboard">🌍 Classement</button>
+      <button class="mobileMore__btn" id="mobileStats">📊 Statistiques</button>
+    </div>
+  </div>
+
   <!-- SCRIPTS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.98.0/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
   <!-- V2 — Confetti pour milestones et prestiges -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js" crossorigin="anonymous"></script>
   <script src="app.js"></script>
+  <script src="data/cars.js"></script>
+  <script src="data/talents.js"></script>
+  <script src="data/heritage.js"></script>
+  <script src="data/achievements.js"></script>
+  <script src="ui/render.js"></script>
+  <script src="ui/prestige-ui.js"></script>
+  <script src="data/challenges.js"></script>
+  <script src="ui/challenges-ui.js"></script>
+  <script src="ui/auth-ui.js"></script>
+  <script src="ui/profile-ui.js"></script>
+  <script src="ui/leaderboard.js"></script>
+  <script src="save/save-snapshot.js"></script>
+  <script src="save/save-repository.js"></script>
+  <script src="save/save-service.js"></script>
+  <script src="ui/mobile-nav.js"></script>
+  <script src="boot.js"></script>
 
 </body>
 </html>

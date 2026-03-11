@@ -23,9 +23,10 @@ class SaveService {
     if(!repository) throw new Error("SaveService: repository requis");
 
     this._repo    = repository;
-    this._loading = false;   // un cloudLoad est en cours
-    this._saving  = false;   // un cloudSave est en cours
-    this._ready   = false;   // true après le premier load (succès ou échec)
+    this._loading     = false;  // un cloudLoad est en cours
+    this._saving      = false;  // un cloudSave est en cours
+    this._ready       = false;  // true après le premier load (succès ou échec)
+    this._pendingSave = false;  // un save a été demandé pendant qu'un autre tournait
   }
 
   // ── Accesseurs ──────────────────────────────────────────────────────────────
@@ -65,18 +66,21 @@ class SaveService {
         const currentTab = state.activeTab; // préserver l'onglet actif
         applySaveSnapshot(snapshot);
         if(currentTab) state.activeTab = currentTab;
+        updateTopbarProfile(); // rafraîchit le pseudo/avatar dès que le profil est chargé
         showSaveIndicator("☁️ Partie chargée");
       } else {
         dbg("[SaveService] aucun snapshot — nouvelle partie");
       }
 
-      renderAll();
+      renderAll(true, true);
+      if(typeof initChallenges === 'function') initChallenges();
     } catch(e) {
       // Supabase cold start, réseau instable, etc.
       // On laisse le jeu démarrer en état initial — pas de blocage.
       console.error("[SaveService] load() erreur:", e.message);
       showSaveIndicator("⚠️ Cloud indisponible");
-      renderAll();
+      renderAll(true, true);
+      if(typeof initChallenges === 'function') initChallenges();
     } finally {
       this._loading = false;
       this._ready   = true;   // autosave peut maintenant s'activer
@@ -92,24 +96,38 @@ class SaveService {
    * @param {string} userId
    */
   async save(userId) {
-    if(!this._ready)   { dbg("[SaveService] save() ignoré — pas encore prêt");    return; }
-    if(this._saving)   { dbg("[SaveService] save() ignoré — déjà en cours");      return; }
-    if(this._loading)  { dbg("[SaveService] save() ignoré — load en cours");       return; }
+    if(!this._ready)  { dbg("[SaveService] save() ignoré — pas encore prêt"); return; }
+    if(this._loading) { dbg("[SaveService] save() ignoré — load en cours");    return; }
+
+    // Si un save tourne déjà, on mémorise qu'un nouveau save est nécessaire.
+    // Le finally du save en cours le déclenchera automatiquement.
+    if(this._saving) {
+      this._pendingSave = true;
+      dbg("[SaveService] save() — pending enregistré");
+      return;
+    }
 
     this._saving = true;
+    this._pendingSave = false;
     dbg("[SaveService] save() pour user:", userId);
 
     try {
+      // Snapshot capturé AVANT le await — reflète l'état exact au moment du clic.
       const snapshot = buildSaveSnapshot();
       await this._repo.upsert(userId, snapshot);
       dbg("[SaveService] save() ✅ succès");
       showSaveIndicator("☁️ Sauvegardé");
     } catch(e) {
-      // On log, on n'écrase pas l'état — l'autosave repassera dans 60s.
       console.error("[SaveService] save() erreur:", e.message);
       showSaveIndicator("⚠️ Erreur cloud");
     } finally {
       this._saving = false;
+      // Si un save a été demandé pendant qu'on tournait, on le relance immédiatement.
+      if(this._pendingSave) {
+        this._pendingSave = false;
+        dbg("[SaveService] save() — exécution du pending save");
+        this.save(userId);
+      }
     }
   }
 
@@ -120,9 +138,10 @@ class SaveService {
    * un prochain load propre à la reconnexion.
    */
   reset() {
-    this._loading = false;
-    this._saving  = false;
-    this._ready   = false;
+    this._loading     = false;
+    this._saving      = false;
+    this._ready       = false;
+    this._pendingSave = false;
     dbg("[SaveService] reset()");
   }
 }

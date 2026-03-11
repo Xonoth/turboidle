@@ -15,7 +15,7 @@
 
 // Version courante du format de save.
 // À incrémenter à chaque changement de schéma (ajout/renommage de champ).
-const SAVE_VERSION = 3;
+const SAVE_VERSION = 4;
 
 // ─── buildSaveSnapshot ───────────────────────────────────────────────────────
 // Sérialise l'état courant du jeu en un objet JSON pur.
@@ -43,6 +43,8 @@ function buildSaveSnapshot() {
     totalRepairs:     state.totalRepairs    ?? 0,
     totalAnalyses:    state.totalAnalyses   ?? 0,
     totalClickRepairs: state.totalClickRepairs ?? 0,
+    totalActionClicks: state.totalActionClicks ?? 0,
+    totalOrders:       state.totalOrders       ?? 0,
     totalCarsSold:    state.totalCarsSold   ?? 0,
     sessionStart:     state.sessionStart    ?? Date.now(),
 
@@ -85,6 +87,9 @@ function buildSaveSnapshot() {
     // ── Succès ─────────────────────────────────────────────────────────────
     achievements: state.achievements ?? {},
 
+    // ── Défis journaliers ──────────────────────────────────────────────────
+    challenges: state.challenges ?? null,
+
     // ── Flags internes ─────────────────────────────────────────────────────
     _hasSaved: true,
   };
@@ -123,11 +128,13 @@ function migrateSaveSnapshot(raw) {
     data.v = 3;
   }
 
-  // ── v3 → v4 (exemple futur) ───────────────────────────────────────────────
-  // if(data.v < 4) {
-  //   data.newField = data.newField ?? defaultValue;
-  //   data.v = 4;
-  // }
+  // ── v3 → v4 : défis journaliers + compteurs actions/commandes ──────────────
+  if(data.v < 4) {
+    data.totalActionClicks = data.totalActionClicks ?? 0;
+    data.totalOrders       = data.totalOrders       ?? 0;
+    data.challenges        = data.challenges        ?? null;
+    data.v = 4;
+  }
 
   return data;
 }
@@ -157,6 +164,8 @@ function applySaveSnapshot(raw) {
   state.totalRepairs      = data.totalRepairs      ?? 0;
   state.totalAnalyses     = data.totalAnalyses     ?? 0;
   state.totalClickRepairs = data.totalClickRepairs ?? 0;
+  state.totalActionClicks = data.totalActionClicks ?? 0;
+  state.totalOrders       = data.totalOrders       ?? 0;
   state.totalCarsSold     = data.totalCarsSold     ?? 0;
   state.sessionStart      = data.sessionStart      ?? Date.now();
 
@@ -200,6 +209,7 @@ function applySaveSnapshot(raw) {
 
   // 10. Succès
   state.achievements = data.achievements ?? {};
+  state.challenges   = data.challenges   ?? null;
 
   // 11. Flags internes
   state._hasSaved = data._hasSaved ?? false;
@@ -208,7 +218,8 @@ function applySaveSnapshot(raw) {
   applyGarageName();
   applyHeritageBonuses();       // ← doit précéder applyHeritageBonusesToState
   applyHeritageBonusesToState();
-  rebuildUpgradeMap();          // ← doit précéder applyTalentEffects
+  rebuildUpgradeMap();          // ← doit précéder applyTalentEffects et recalcUpgradeEffects
+  recalcUpgradeEffects();       // ← repart des niveaux sauvegardés, recalcule diagReward/repairClick/speedMult etc.
   applyTalentEffects();         // ← doit précéder recalcRepairAuto
   recalcRepairAuto();
   resetPendingAchievements();
@@ -238,3 +249,5 @@ function applySaveSnapshot(raw) {
     }
   }
 }
+
+

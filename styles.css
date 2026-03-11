@@ -1546,26 +1546,19 @@ body{
 }
 @media (max-width: 1024px){
   .bigAction{
-    background:
-      linear-gradient(to top, rgba(6,12,28,.7) 0%, rgba(6,12,28,.05) 55%, transparent 100%),
-      url('analyser.png') center 10% / 70% auto no-repeat;
-    min-height: 140px;
-    justify-content: flex-start;
+    background: linear-gradient(135deg, rgba(4,9,20,.95), rgba(8,16,36,.9));
+    min-height: 80px;
+    justify-content: center;
     align-items: center;
-    padding: 0 16px 0 10px;
+    padding: 0 16px;
+  }
+  .bigAction__meta{
+    position: static;
+    text-align: center;
+    font-size: 15px;
   }
 }
-@media (max-width: 768px){
-  .bigAction{
-    background:
-      linear-gradient(to top, rgba(6,12,28,.7) 0%, rgba(6,12,28,.05) 55%, transparent 100%),
-      url('analyser.png') center 10% / 90% auto no-repeat;
-    min-height: 130px;
-    justify-content: flex-start;
-    align-items: center;
-    padding: 0 16px 0 55px;
-  }
-}
+/* bigAction mobile → voir bloc @media principal ci-dessous */
 
 /* ══════════════════════════════════════
    SUCCÈS — Modal TURBO IDLE
@@ -2154,8 +2147,159 @@ body{
   font-weight: 800;
 }
 
+#prestigeInfo{
+  flex-shrink:0;
+}
+
+
+/* ── Onglets prestige ───────────────────────────── */
+.prestigeTabs{
+  flex-shrink:0;
+  display:flex;
+  gap:0;
+  border-bottom:1px solid rgba(255,255,255,.06);
+  padding: 0 24px;
+}
+.prestigeTab{
+  position:relative;
+  padding: 11px 20px;
+  font-size:13px;
+  font-weight:700;
+  font-family:var(--font-ui);
+  letter-spacing:.5px;
+  color:rgba(255,255,255,.35);
+  background:none;
+  border:none;
+  border-bottom:2px solid transparent;
+  cursor:pointer;
+  transition:color .18s, border-color .18s;
+  margin-bottom:-1px;
+}
+.prestigeTab:hover{ color:rgba(255,255,255,.6); }
+.prestigeTab--active{
+  color:#ff8c40;
+  border-bottom-color:#ff8c40;
+}
+.prestigeTab__badge{
+  display:inline-block;
+  margin-left:6px;
+  padding:1px 6px;
+  border-radius:10px;
+  background:rgba(255,200,58,.2);
+  color:#ffc83a;
+  font-size:10px;
+  font-weight:800;
+  vertical-align:middle;
+}
+
+/* ── Panneaux onglets ───────────────────────────── */
+.prestigeTabPanel{
+  flex:1;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+.prestigeTabPanel--hidden{ display:none; }
+
+/* Le panneau prestige scroll si nécessaire */
+#ptab-prestige{
+  overflow-y:auto;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(255,140,64,.2) transparent;
+}
+
+/* Le panneau héritage laisse la grid scroller */
+#ptab-heritage{
+  overflow:hidden;
+}
+
+/* ── Milestone prestige ─────────────────────────── */
+.prestige__milestone{
+  margin: 8px 24px 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,200,58,.2);
+  background: rgba(255,200,58,.05);
+  flex-shrink:0;
+}
+.prestige__milestone--done{
+  border-color: rgba(46,229,157,.2);
+  background: rgba(46,229,157,.05);
+  color: rgba(46,229,157,.8);
+  font-weight:700;
+  font-size:13px;
+  text-align:center;
+}
+.prestige__milestoneLabel{
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:1.5px;
+  text-transform:uppercase;
+  color:rgba(255,200,58,.6);
+  margin-bottom:5px;
+}
+.prestige__milestoneDesc{
+  font-size:12px;
+  color:rgba(255,255,255,.7);
+  font-weight:600;
+  margin-bottom:7px;
+}
+.prestige__milestoneBar{
+  height:4px;
+  border-radius:4px;
+  background:rgba(255,255,255,.07);
+  overflow:hidden;
+  margin-bottom:4px;
+}
+.prestige__milestoneBarFill{
+  height:100%;
+  border-radius:4px;
+  background: linear-gradient(90deg, #ffc83a, #ff8c40);
+  transition: width .4s ease;
+}
+.prestige__milestoneProgress{
+  font-size:10px;
+  color:rgba(255,255,255,.35);
+  font-weight:700;
+  text-align:right;
+}
+
+/* ── Aperçu prochain run ────────────────────────── */
+.prestige__preview{
+  margin: 8px 24px 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(167,139,250,.15);
+  background: rgba(167,139,250,.04);
+  flex-shrink:0;
+}
+.prestige__previewTitle{
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:1.5px;
+  text-transform:uppercase;
+  color:rgba(167,139,250,.6);
+  margin-bottom:8px;
+}
+.prestige__previewGrid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:5px;
+}
+.prestige__previewItem{
+  font-size:12px;
+  color:rgba(255,255,255,.5);
+  font-weight:600;
+}
+.prestige__previewItem b{
+  color:rgba(255,255,255,.85);
+  font-weight:800;
+}
+
 /* ── Filtres branches ──────────────────────────── */
 .heritageFilters{
+  flex-shrink:0;
   display:flex;
   flex-wrap:wrap;
   gap:0;
@@ -2188,7 +2332,7 @@ body{
   overflow-y:auto;
   overflow-x:hidden;
   display:grid;
-  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(255px, 1fr));
   gap:10px;
   align-content:start;
   padding:16px 20px 24px;
@@ -3193,4 +3337,686 @@ body{
 }
 .item__nextcost--miss{
   color: #ff8c40;
+}
+
+/* ══════════════════════════════════════════════════
+   DÉFIS JOURNALIERS
+══════════════════════════════════════════════════ */
+
+.btn--challenges{
+  border-color: rgba(49,214,255,.3);
+  color: #31d6ff;
+}
+.btn--challenges:hover{
+  background: rgba(49,214,255,.08);
+  border-color: rgba(49,214,255,.6);
+}
+.notifDot--cyan{ background:#31d6ff; }
+
+.modal__panel--challenges{
+  width: min(560px, 96vw);
+  max-height: min(700px, 92vh);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  background: linear-gradient(160deg, #060d14 0%, #091219 40%, #060d14 100%);
+  border: 1px solid rgba(49,214,255,.12);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.8), 0 40px 120px rgba(0,0,0,.9), 0 0 80px rgba(49,214,255,.05);
+}
+.modal__panel--challenges .achModal__head{
+  background: linear-gradient(90deg, rgba(49,214,255,.05) 0%, transparent 60%);
+  flex-shrink: 0;
+}
+.modal__panel--challenges .achModal__head::before{
+  background: linear-gradient(180deg, #31d6ff, rgba(49,214,255,.2));
+}
+
+.challenges__body{
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 20px 24px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(49,214,255,.2) transparent;
+}
+
+.challenges__header{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.challenges__title{
+  font-size: 14px;
+  font-weight: 800;
+  color: rgba(255,255,255,.85);
+}
+.challenges__timer{
+  font-size: 11px;
+  color: rgba(255,255,255,.4);
+  font-weight: 600;
+}
+.challenges__timer b{ color: #31d6ff; }
+.challenges__subtitle{
+  font-size: 11px;
+  color: rgba(255,255,255,.3);
+  margin-bottom: 14px;
+}
+.challenges__subtitle b{ color: rgba(255,255,255,.55); }
+.challenges__allDone{
+  text-align: center;
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(46,229,157,.06);
+  border: 1px solid rgba(46,229,157,.2);
+  color: rgba(46,229,157,.8);
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+.challenges__list{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.challenges__empty{
+  text-align: center;
+  color: rgba(255,255,255,.3);
+  padding: 40px 0;
+  font-size: 13px;
+}
+
+/* ── Carte défi ─────────────────────────────────── */
+.challengeCard{
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.06);
+  background: rgba(255,255,255,.02);
+  padding: 14px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color .2s;
+}
+.challengeCard--done{
+  border-color: rgba(49,214,255,.25);
+  background: rgba(49,214,255,.04);
+}
+.challengeCard--claimed{
+  border-color: rgba(46,229,157,.2);
+  background: rgba(46,229,157,.03);
+  opacity: .65;
+}
+
+.challengeCard__top{
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.challengeCard__icon{
+  font-size: 22px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.challengeCard__info{
+  flex: 1;
+  min-width: 0;
+}
+.challengeCard__label{
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255,255,255,.85);
+  margin-bottom: 3px;
+}
+.challengeCard__desc{
+  font-size: 11px;
+  color: rgba(255,255,255,.4);
+  font-weight: 500;
+}
+.challengeCard__check{
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.challengeCard__btn{
+  flex-shrink: 0;
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(49,214,255,.4);
+  background: rgba(49,214,255,.1);
+  color: #31d6ff;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  transition: background .18s, border-color .18s;
+  white-space: nowrap;
+}
+.challengeCard__btn:hover{
+  background: rgba(49,214,255,.2);
+  border-color: rgba(49,214,255,.7);
+}
+
+.challengeCard__progress{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.challengeCard__bar{
+  flex: 1;
+  height: 5px;
+  border-radius: 5px;
+  background: rgba(255,255,255,.07);
+  overflow: hidden;
+}
+.challengeCard__fill{
+  height: 100%;
+  border-radius: 5px;
+  background: linear-gradient(90deg, rgba(49,214,255,.5), rgba(49,214,255,.8));
+  transition: width .3s ease;
+}
+.challengeCard__fill--done{
+  background: linear-gradient(90deg, #2ee59d, #31d6ff);
+}
+.challengeCard__count{
+  font-size: 11px;
+  color: rgba(255,255,255,.4);
+  font-weight: 700;
+  white-space: nowrap;
+  min-width: 80px;
+  text-align: right;
+}
+
+.challengeCard__rewards{
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.challengeCard__reward{
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 20px;
+}
+.challengeCard__reward--money{
+  background: rgba(255,200,58,.1);
+  color: #ffc83a;
+  border: 1px solid rgba(255,200,58,.2);
+}
+.challengeCard__reward--talent{
+  background: rgba(167,139,250,.1);
+  color: #a78bfa;
+  border: 1px solid rgba(167,139,250,.2);
+}
+
+.challenges__bonusHint{
+  text-align: center;
+  padding: 7px 12px;
+  border-radius: 8px;
+  background: rgba(167,139,250,.05);
+  border: 1px solid rgba(167,139,250,.12);
+  color: rgba(167,139,250,.6);
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+.challenges__bonusRep{
+  font-size: 12px;
+  color: #ffc83a;
+  font-weight: 700;
+  margin-top: 5px;
+}
+
+
+/* ══════════════════════════════════════════════════
+   MOBILE — max-width: 768px
+══════════════════════════════════════════════════ */
+
+/* Desktop : cacher nav + menu mobile */
+@media (min-width: 769px) {
+  .mobileNav  { display: none !important; }
+  .mobileMore { display: none !important; }
+}
+
+/* Badge compteur showroom (global, pas dans media) */
+.mobileNav__dot {
+  position: absolute;
+  top: 3px;
+  right: calc(50% - 18px);
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: #ff4d70;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  box-shadow: 0 0 6px rgba(255,77,112,.5);
+}
+
+/* Menu "Plus" (bottom-sheet, géré par JS display:flex) */
+.mobileMore {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  align-items: flex-end;
+  justify-content: center;
+}
+.mobileMore__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.mobileMore__panel {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  background: linear-gradient(180deg, rgba(10,16,30,.99) 0%, rgba(6,10,20,.99) 100%);
+  border-top: 1px solid rgba(49,214,255,.1);
+  border-radius: 18px 18px 0 0;
+  padding: 8px 14px calc(56px + 8px);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: 0 -6px 40px rgba(0,0,0,.75);
+}
+.mobileMore__btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 13px 16px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.05);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: var(--font-ui);
+  letter-spacing: .3px;
+  cursor: pointer;
+  text-align: left;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .1s;
+}
+.mobileMore__btn:active { background: rgba(49,214,255,.08); }
+.mobileMore__notif {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* ── Styles mobile ──────────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* Éviter le scroll body — tout se fait dans les cols */
+  html, body { overflow: hidden; height: 100%; overscroll-behavior: none; }
+
+  /* ── Topbar ─────────────────────────────────────── */
+  .topbar {
+    height: 50px;
+    padding: 0 8px;
+    gap: 4px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  /* Brand : taille fixe contrainte, ne pousse pas */
+  .brand {
+    flex-shrink: 1;
+    min-width: 0;
+    max-width: 110px;
+    overflow: hidden;
+  }
+  .brand__icon  { width: 24px; height: 24px; font-size: 12px; flex-shrink: 0; }
+  .brand__txt   { min-width: 0; overflow: hidden; }
+  .brand__title {
+    font-size: 11px;
+    letter-spacing: .3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 78px;
+  }
+  .brand__sub   { display: none; }
+  .topProgress  { display: none; }
+  /* Centre : argent centré */
+  .topbar__center {
+    flex: 0 0 auto;
+    justify-content: center;
+    gap: 4px;
+    min-width: 0;
+  }
+  /* Actions : flex réduit, pas de débordement */
+  .topbar__actions {
+    gap: 3px;
+    flex-shrink: 1;
+    min-width: 0;
+  }
+  /* Profil : pseudo tronqué court sur mobile */
+  .profileBtn { max-width: 80px; min-width: 0; }
+  .profileBtn__pseudo { max-width: 48px; font-size: 10px; }
+  .profileBtn__avatar { font-size: 14px; }
+  /* Masquer les boutons qui passent dans le menu Plus */
+  .btn--prestige,
+  .btn--challenges,
+  #btnTalents,
+  #btnAchievements,
+  #btnLeaderboard,
+  #btnStats { display: none !important; }
+  /* Argent compact */
+  .money { gap: 2px; }
+  .money__amount { font-size: 14px; white-space: nowrap; }
+  .money__rate   { display: none; }
+  /* REP : tronquer si très grand nombre */
+  .repbtn {
+    font-size: 10px;
+    padding: 3px 6px;
+    height: 26px;
+    max-width: 90px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  /* ── Layout principal ───────────────────────────── */
+  .layout {
+    display: block;
+    padding: 0;
+    /* 50px topbar + 54px mobileNav */
+    height: calc(100dvh - 50px - 54px);
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Toutes les colonnes empilées, invisibles par défaut */
+  .col {
+    display: none;
+    position: absolute;
+    inset: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    padding: 10px 10px 14px;
+    gap: 10px;
+    box-sizing: border-box;
+  }
+  .col--mobile-active {
+    display: flex;
+    flex-direction: column;
+  }
+  /* Mode multi-col (Garage = diag + atelier) */
+  .layout--mobile-multi {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .layout--mobile-multi .col--mobile-active {
+    position: relative !important;
+    inset: auto !important;
+    overflow: visible !important;
+    flex-shrink: 0;
+  }
+  /* Vue Garage : masquer showroom (accessible via onglet dédié) */
+  .layout--mobile-multi .panel--showroom { display: none; }
+  /* Vue Showroom : masquer diag */
+  .col--left.col--mobile-active:not(.layout--mobile-multi .col--left) .panel--diag { display: none; }
+  /* En mode multi : les deux cols empilées verticalement dans le layout */
+  .layout--mobile-multi {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 10px 10px 14px;
+    box-sizing: border-box;
+  }
+
+  /* ── Panels généraux ────────────────────────────── */
+  .panel {
+    border-radius: 12px;
+    flex-shrink: 0;
+    /* Pas de height fixe sur mobile */
+    height: auto !important;
+  }
+  .panel--tall {
+    height: auto !important;
+    min-height: 0;
+    flex: none;
+  }
+  .panel__head  { padding: 10px 12px 8px; }
+  .panel__title { font-size: 13px; }
+
+  /* ── Panel diag + bouton analyser ───────────────────── */
+  .panel--diag { flex-shrink: 0; }
+  .bigAction {
+    min-height: 80px;
+    touch-action: manipulation;
+    background: linear-gradient(135deg, rgba(4,9,20,.95), rgba(8,16,36,.9));
+    align-items: center;
+    justify-content: center;
+    padding: 0 16px;
+  }
+  .bigAction__meta {
+    position: static;
+    text-align: center;
+    font-size: 15px;
+    max-width: 100%;
+  }
+
+  /* ── Workzone : ne plus utiliser height:calc() ──── */
+  .workzone {
+    height: auto !important;
+    flex: none;
+    min-height: 80px;
+  }
+  .workbox {
+    padding: 10px;
+    gap: 8px;
+    /* Pas de min-height qui pousse */
+  }
+  .btn--repair {
+    width: 100%;
+    min-height: 46px;
+    font-size: 14px;
+    padding: 10px 16px;
+    touch-action: manipulation;
+  }
+
+  /* Garage slots : scroll interne limité */
+  .garageSlots {
+    max-height: 230px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .queue__list { max-height: 180px; overflow-y: auto; }
+
+  /* ── Showroom ────────────────────────────────────── */
+  .panel--showroom { flex: none; height: auto !important; }
+  /* Scroll interne showroom si beaucoup de voitures */
+  #showroomList { max-height: 55vh; overflow-y: auto; }
+
+  /* Cards showroom : touch target + texte qui ne déborde pas */
+  .sItem {
+    padding: 9px 10px;
+    gap: 8px;
+    flex-wrap: nowrap;
+  }
+  .sItem > div:first-child { min-width: 0; flex: 1; overflow: hidden; }
+  .sItem__name { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sItem__meta { font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sell {
+    flex-shrink: 0;
+    min-width: 64px;
+    min-height: 38px;
+    font-size: 12px;
+    padding: 7px 10px;
+    touch-action: manipulation;
+  }
+
+  /* ── Bureau / upgrades ───────────────────────────── */
+  .tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    flex-wrap: nowrap;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    padding: 9px 13px;
+    font-size: 10px;
+    white-space: nowrap;
+    min-height: 38px;
+  }
+  .list { max-height: none; height: auto; overflow: visible; }
+  .item {
+    padding: 10px 12px;
+  }
+  .buy {
+    min-height: 36px;
+    min-width: 66px;
+    font-size: 11px;
+    touch-action: manipulation;
+  }
+  /* Textes upgrade : éviter les coupures */
+  .item__name { font-size: 12px; }
+  .item__desc { font-size: 11px; }
+  .item__nextcost { font-size: 10px; }
+
+  /* ── Modals : plein écran ────────────────────────── */
+  .modal__panel,
+  .modal__panel--talents,
+  .modal__panel--prestige,
+  .modal__panel--achievements,
+  .modal__panel--challenges,
+  .modal__panel--confirm {
+    width:  100vw   !important;
+    height: 100dvh  !important;
+    max-height: 100dvh !important;
+    top:    0       !important;
+    left:   0       !important;
+    transform: none !important;
+    border-radius: 0 !important;
+    border: none    !important;
+  }
+
+  /* ── Barre de nav mobile ─────────────────────────── */
+  .mobileNav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 54px;
+    background: rgba(5,9,18,.97);
+    border-top: 1px solid rgba(49,214,255,.1);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    z-index: 20;
+    box-shadow: 0 -2px 16px rgba(0,0,0,.6);
+  }
+  .mobileNav__btn {
+    flex: 1;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: rgba(255,255,255,.3);
+    transition: color .12s;
+    -webkit-tap-highlight-color: transparent;
+    padding: 5px 2px;
+    touch-action: manipulation;
+  }
+  .mobileNav__btn--active { color: #31d6ff; }
+  .mobileNav__btn--active .mobileNav__icon {
+    filter: drop-shadow(0 0 5px rgba(49,214,255,.55));
+  }
+  .mobileNav__icon  { font-size: 18px; line-height: 1; }
+  .mobileNav__label { font-size: 9px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; }
+
+  /* ── Slots garage : version condensée ───────────── */
+  .garageSlot {
+    padding: 6px 8px 6px 10px;
+    gap: 7px;
+    min-height: 0;
+  }
+  .garageSlot__num {
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
+    flex-shrink: 0;
+  }
+  /* Body : gap réduit */
+  .garageSlot__body { gap: 2px; }
+  /* Ligne 1 : tier + nom sur une seule ligne, pas de wrap */
+  .garageSlot__row {
+    flex-wrap: nowrap;
+    gap: 4px;
+  }
+  .garageSlot__row > div:first-child {
+    flex-wrap: nowrap !important;
+    overflow: hidden;
+    min-width: 0;
+    flex: 1;
+  }
+  /* Cacher le badge fail (info secondaire) */
+  .garageSlot .failBadge { display: none; }
+  /* Tier badge : plus compact */
+  .garageSlot .tierBadge {
+    font-size: 9px;
+    padding: 1px 5px;
+    min-width: 24px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+  /* Nom : ellipsis strict */
+  .garageSlot__name {
+    font-size: 11px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* Status badge : très compact, ne wrap jamais */
+  .garageSlot__status {
+    font-size: 8px;
+    padding: 2px 4px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    letter-spacing: .2px;
+  }
+  /* Meta : une seule ligne, overflow caché */
+  .garageSlot__meta {
+    gap: 8px;
+    font-size: 10px;
+    overflow: hidden;
+    white-space: nowrap;
+    flex-wrap: nowrap;
+  }
+  .garageSlot__meta span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+  /* Cacher le % (3e span) et le worker badge */
+  .garageSlot__meta span:nth-child(3) { display: none; }
+  .garageSlot__status--worker { display: none; }
+  /* Barre très fine */
+  .garageSlot__bar { height: 2px; margin: 0; }
+
+
 }
