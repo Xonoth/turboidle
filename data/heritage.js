@@ -367,8 +367,22 @@ function getTalentRank(id){
   return state.talents[id] ?? 0;
 }
 
+function getTierPointsSpent(category, tier){
+  return TALENTS
+    .filter(t => t.category === category && t.tier === tier)
+    .reduce((sum, t) => sum + getTalentRank(t.id), 0);
+}
+
 function hasRequirements(talent){
-  return (talent.requires || []).every(r => getTalentRank(r.id) >= r.rank);
+  // Prérequis classiques (requires)
+  const baseOk = (talent.requires || []).every(r => getTalentRank(r.id) >= r.rank);
+  if(!baseOk) return false;
+  // Prérequis de tier : pour T2 → 10pts en T1, pour T3 → 10pts en T2
+  if(talent.tier >= 2){
+    const prevTierPoints = getTierPointsSpent(talent.category, talent.tier - 1);
+    if(prevTierPoints < 10) return false;
+  }
+  return true;
 }
 
 let _talentFilter = "Tous";
@@ -393,53 +407,100 @@ function renderTalentsUI(){
     });
   }
 
-  // Cartes
+  // Cartes groupées par tier — layout 3 colonnes
   talentListEl.innerHTML = "";
   const list = _talentFilter === "Tous" ? TALENTS : TALENTS.filter(t=>t.category===_talentFilter);
 
-  for(const t of list){
-    const rank   = getTalentRank(t.id);
-    const locked = !hasRequirements(t);
-    const maxed  = rank >= t.maxRank;
-    const canBuy = !locked && state.talentPoints > 0 && !maxed;
+  const TIER_LABELS = { 1:"★ TIER 1", 2:"★★ TIER 2", 3:"★★★ TIER 3" };
+  const TIER_COLORS = { 1:"#4a9eff", 2:"#a78bfa", 3:"#fbbf24" };
 
-    let cardClass = "talentCard";
-    if(locked)      cardClass += " talentCard--locked";
-    else if(maxed)  cardClass += " talentCard--maxed";
-    else if(rank>0) cardClass += " talentCard--active";
+  // Wrapper 3 colonnes
+  const grid = document.createElement("div");
+  grid.className = "talentTierGrid";
+  talentListEl.appendChild(grid);
 
-    const pct = t.maxRank > 0 ? (rank / t.maxRank * 100).toFixed(1) : 0;
-    const barColor = maxed ? "#31d6ff" : rank > 0 ? "#a78bfa" : "rgba(255,255,255,.1)";
-    const progressBar = `
-      <div class="talentCard__rankRow">
-        <div class="talentCard__progressTrack">
-          <div class="talentCard__progressFill" style="width:${pct}%;background:${barColor}"></div>
+  const tiers = [1, 2, 3];
+
+  for(const tierNum of tiers){
+    const tierTalents = list.filter(t => (t.tier ?? 1) === tierNum);
+
+    const col = document.createElement("div");
+    col.className = `talentTierCol talentTierCol--t${tierNum}`;
+    col.style.setProperty("--tier-color", TIER_COLORS[tierNum]);
+
+    // Header colonne
+    let statusHtml = "";
+    if(tierNum === 1){
+      statusHtml = `<span class="tierHeader__unlocked">✅ Disponible</span>`;
+    } else {
+      // Calculer par catégorie filtrée ou toutes catégories
+      const cats = _talentFilter === "Tous"
+        ? [...new Set(TALENTS.map(t=>t.category))]
+        : [_talentFilter];
+      const needed = tierNum === 2 ? 10 : 20;
+      const allUnlocked = cats.every(cat => getTierPointsSpent(cat, tierNum-1) >= needed);
+      const anyProgress = cats.map(cat => getTierPointsSpent(cat, tierNum-1));
+      if(allUnlocked){
+        statusHtml = `<span class="tierHeader__unlocked">✅ Débloqué</span>`;
+      } else {
+        const minPts = Math.min(...anyProgress);
+        statusHtml = `<span class="tierHeader__req">${minPts}/${needed} pts T${tierNum-1}</span>`;
+      }
+    }
+
+    col.innerHTML = `<div class="tierHeader" style="--tier-color:${TIER_COLORS[tierNum]}">
+      <span class="tierHeader__label">${TIER_LABELS[tierNum]}</span>
+      ${statusHtml}
+    </div>`;
+
+    // Cartes
+    for(const t of tierTalents){
+      const rank   = getTalentRank(t.id);
+      const locked = !hasRequirements(t);
+      const maxed  = rank >= t.maxRank;
+      const canBuy = !locked && state.talentPoints > 0 && !maxed;
+
+      let cardClass = "talentCard";
+      if(locked)      cardClass += " talentCard--locked";
+      else if(maxed)  cardClass += " talentCard--maxed";
+      else if(rank>0) cardClass += " talentCard--active";
+
+      const pct = t.maxRank > 0 ? (rank / t.maxRank * 100).toFixed(1) : 0;
+      const barColor = maxed ? "#31d6ff" : rank > 0 ? "#a78bfa" : "rgba(255,255,255,.1)";
+
+      let btnClass = "talentBtn";
+      let btnLabel = `Acheter — 1 point`;
+      if(locked){
+        btnClass += " talentBtn--locked";
+        const tierBlocked = (t.tier??1) >= 2 && getTierPointsSpent(t.category, (t.tier??1)-1) < 10;
+        btnLabel = tierBlocked ? `🔒 Tier ${(t.tier??1)-1} insuffisant` : "🔒 Prérequis manquant";
+      }
+      else if(maxed){ btnClass += " talentBtn--maxed"; btnLabel = "✅ Rang maximum"; }
+
+      const card = document.createElement("div");
+      card.className = cardClass;
+      card.innerHTML = `
+        <div class="talentCard__header">
+          <div class="talentCard__iconWrap">${t.icon ?? "⭐"}</div>
+          <div class="talentCard__info">
+            <div class="talentCard__name">${t.name}</div>
+            <div class="talentCard__desc">${t.desc}</div>
+          </div>
         </div>
-        <div class="talentCard__rankLabel">${rank} / ${t.maxRank}</div>
-      </div>`;
-
-    let btnClass = "talentBtn";
-    let btnLabel = `Acheter — 1 point`;
-    if(locked){ btnClass += " talentBtn--locked"; btnLabel = "🔒 Prérequis manquant"; }
-    else if(maxed){ btnClass += " talentBtn--maxed"; btnLabel = "✅ Rang maximum"; }
-
-    const card = document.createElement("div");
-    card.className = cardClass;
-    card.innerHTML = `
-      <div class="talentCard__header">
-        <div class="talentCard__iconWrap">${t.icon ?? "⭐"}</div>
-        <div class="talentCard__info">
-          <div class="talentCard__name">${t.name}</div>
-          <div class="talentCard__desc">${t.desc}</div>
+        <div class="talentCard__rankRow">
+          <div class="talentCard__progressTrack">
+            <div class="talentCard__progressFill" style="width:${pct}%;background:${barColor}"></div>
+          </div>
+          <div class="talentCard__rankLabel">${rank} / ${t.maxRank}</div>
         </div>
-        <div class="talentCard__cat">${t.category}</div>
-      </div>
-      ${progressBar}
-      <button class="${btnClass}" data-talent-buy="${t.id}" ${canBuy ? "" : "disabled"}>
-        ${btnLabel}
-      </button>
-    `;
-    talentListEl.appendChild(card);
+        <button class="${btnClass}" data-talent-buy="${t.id}" ${canBuy ? "" : "disabled"}>
+          ${btnLabel}
+        </button>
+      `;
+      col.appendChild(card);
+    }
+
+    grid.appendChild(col);
   }
 }
 

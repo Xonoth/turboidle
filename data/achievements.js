@@ -105,9 +105,9 @@ const ACHIEVEMENTS = [
   { id:"part_slots5",  cat:"Stock",        icon:"🚛", name:"Logisticien",               desc:"Avoir 5 slots de livraison simultanés",     cond:s=>(s.upgrades?.find(u=>u.id==="slots_livraison")?.lvl??0)>=4, reward:{rep:100,money:15000,talent:0} },
   { id:"part_norupture",cat:"Stock",       icon:"✅", name:"Zéro Rupture",              desc:"Avoir au moins 5 pièces de chaque type en stock (min 10 types)", cond:s=>{const vals=Object.values(s.parts??{});return vals.filter(p=>p.qty>=5).length>=10;}, reward:{rep:150,money:20000,talent:1} },
   { id:"part_auto_on",  cat:"Stock",       icon:"🤖", name:"Stock Pilote Auto",          desc:"Activer les commandes automatiques (Logiciel Stock niv.3)",       cond:s=>(s.upgrades?.find(u=>u.id==="logiciel_stock")?.lvl??0)>=3,  reward:{rep:200, money:30000,  talent:1} },
-  { id:"part_topdrv10", cat:"Stock",       icon:"🔴", name:"Bonnes Affaires",            desc:"Commander 10 fois chez TopDrive (pièces sans malus)",             cond:s=>Object.values(s.parts??{}).filter(p=>p.supplier==="topdrive"&&p.qty>0).length>=3, reward:{rep:80,  money:5000,   talent:0} },
+  { id:"part_topdrv10", cat:"Stock",       icon:"🔴", name:"Bonnes Affaires",            desc:"Avoir 3 types de pièces TopDrive en stock",             cond:s=>Object.values(s.parts??{}).filter(p=>p.supplier==="topdrive"&&p.qty>0).length>=3, reward:{rep:80,  money:5000,   talent:0} },
   { id:"part_val_10k",  cat:"Stock",       icon:"💰", name:"Stock de Valeur",            desc:"Avoir un stock de pièces valant plus de 10 000 € au total",       cond:s=>Object.values(s.parts??{}).reduce((a,p)=>a+(p.qty*(p.lastPrice??0)),0)>=10000,     reward:{rep:300, money:50000,  talent:1} },
-  { id:"part_del_fast", cat:"Stock",       icon:"⚡", name:"Livraison Express",          desc:"Recevoir une livraison Euroline en moins de 10 secondes",         cond:s=>s._fastDelivery===true,                                     reward:{rep:200, money:20000,  talent:1} },
+  { id:"part_del_fast", cat:"Stock",       icon:"⚡", name:"Livraison Express",          desc:"Avoir au moins 1 slot de livraison actif (Slots Livraison niv.1)",         cond:s=>(s.upgrades?.find(u=>u.id==="slots_livraison")?.lvl??0)>=1,                                     reward:{rep:200, money:20000,  talent:1} },
 
   // ── AMÉLIORATIONS ────────────────────────────────────
   { id:"up_first",     cat:"Améliorations",icon:"📦", name:"Premier Investissement",   desc:"Acheter une première amélioration",         cond:s=>s.upgrades?.some(u=>u.lvl>0),                                reward:{rep:5,    money:0,       talent:0} },
@@ -142,23 +142,21 @@ const ACHIEVEMENTS = [
   // ── SHOWROOM ─────────────────────────────────────────
   { id:"show_1",       cat:"Showroom",     icon:"🚘", name:"Première Expo",            desc:"Avoir 1 voiture au showroom",               cond:s=>s.showroom?.length>=1,      reward:{rep:5,    money:0,     talent:0} },
   { id:"show_3",       cat:"Showroom",     icon:"🚘", name:"Petite Expo",              desc:"Avoir 3 voitures au showroom",              cond:s=>s.showroom?.length>=3,      reward:{rep:20,   money:1000,    talent:0} },
-  { id:"show_full",    cat:"Showroom",     icon:"🏪", name:"Showroom Plein",           desc:"Remplir complètement le showroom",          cond:s=>s.showroom?.length>0&&s.showroom.length>=(s.showroomCap??3)+(s.talentShowroomSlots??0), reward:{rep:50,money:5000,talent:0} },
+  { id:"show_full",    cat:"Showroom",     icon:"🏪", name:"Showroom Plein",           desc:"Remplir complètement le showroom",          cond:s=>s.showroom?.length>0&&s.showroom.length>=(s.showroomCap??3), reward:{rep:50,money:5000,talent:0} },
   { id:"show_S",       cat:"Showroom",     icon:"🏆", name:"Voiture de Prestige",      desc:"Avoir une voiture tier S au showroom",      cond:s=>s.showroom?.some(c=>c.tier==="S"),    reward:{rep:150,  money:15000,   talent:0} },
   { id:"show_SS",      cat:"Showroom",     icon:"🏆", name:"Supercar en Vitrine",      desc:"Avoir une voiture tier SS au showroom",     cond:s=>s.showroom?.some(c=>c.tier==="SS"),   reward:{rep:500,  money:60000,   talent:1} },
   { id:"show_SSS",     cat:"Showroom",     icon:"💎", name:"Hypercar Exposée",         desc:"Avoir une voiture tier SSS au showroom",    cond:s=>s.showroom?.some(c=>c.tier==="SSS"),  reward:{rep:2000, money:300000,  talent:2} },
   { id:"show_SSSp",    cat:"Showroom",     icon:"💎", name:"Mythique en Vitrine",      desc:"Avoir une voiture SSS+ au showroom",        cond:s=>s.showroom?.some(c=>c.tier==="SSS+"), reward:{rep:8000, money:2000000, talent:3} },
 
   // ── DIVERS ────────────────────────────────────────────
-  { id:"session_1h",   cat:"Divers",       icon:"⏱️", name:"Joueur Assidu",            desc:"Jouer 1 heure au total",                    cond:s=>Date.now()-(s.sessionStart??Date.now())>=3600000,            reward:{rep:0,   money:10000,    talent:0} },
-  { id:"session_5h",   cat:"Divers",       icon:"⏱️", name:"Passionné",               desc:"Jouer 5 heures au total",                   cond:s=>Date.now()-(s.sessionStart??Date.now())>=18000000,           reward:{rep:0,   money:50000,    talent:0} },
+  { id:"session_1h",   cat:"Divers",       icon:"⏱️", name:"Joueur Assidu",            desc:"Jouer 1 heure sans interruption",                    cond:s=>Date.now()-(s.sessionStart??Date.now())>=3600000,            reward:{rep:0,   money:10000,    talent:0} },
+  { id:"session_5h",   cat:"Divers",       icon:"⏱️", name:"Passionné",               desc:"Jouer 5 heures sans interruption",                   cond:s=>Date.now()-(s.sessionStart??Date.now())>=18000000,           reward:{rep:0,   money:50000,    talent:0} },
   { id:"save_first",   cat:"Divers",       icon:"💾", name:"Données Sécurisées",       desc:"Sauvegarder la partie",                     cond:s=>s._hasSaved===true,                                          reward:{rep:0,    money:0,     talent:0} },
   { id:"name_change",  cat:"Divers",       icon:"✏️", name:"Mon Garage, Mes Règles",  desc:"Renommer ton garage",                       cond:s=>s.garageName!=="Garage Turbo",                               reward:{rep:0,   money:0,     talent:0} },
   { id:"profile_set",  cat:"Divers",       icon:"👤", name:"Identité Établie",         desc:"Personnaliser ton profil",                  cond:s=>s.profile?.pseudo!=="Mécanicien"&&s.profile?.pseudo!=null,   reward:{rep:0,   money:0,     talent:0} },
   { id:"full_garage",  cat:"Divers",       icon:"🔥", name:"Garage Complet",           desc:"Remplir tous les emplacements",             cond:s=>{const occ=(s.active?1:0)+(s.queue?.length??0);return occ>0&&occ>=s.garageCap;}, reward:{rep:0,money:0,talent:0} },
   { id:"rich_repair",  cat:"Divers",       icon:"💸", name:"Réparer du Luxe",          desc:"Réparer une voiture de tier A ou +",        cond:s=>["A","S","SS","SSS","SSS+"].includes(s._lastRepairedTier??""),reward:{rep:50,   money:5000,    talent:0} },
   { id:"broke",        cat:"Divers",       icon:"😅", name:"Dans le Rouge",            desc:"Passer sous 10 €",                          cond:s=>s._wasBroke===true,                                          reward:{rep:0,    money:0,     talent:0} },
-  { id:"auto_sell",    cat:"Divers",       icon:"🤝", name:"Vendeur Automatique",      desc:"Embaucher le Vendeur Junior",               cond:s=>(s.upgrades?.find(u=>u.id==="vendeur")?.lvl??0)>=1,          reward:{rep:0,   money:500,    talent:0} },
-  { id:"prestige_prep",cat:"Divers",       icon:"🎯", name:"Prêt au Départ",           desc:"Atteindre le niveau 50 de garage",          cond:s=>s.garageLevel>=50,                                           reward:{rep:100,  money:20000,   talent:0} },
 
   // ── VENTES CUMULÉES (toutes parties) ────────────────
   { id:"total_sold_500",  cat:"Ventes",       icon:"🚗", name:"Demi-Millier Cumulé",       desc:"Vendre 500 voitures au total (tous prestiges)",    cond:s=>(s.totalCarsSold??0)>=500,       reward:{rep:100,  money:10000,   talent:0} },
@@ -182,8 +180,8 @@ const ACHIEVEMENTS = [
 
   // ── NIVEAU GARAGE HIGH ───────────────────────────────
   { id:"lvl_200",         cat:"Garage",       icon:"🌆", name:"Méga Complexe",             desc:"Atteindre le niveau 200",                          cond:s=>s.garageLevel>=200,              reward:{rep:5000, money:2000000, talent:3} },
-  { id:"lvl_300",         cat:"Garage",       icon:"🌇", name:"Corporation",               desc:"Atteindre le niveau 300",                          cond:s=>s.garageLevel>=300,              reward:{rep:12000,money:5000000, talent:5} },
-  { id:"lvl_500",         cat:"Garage",       icon:"🌃", name:"Monopole de l'Auto",        desc:"Atteindre le niveau 500",                          cond:s=>s.garageLevel>=500,              reward:{rep:30000,money:15000000,talent:8} },
+  { id:"lvl_300",         cat:"Garage",       icon:"🌇", name:"Maître du Garage",           desc:"Atteindre le niveau 175",                          cond:s=>s.garageLevel>=175,              reward:{rep:12000,money:5000000, talent:5} },
+  { id:"lvl_500",         cat:"Garage",       icon:"🌃", name:"Légendaire",                 desc:"Atteindre le niveau 200 (niveau maximum)",         cond:s=>s.garageLevel>=200,              reward:{rep:30000,money:15000000,talent:8} },
 
   // ── RÉPARATIONS CUMULÉES ────────────────────────────
   { id:"total_rep_5k",    cat:"Atelier",      icon:"🛠️", name:"Cinq Mille Réparations",   desc:"Effectuer 5 000 réparations au total",             cond:s=>(s.totalRepairs??0)>=5000,       reward:{rep:500,  money:100000,  talent:1} },
@@ -235,8 +233,8 @@ const ACHIEVEMENTS = [
   { id:"combo_prestige_ss",cat:"Défis",       icon:"🔄", name:"Prestige de Luxe",          desc:"Effectuer un prestige avec tier SS débloqué",      cond:s=>(s.prestigeCount??0)>=1&&s.rep>=70000,                                              reward:{rep:0,    money:500000,  talent:2} },
 
   // ── SESSIONS LONGUES ─────────────────────────────────
-  { id:"session_24h",     cat:"Divers",       icon:"🌙", name:"Nuit Blanche",              desc:"Jouer 24 heures au total",                         cond:s=>Date.now()-(s.sessionStart??Date.now())>=86400000,   reward:{rep:0,  money:50000,   talent:1} },
-  { id:"session_100h",    cat:"Divers",       icon:"🏆", name:"Vétéran",                   desc:"Jouer 100 heures au total",                        cond:s=>Date.now()-(s.sessionStart??Date.now())>=360000000,  reward:{rep:0, money:500000,  talent:2} },
+  { id:"session_24h",     cat:"Divers",       icon:"🌙", name:"Nuit Blanche",              desc:"Jouer 24 heures sans interruption",                         cond:s=>Date.now()-(s.sessionStart??Date.now())>=86400000,   reward:{rep:0,  money:50000,   talent:1} },
+  { id:"session_100h",    cat:"Divers",       icon:"🏆", name:"Vétéran",                   desc:"Jouer 100 heures sans interruption",                        cond:s=>Date.now()-(s.sessionStart??Date.now())>=360000000,  reward:{rep:0, money:500000,  talent:2} },
 ];
 
 // State des succès (débloqués)
@@ -280,7 +278,7 @@ function resetPendingAchievements(){
 
 function checkAchievements(){
   // Mise à jour flags spéciaux
-  if(state.money < 10) state._wasBroke = true;
+  if((state.money??0) < 10 && (state.carsSold??0) > 0) state._wasBroke = true;
 
   // Init lazy si besoin
   if(!_pendingAchievements) resetPendingAchievements();
@@ -497,8 +495,8 @@ function renderAchievementsUI(){
     return `<div class="achCard ${isUnlocked?"achCard--unlocked":"achCard--locked"}">
       <div class="achCard__iconWrap">${ach.icon}</div>
       <div class="achCard__body">
-        <div class="achCard__name">${isUnlocked ? ach.name : "???"}</div>
-        <div class="achCard__desc">${isUnlocked ? ach.desc : "Succès verrouillé"}</div>
+        <div class="achCard__name">${ach.name}</div>
+        <div class="achCard__desc">${ach.desc}</div>
         <div class="achCard__reward">${rewardStr}</div>
       </div>
       <div class="achCard__check">${isUnlocked ? "✅" : "🔒"}</div>
