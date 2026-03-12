@@ -15,7 +15,7 @@
 
 // Version courante du format de save.
 // À incrémenter à chaque changement de schéma (ajout/renommage de champ).
-const SAVE_VERSION = 4;
+const SAVE_VERSION = 5;
 
 // ─── buildSaveSnapshot ───────────────────────────────────────────────────────
 // Sérialise l'état courant du jeu en un objet JSON pur.
@@ -46,6 +46,10 @@ function buildSaveSnapshot() {
     totalActionClicks: state.totalActionClicks ?? 0,
     totalOrders:       state.totalOrders       ?? 0,
     totalCarsSold:    state.totalCarsSold   ?? 0,
+    runMoneyPassive:  state.runMoneyPassive  ?? 0,
+    runMoneySales:    state.runMoneySales    ?? 0,
+    runMoneyDiag:     state.runMoneyDiag     ?? 0,
+    runMoneyParts:    state.runMoneyParts    ?? 0,
     sessionStart:     state.sessionStart    ?? Date.now(),
 
     // ── Niveau garage ──────────────────────────────────────────────────────
@@ -136,6 +140,15 @@ function migrateSaveSnapshot(raw) {
     data.v = 4;
   }
 
+  // ── v4 → v5 : trackers argent par source (run actuel) ────────────────────
+  if(data.v < 5) {
+    data.runMoneyPassive = data.runMoneyPassive ?? 0;
+    data.runMoneySales   = data.runMoneySales   ?? 0;
+    data.runMoneyDiag    = data.runMoneyDiag    ?? 0;
+    data.runMoneyParts   = data.runMoneyParts   ?? 0;
+    data.v = 5;
+  }
+
   return data;
 }
 
@@ -167,6 +180,10 @@ function applySaveSnapshot(raw) {
   state.totalActionClicks = data.totalActionClicks ?? 0;
   state.totalOrders       = data.totalOrders       ?? 0;
   state.totalCarsSold     = data.totalCarsSold     ?? 0;
+  state.runMoneyPassive   = data.runMoneyPassive   ?? 0;
+  state.runMoneySales     = data.runMoneySales     ?? 0;
+  state.runMoneyDiag      = data.runMoneyDiag      ?? 0;
+  state.runMoneyParts     = data.runMoneyParts     ?? 0;
   state.sessionStart      = data.sessionStart      ?? Date.now();
 
   // 4. Niveau garage

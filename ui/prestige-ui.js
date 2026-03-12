@@ -55,6 +55,10 @@ function renderPrestigeModal(){
       </div>
     </div>
 
+    <button class="prestige__btn ${can ? '' : 'prestige__btn--locked'}" id="btnDoPrestige" ${can ? '' : 'disabled'}>
+      ${can ? '🔥 LANCER LE PRESTIGE' : '🔒 Conditions non remplies'}
+    </button>
+
     ${nextMilestone ? `
     <div class="prestige__milestone">
       <div class="prestige__milestoneLabel">🎯 Prochain milestone — Prestige ${nextMilestone.count}</div>
@@ -89,9 +93,58 @@ function renderPrestigeModal(){
       ${state.garageLevel < 50 ? `<div class="prestige__missing-line">🔒 Encore <b>${50 - state.garageLevel} niveau${50 - state.garageLevel > 1 ? 'x' : ''}</b> de garage manquant${50 - state.garageLevel > 1 ? 's' : ''}</div>` : ''}
       ${state.rep < 40000 ? `<div class="prestige__missing-line">🔒 Encore <b>${(40000 - state.rep).toLocaleString("fr-FR")} REP</b> manquants</div>` : ''}
     </div>` : ''}
-    <button class="prestige__btn ${can ? '' : 'prestige__btn--locked'}" id="btnDoPrestige" ${can ? '' : 'disabled'}>
-      ${can ? '🔥 LANCER LE PRESTIGE' : '🔒 Conditions non remplies'}
-    </button>
+
+    <div class="prestige__runStats">
+      <div class="prestige__runTitle">📊 Run actuel</div>
+      <div class="prestige__runGrid">
+        <div class="prestige__runItem">
+          <span class="prestige__runIcon">💸</span>
+          <span class="prestige__runLabel">Revenus passifs</span>
+          <span class="prestige__runVal">${formatMoney(Math.round(state.runMoneyPassive ?? 0))}</span>
+        </div>
+        <div class="prestige__runItem">
+          <span class="prestige__runIcon">🚗</span>
+          <span class="prestige__runLabel">Ventes de véhicules</span>
+          <span class="prestige__runVal">${formatMoney(Math.round(state.runMoneySales ?? 0))}</span>
+        </div>
+        <div class="prestige__runItem">
+          <span class="prestige__runIcon">🔍</span>
+          <span class="prestige__runLabel">Diagnostics</span>
+          <span class="prestige__runVal">${formatMoney(Math.round(state.runMoneyDiag ?? 0))}</span>
+        </div>
+        <div class="prestige__runItem">
+          <span class="prestige__runIcon">🔩</span>
+          <span class="prestige__runLabel">Bonus pièces</span>
+          <span class="prestige__runVal">${formatMoney(Math.round(state.runMoneyParts ?? 0))}</span>
+        </div>
+        <div class="prestige__runItem prestige__runItem--total">
+          <span class="prestige__runIcon">💰</span>
+          <span class="prestige__runLabel">Total run</span>
+          <span class="prestige__runVal">${formatMoney(Math.round((state.runMoneyPassive ?? 0) + (state.runMoneySales ?? 0) + (state.runMoneyDiag ?? 0) + (state.runMoneyParts ?? 0)))}</span>
+        </div>
+        <div class="prestige__runItem">
+          <span class="prestige__runIcon">🔧</span>
+          <span class="prestige__runLabel">Réparations</span>
+          <span class="prestige__runVal">${(state.totalRepairs ?? 0).toLocaleString("fr-FR")}</span>
+        </div>
+        <div class="prestige__runItem">
+          <span class="prestige__runIcon">🏷️</span>
+          <span class="prestige__runLabel">Véhicules vendus</span>
+          <span class="prestige__runVal">${(state.carsSold ?? 0).toLocaleString("fr-FR")}</span>
+        </div>
+        <div class="prestige__runItem">
+          <span class="prestige__runIcon">⭐</span>
+          <span class="prestige__runLabel">REP actuelle</span>
+          <span class="prestige__runVal">${(state.rep ?? 0).toLocaleString("fr-FR")}</span>
+        </div>
+        <div class="prestige__runItem">
+          <span class="prestige__runIcon">📦</span>
+          <span class="prestige__runLabel">Niveau garage</span>
+          <span class="prestige__runVal">LVL ${state.garageLevel ?? 1}</span>
+        </div>
+      </div>
+    </div>
+
   `;
 
   // ── Onglets ──────────────────────────────────────────────────────────────────

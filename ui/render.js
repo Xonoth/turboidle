@@ -346,7 +346,7 @@ function renderUpgrades(){
         <div class="item__txt">
           <div class="item__name">${u.name} <span class="pill">niv. ${u.lvl}</span></div>
           <div class="item__desc">${u.desc}</div>
-          ${!isMaxed ? `<div class="item__nextcost">→ Niv.${u.lvl+2} : ${formatMoney(Math.ceil(u.cost*1.25))}${state.money < Math.ceil(u.cost*1.25) && prereqMet ? ` <span class="item__nextcost--miss">(-${formatMoney(Math.ceil(u.cost*1.25) - state.money)})</span>` : ''}</div>` : ''}
+          ${!isMaxed ? `<div class="item__nextcost">→ Niv.${u.lvl+2} : ${formatMoney(Math.ceil(u.cost*1.25))}${state.money < Math.ceil(u.cost*1.25) ? ` <span class="item__nextcost--miss">(-${formatMoney(Math.ceil(u.cost*1.25) - state.money)})</span>` : ''}</div>` : ''}
           ${prereqHtml}
           ${maxLvlHtml}
         </div>
@@ -625,9 +625,9 @@ function renderOrderList(listEl, catFilter){
       const delaySecs = delay % 60;
       const delayStr = delayMins >= 1 ? `${delayMins}m${delaySecs>0?' '+delaySecs+'s':''}` : `${delay}s`;
       const slotsFull = state.orders.length >= getMaxOrders();
-      const canAfford = state.money >= price && !slotsFull;
-      const canAfford5  = state.money >= price*5  && !slotsFull;
-      const canAfford10 = state.money >= price*10 && !slotsFull;
+      const canAfford   = state.money >= price    && !slotsFull;
+      const canAfford10 = state.money >= price*10  && !slotsFull;
+      const canAfford50 = state.money >= price*50  && !slotsFull;
 
       const specCats = supp.speciality ? (Array.isArray(supp.speciality) ? supp.speciality : [supp.speciality]) : [];
       const isSpecBonus = specCats.includes(part.category);
@@ -678,8 +678,8 @@ function renderOrderList(listEl, catFilter){
           <span class="stockSupplRow__price" style="color:${canAfford?"#48c78e":"#ff4d70"}">${formatMoney(price)}</span>
           <div class="stockSupplRow__btns">
             <button class="stockSupplRow__buy" data-pid="${part.id}" data-sid="${sid}" data-qty="1"  ${canAfford   ?"":"disabled"}>×1</button>
-            <button class="stockSupplRow__buy" data-pid="${part.id}" data-sid="${sid}" data-qty="5"  ${canAfford5  ?"":"disabled"}>×5</button>
             <button class="stockSupplRow__buy" data-pid="${part.id}" data-sid="${sid}" data-qty="10" ${canAfford10 ?"":"disabled"}>×10</button>
+            <button class="stockSupplRow__buy" data-pid="${part.id}" data-sid="${sid}" data-qty="50" ${canAfford50 ?"":"disabled"}>×50</button>
           </div>
         </div>
       `;
@@ -752,7 +752,7 @@ function renderStockUpgradesView(el){
         <div class="item__txt">
           <div class="item__name">${u.name} <span class="pill">niv. ${u.lvl}</span></div>
           <div class="item__desc">${u.desc}</div>
-          ${!isMaxed ? `<div class="item__nextcost">→ Niv.${u.lvl+2} : ${formatMoney(Math.ceil(u.cost*1.25))}${state.money < Math.ceil(u.cost*1.25) && prereqMet ? ` <span class="item__nextcost--miss">(-${formatMoney(Math.ceil(u.cost*1.25) - state.money)})</span>` : ''}</div>` : ''}
+          ${!isMaxed ? `<div class="item__nextcost">→ Niv.${u.lvl+2} : ${formatMoney(Math.ceil(u.cost*1.25))}${state.money < Math.ceil(u.cost*1.25) ? ` <span class="item__nextcost--miss">(-${formatMoney(Math.ceil(u.cost*1.25) - state.money)})</span>` : ''}</div>` : ''}
           ${maxLvlHtml}
         </div>
       </div>

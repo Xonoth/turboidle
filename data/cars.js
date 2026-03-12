@@ -89,8 +89,9 @@ function processAutoOrders(dt = 0){
     if(qty <= threshold && !alreadyOrdering){
       const price = getPartPrice(part.id, supplierId) * orderQty;
       if(state.money >= price && price <= budgetLeft){
-        orderPart(part.id, supplierId, orderQty);
-        budgetLeft -= price;
+        if(orderPart(part.id, supplierId, orderQty)){
+          budgetLeft -= price; // mise à jour du budget local pour les commandes suivantes
+        }
       }
     }
   }
@@ -409,8 +410,7 @@ function consumeParts(partIds, car){
       const effQ = getEffectiveQuality(slot.supplier, pid);
       totalQ += effQ;
       count++;
-      const cost = getPartPrice(pid, slot.supplier, car, totalFactor);
-      state.money -= cost;
+      // Argent déjà débité à la commande (orderPart) — pas de double débit ici
     }
   }
   return count > 0 ? totalQ / count : null;
@@ -430,6 +430,13 @@ function orderPart(partId, supplierId, qty = 1){
     showToast("⚠️ Slots de livraison pleins ! Améliorez les Slots Livraison.");
     return false;
   }
+  // Vérifier et débiter l'argent à la commande
+  const price = getPartPrice(partId, supplierId) * qty;
+  if(state.money < price){
+    showToast("⚠️ Fonds insuffisants !");
+    return false;
+  }
+  state.money -= price;
   const delay = getDeliveryDelay(supplierId);
   state.orders.push({
     id: crypto.randomUUID(),

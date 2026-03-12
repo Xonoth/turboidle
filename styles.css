@@ -1561,6 +1561,63 @@ body{
 /* bigAction mobile → voir bloc @media principal ci-dessous */
 
 /* ══════════════════════════════════════
+   PRESTIGE — Run Stats
+══════════════════════════════════════ */
+.prestige__runStats {
+  margin: 16px 0 20px;
+  background: rgba(255,140,64,.06);
+  border: 1px solid rgba(255,140,64,.2);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+.prestige__runTitle {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #ff8c40;
+  margin-bottom: 12px;
+}
+.prestige__runGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.prestige__runItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.prestige__runItem--total {
+  grid-column: 1 / -1;
+  background: rgba(255,140,64,.08);
+  border-color: rgba(255,140,64,.25);
+}
+.prestige__runItem--total .prestige__runVal {
+  color: #ff8c40;
+  font-size: 15px;
+}
+.prestige__runIcon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.prestige__runLabel {
+  font-size: 11px;
+  color: #8899bb;
+  flex: 1;
+}
+.prestige__runVal {
+  font-size: 13px;
+  font-weight: 700;
+  color: #e8eaf6;
+  white-space: nowrap;
+}
+
+/* ══════════════════════════════════════
    SUCCÈS — Modal TURBO IDLE
 ══════════════════════════════════════ */
 .modal__panel--achievements{

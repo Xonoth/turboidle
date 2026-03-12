@@ -383,6 +383,11 @@ if(!state.totalRepairs)      state.totalRepairs      = 0;
 if(!state.totalAnalyses)     state.totalAnalyses     = 0;
 if(!state.totalClickRepairs) state.totalClickRepairs = 0;
 if(!state.totalCarsSold)     state.totalCarsSold     = 0;
+// Trackers run actuel (remis à 0 au prestige)
+if(!state.runMoneyPassive)   state.runMoneyPassive   = 0;
+if(!state.runMoneySales)     state.runMoneySales     = 0;
+if(!state.runMoneyDiag)      state.runMoneyDiag      = 0;
+if(!state.runMoneyParts)     state.runMoneyParts     = 0;
 if(!state.totalActionClicks) state.totalActionClicks = 0;
 if(!state.totalOrders)       state.totalOrders       = 0;
 if(!state.challenges)        state.challenges        = null;
@@ -593,6 +598,7 @@ btnAnalyze.addEventListener("click", () => {
   if(isFinite(diagGain) && diagGain > 0) {
     state.money += diagGain;
     state.totalMoneyEarned = (state.totalMoneyEarned ?? 0) + diagGain;
+    state.runMoneyDiag     = (state.runMoneyDiag     ?? 0) + diagGain;
     spawnFloatText("+" + formatMoney(diagGain), "diag", document.getElementById("btnAnalyze"));
   }
   state.totalAnalyses = (state.totalAnalyses ?? 0) + 1;
@@ -649,6 +655,11 @@ showroomListEl.addEventListener("click", (e) => {
   if(isFinite(saleValue)) {
     state.money += saleValue;
     state.totalMoneyEarned = (state.totalMoneyEarned ?? 0) + saleValue;
+    const _partsMult = getPartsValueMult(car);
+    const _baseVal   = Math.round(car.baseValue * (1 + state.saleBonusPct + (state.talentSaleBonus ?? 0)) * (typeof getPartsValueMult !== 'undefined' ? 1 : 1));
+    const _partsBonus = (_partsMult > 1) ? Math.round(saleValue - saleValue / _partsMult) : 0;
+    state.runMoneySales    = (state.runMoneySales ?? 0) + saleValue;
+    state.runMoneyParts    = (state.runMoneyParts  ?? 0) + _partsBonus;
     spawnFloatText("+" + formatMoney(saleValue), "money", btnPos);
   }
   const tierData = TIERS[car.tier] || TIERS["F"];
@@ -806,6 +817,7 @@ function applyTickLogic(dt){
   if(isFinite(passiveGain)) {
     state.money += passiveGain;
     state.totalMoneyEarned = (state.totalMoneyEarned ?? 0) + passiveGain;
+    state.runMoneyPassive  = (state.runMoneyPassive  ?? 0) + passiveGain;
   }
 
   // Traitement des livraisons de pièces
@@ -838,6 +850,7 @@ function applyTickLogic(dt){
         if(isFinite(diagGain) && diagGain > 0){
           state.money += diagGain;
           state.totalMoneyEarned = (state.totalMoneyEarned ?? 0) + diagGain;
+          state.runMoneyDiag     = (state.runMoneyDiag     ?? 0) + diagGain;
         }
         state.totalAnalyses = (state.totalAnalyses ?? 0) + 1;
         state.queue.push(makeCar());
@@ -861,6 +874,9 @@ function applyTickLogic(dt){
         if(isFinite(saleValue)){
           state.money += saleValue;
           state.totalMoneyEarned = (state.totalMoneyEarned ?? 0) + saleValue;
+          const _pm = getPartsValueMult(car);
+          state.runMoneySales = (state.runMoneySales ?? 0) + saleValue;
+          if(_pm > 1) state.runMoneyParts = (state.runMoneyParts ?? 0) + Math.round(saleValue - saleValue / _pm);
         }
         const tierData = TIERS[car.tier] || TIERS["F"];
         const repMult = state.heritageBonuses?.repGainMult ?? 1.0;

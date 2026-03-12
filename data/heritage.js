@@ -309,6 +309,11 @@ function doPrestige(){
     totalActionClicks:   persistTotalClicks,
     challenges:          persistChallenges,
     sessionStart:        persistSession,
+    // Run stats — remises à 0 au prestige
+    runMoneyPassive:   0,
+    runMoneySales:     0,
+    runMoneyDiag:      0,
+    runMoneyParts:     0,
     parts:             {},
     orders:            [],
     stockSettings:     state.stockSettings ?? {},
