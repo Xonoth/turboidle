@@ -346,7 +346,7 @@ function renderUpgrades(){
         <div class="item__txt">
           <div class="item__name">${u.name} <span class="pill">niv. ${u.lvl}</span></div>
           <div class="item__desc">${u.desc}</div>
-          ${!isMaxed ? `<div class="item__nextcost">→ Niv.${u.lvl+2} : ${formatMoney(Math.ceil(u.cost*1.25))}${state.money < Math.ceil(u.cost*1.25) ? ` <span class="item__nextcost--miss">(-${formatMoney(Math.ceil(u.cost*1.25) - state.money)})</span>` : ''}</div>` : ''}
+          ${!isMaxed ? (() => { const nm = Math.ceil(u.cost*(UPGRADE_MULT[u.id]??1.25)); return `<div class="item__nextcost">→ Niv.${u.lvl+2} : ${formatMoney(nm)}${state.money < nm ? ` <span class="item__nextcost--miss">(-${formatMoney(nm - state.money)})</span>` : ''}</div>`; })() : ''}
           ${prereqHtml}
           ${maxLvlHtml}
         </div>
@@ -752,7 +752,7 @@ function renderStockUpgradesView(el){
         <div class="item__txt">
           <div class="item__name">${u.name} <span class="pill">niv. ${u.lvl}</span></div>
           <div class="item__desc">${u.desc}</div>
-          ${!isMaxed ? `<div class="item__nextcost">→ Niv.${u.lvl+2} : ${formatMoney(Math.ceil(u.cost*1.25))}${state.money < Math.ceil(u.cost*1.25) ? ` <span class="item__nextcost--miss">(-${formatMoney(Math.ceil(u.cost*1.25) - state.money)})</span>` : ''}</div>` : ''}
+          ${!isMaxed ? (() => { const nm = Math.ceil(u.cost*(UPGRADE_MULT[u.id]??1.25)); return `<div class="item__nextcost">→ Niv.${u.lvl+2} : ${formatMoney(nm)}${state.money < nm ? ` <span class="item__nextcost--miss">(-${formatMoney(nm - state.money)})</span>` : ''}</div>`; })() : ''}
           ${maxLvlHtml}
         </div>
       </div>

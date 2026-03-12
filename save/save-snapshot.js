@@ -15,7 +15,7 @@
 
 // Version courante du format de save.
 // À incrémenter à chaque changement de schéma (ajout/renommage de champ).
-const SAVE_VERSION = 5;
+const SAVE_VERSION = 6;
 
 // ─── buildSaveSnapshot ───────────────────────────────────────────────────────
 // Sérialise l'état courant du jeu en un objet JSON pur.
@@ -92,7 +92,8 @@ function buildSaveSnapshot() {
     achievements: state.achievements ?? {},
 
     // ── Défis journaliers ──────────────────────────────────────────────────
-    challenges: state.challenges ?? null,
+    challenges:      state.challenges      ?? null,
+    specialization:  state.specialization  ?? null,
 
     // ── Flags internes ─────────────────────────────────────────────────────
     _hasSaved: true,
@@ -147,6 +148,12 @@ function migrateSaveSnapshot(raw) {
     data.runMoneyDiag    = data.runMoneyDiag    ?? 0;
     data.runMoneyParts   = data.runMoneyParts   ?? 0;
     data.v = 5;
+  }
+
+  // ── v5 → v6 : spécialisation garage ──────────────────────────────────────
+  if(data.v < 6) {
+    data.specialization = data.specialization ?? null;
+    data.v = 6;
   }
 
   return data;
@@ -226,7 +233,8 @@ function applySaveSnapshot(raw) {
 
   // 10. Succès
   state.achievements = data.achievements ?? {};
-  state.challenges   = data.challenges   ?? null;
+  state.challenges     = data.challenges     ?? null;
+  state.specialization = data.specialization ?? null;
 
   // 11. Flags internes
   state._hasSaved = data._hasSaved ?? false;
@@ -237,7 +245,7 @@ function applySaveSnapshot(raw) {
   applyHeritageBonusesToState();
   rebuildUpgradeMap();          // ← doit précéder applyTalentEffects et recalcUpgradeEffects
   recalcUpgradeEffects();       // ← repart des niveaux sauvegardés, recalcule diagReward/repairClick/speedMult etc.
-  applyTalentEffects();         // ← doit précéder recalcRepairAuto
+  applyTalentEffects();         // ← appelle applySpecializationEffects en interne
   recalcRepairAuto();
   resetPendingAchievements();
   updateGarageLevel();

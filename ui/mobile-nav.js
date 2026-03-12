@@ -135,6 +135,7 @@
     wire("mobileAchievements","btnAchievements");
     wire("mobileLeaderboard", "btnLeaderboard");
     wire("mobileStats",       "btnStats");
+    wire("mobileHelp",        "btnHelp");
 
     if(isMobile()) activateCol("center");
 

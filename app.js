@@ -96,7 +96,7 @@ const state = {
     { id:"stagiaire",        tab:"team", icon:"🧑‍🔧", name:"Stagiaire Accueil",    lvl:0, desc:"Diagnostique auto toutes les 12s (min 6s au niv.max)",                    cost:15000,  maxLvl:10 },
     { id:"receptionnaire",   tab:"team", icon:"📋",    name:"Réceptionnaire",        lvl:0, desc:"Accélère le diagnostic auto jusqu'à 1s (prérequis : Stagiaire niv.10)", cost:120000, maxLvl:10 },
     { id:"vendeur",          tab:"team", icon:"👔",    name:"Vendeur Junior",         lvl:0, desc:"Vend auto toutes les 15s (min 8s au niv.max)",                          cost:25000,  maxLvl:10 },
-    { id:"vendeur_confirme", tab:"team", icon:"🤵",    name:"Vendeur Confirmé",       lvl:0, desc:"Accélère la vente auto jusqu'à 1s (prérequis : Vendeur Junior niv.10)", cost:200000, maxLvl:10 },
+    { id:"vendeur_confirme", tab:"team", icon:"🤵",    name:"Vendeur Confirmé",       lvl:0, desc:"Accélère la vente auto jusqu'à 1s (prérequis : Vendeur Junior niv.10)", cost:502687, maxLvl:10 },
     { id:"apprenti",         tab:"team", icon:"🔩",    name:"Apprenti Mécanicien",   lvl:0, desc:"+0.15s/s de réparation auto par rang",                                  cost:12000 },
     { id:"mecanicien",       tab:"team", icon:"🛠️",   name:"Mécanicien",             lvl:0, desc:"+0.5s/s de réparation auto par rang",                                   cost:80000 },
 
@@ -355,17 +355,21 @@ function calcDealsPassive(){
 function applyTalentEffects(){
   const fx = computeTalentEffects();
 
-  state.moneyPerSec         = fx.passive + calcDealsPassive() + (state.heritageBonuses?.passiveBonus ?? 0);
-  state.talentSpeedMult     = fx.speedMult;
+  // Appliquer la spécialisation avant de combiner avec les talents
+  if(typeof applySpecializationEffects === 'function') applySpecializationEffects();
+
+  state.moneyPerSec         = (fx.passive + calcDealsPassive() + (state.heritageBonuses?.passiveBonus ?? 0))
+                              * (state.specPassiveMult ?? 1.0);
+  state.talentSpeedMult     = fx.speedMult * (state.specSpeedMult ?? 1.0);
   state.talentDiagBonus     = fx.diagBonus;
-  state.talentDiagMult      = fx.diagMult;
+  state.talentDiagMult      = fx.diagMult  * (state.specDiagMult  ?? 1.0);
   state.talentSaleBonus     = fx.saleBonus;
   state.talentClickBonus    = fx.clickBonus;
   state.talentShowroomSlots = fx.showroomSlots;
-  state.talentRareMult      = fx.rareMult;
-  state.talentRepairAuto    = fx.repairAuto;
-  state.talentDeliveryDisc  = fx.deliveryDisc;
-  state.talentExtraSlots    = fx.extraSlots;
+  state.talentRareMult      = fx.rareMult  * (state.specRareMult  ?? 1.0);
+  state.talentRepairAuto    = fx.repairAuto * (state.specAutoMult  ?? 1.0);
+  state.talentDeliveryDisc  = Math.min(0.90, fx.deliveryDisc + (state.specDeliveryDisc ?? 0));
+  state.talentExtraSlots    = Math.round(fx.extraSlots * (state.specDeliverySlotsMult ?? 1.0));
 }
 
 // =====================
@@ -392,6 +396,20 @@ if(!state.totalActionClicks) state.totalActionClicks = 0;
 if(!state.totalOrders)       state.totalOrders       = 0;
 if(!state.challenges)        state.challenges        = null;
 if(!state.sessionStart)      state.sessionStart      = Date.now();
+if(!state.specialization)    state.specialization    = null;
+// Effets de spécialisation (recalculés à chaque applySpecializationEffects)
+if(!state.specSpeedMult)         state.specSpeedMult         = 1.0;
+if(!state.specAutoMult)          state.specAutoMult          = 1.0;
+if(!state.specSaleMult)          state.specSaleMult          = 1.0;
+if(!state.specPassiveMult)       state.specPassiveMult       = 1.0;
+if(!state.specDiagMult)          state.specDiagMult          = 1.0;
+if(!state.specRareMult)          state.specRareMult          = 1.0;
+if(!state.specRepMult)           state.specRepMult           = 1.0;
+if(!state.specRepReqMult)        state.specRepReqMult        = 1.0;
+if(state.specShowroomCap === undefined) state.specShowroomCap = null;
+if(!state.specDeliverySlotsMult) state.specDeliverySlotsMult = 1.0;
+if(!state.specDeliveryDisc)      state.specDeliveryDisc      = 0.0;
+if(!state.specPartsValueBonus)   state.specPartsValueBonus   = 0.0;
 
 function renderStatsUI(){
   if(!statsGridEl) return;
@@ -526,10 +544,18 @@ function calcEstimatedRepairTime(car){
 
 function calcSaleValue(car){
   const bonus = 1 + state.saleBonusPct + (state.talentSaleBonus ?? 0);
-  const partsMult = getPartsValueMult(car);
+  // Spécialisation : multiplicateur global de vente
+  const specSale = state.specSaleMult ?? 1.0;
+  // Spécialisation Logistique : bonus pièces amplifié
+  const partsValueMult = getPartsValueMult(car);
+  const partsBonus = state.specPartsValueBonus ?? 0;
+  const partsMult = partsValueMult > 1
+    ? 1 + (partsValueMult - 1) * (1 + partsBonus)
+    : partsValueMult;
   const rareTiers = ["S","SS","SSS","SSS+"];
   const rareMult  = rareTiers.includes(car.tier) ? (state.talentRareMult ?? 1) : 1;
-  return Math.round(car.baseValue * bonus * partsMult * rareMult);
+  // Spécialisation Prestige : showroom limité (déjà géré via specShowroomCap)
+  return Math.round(car.baseValue * bonus * specSale * partsMult * rareMult);
 }
 
 function finishRepair(){
@@ -602,6 +628,11 @@ btnAnalyze.addEventListener("click", () => {
     spawnFloatText("+" + formatMoney(diagGain), "diag", document.getElementById("btnAnalyze"));
   }
   state.totalAnalyses = (state.totalAnalyses ?? 0) + 1;
+  // Spécialisation Centre Diagnostic : +1 pt talent toutes les 100 analyses
+  if(state.specialization === "diag" && state.totalAnalyses % 100 === 0){
+    state.talentPoints = (state.talentPoints ?? 0) + 1;
+    showToast("🔍 +1 point talent (100 diagnostics !)");
+  }
   // Défi actions : compter le diag (place était disponible, sinon on aurait return plus haut)
   state.totalActionClicks = (state.totalActionClicks ?? 0) + 1;
   state.queue.push(makeCar());
@@ -664,7 +695,7 @@ showroomListEl.addEventListener("click", (e) => {
   }
   const tierData = TIERS[car.tier] || TIERS["F"];
   const repMult = state.heritageBonuses?.repGainMult ?? 1.0;
-  const repGain = Math.round(tierData.repGain * repMult);
+  const repGain = Math.round(tierData.repGain * repMult * (state.specRepMult ?? 1.0));
   if(isFinite(repGain)) {
     state.rep += repGain;
     setTimeout(() => spawnFloatText("+" + repGain + " REP", "rep", btnPos), 120);
@@ -689,7 +720,7 @@ const UPGRADE_MULT = {
   showroom_slot:1.30,
   stagiaire:1.35, receptionnaire:1.40, vendeur:1.35, vendeur_confirme:1.40,
   apprenti:1.30, mecanicien:1.35,
-  magasinier:1.40, logiciel_stock:1.45, slots_livraison:1.35,
+  magasinier:4.00, logiciel_stock:4.00, slots_livraison:2.00,
 };
 
 // L1 — Achat upgrade : après achat, rebuildUpgradeMap() est appelé AVANT applyTalentEffects()
@@ -853,6 +884,10 @@ function applyTickLogic(dt){
           state.runMoneyDiag     = (state.runMoneyDiag     ?? 0) + diagGain;
         }
         state.totalAnalyses = (state.totalAnalyses ?? 0) + 1;
+        if(state.specialization === "diag" && state.totalAnalyses % 100 === 0){
+          state.talentPoints = (state.talentPoints ?? 0) + 1;
+          if(!_isOfflineCatchup) showToast("🔍 +1 point talent (100 diagnostics !)");
+        }
         state.queue.push(makeCar());
         tryStartNextRepair();
         _needsFullRender = true;
@@ -880,7 +915,7 @@ function applyTickLogic(dt){
         }
         const tierData = TIERS[car.tier] || TIERS["F"];
         const repMult = state.heritageBonuses?.repGainMult ?? 1.0;
-        const repGain = Math.round(tierData.repGain * repMult);
+        const repGain = Math.round(tierData.repGain * repMult * (state.specRepMult ?? 1.0));
         if(isFinite(repGain)) state.rep += repGain;
         state.carsSold += 1;
         state.totalCarsSold = (state.totalCarsSold ?? 0) + 1;

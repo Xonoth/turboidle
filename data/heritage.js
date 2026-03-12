@@ -133,7 +133,8 @@ function applyHeritageBonusesToState(){
 }
 
 function canPrestige(){
-  return state.garageLevel >= 50 && state.rep >= 40000;
+  const repReq = Math.round(40000 * (state.specRepReqMult ?? 1.0));
+  return state.garageLevel >= 50 && state.rep >= repReq;
 }
 
 
@@ -255,8 +256,9 @@ function doPrestige(){
   const persistTotalSales   = state.totalCarsSold     ?? 0;
   const persistTotalOrders  = state.totalOrders        ?? 0;
   const persistTotalClicks  = state.totalActionClicks  ?? 0;
-  const persistChallenges   = state.challenges         ?? null;
-  const persistSession      = state.sessionStart;
+  const persistChallenges      = state.challenges         ?? null;
+  const persistSpecialization  = state.specialization      ?? null;
+  const persistSession         = state.sessionStart;
 
   // Reset du state (même structure que state initial)
   const baseUpgrades = JSON.parse(JSON.stringify(
@@ -308,6 +310,7 @@ function doPrestige(){
     totalOrders:         persistTotalOrders,
     totalActionClicks:   persistTotalClicks,
     challenges:          persistChallenges,
+    specialization:      persistSpecialization,
     sessionStart:        persistSession,
     // Run stats — remises à 0 au prestige
     runMoneyPassive:   0,

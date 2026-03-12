@@ -101,17 +101,18 @@ function getTierWeights(rep){
   const ramp = (threshold, startW, rate, cap) =>
     rep >= threshold ? Math.min(cap, startW + (rep - threshold) * rate) : 0;
 
+  // Seuils alignés sur TIERS.repReq — aucun tier ne peut apparaître avant son repReq
   const weights = {
     F:      Math.max(0,  50  - rep * 0.0002),
     E:      Math.max(0,  35  - rep * 0.0002),
-    D:      rep >= 150   ? Math.max(2, 22 - rep * 0.0001)  : 0,
-    C:      ramp(300,    3,   0.002,  18),
-    B:      ramp(1500,   2,   0.001,  14),
-    A:      ramp(6000,   2,   0.0008, 10),
-    S:      ramp(20000,  1.5, 0.0004,  6),
+    D:      rep >= 500    ? Math.max(2, 22 - rep * 0.0001)  : 0,
+    C:      ramp(1500,   3,   0.002,  18),
+    B:      ramp(5000,   2,   0.001,  14),
+    A:      ramp(8000,   2,   0.0008, 10),
+    S:      ramp(25000,  1.5, 0.0004,  6),
     SS:     ramp(70000,  1,   0.0002,  3),
-    SSS:    ramp(200000, 0.5, 0.00006, 1.2),
-    "SSS+": ramp(600000, 0.2, 0.00002, 0.4),
+    SSS:    ramp(180000, 0.5, 0.00006, 1.2),
+    "SSS+": ramp(450000, 0.2, 0.00002, 0.4),
   };
   return weights;
 }
@@ -370,7 +371,12 @@ function getEffectiveQuality(supplierId, partId){
 // Calcule le délai de livraison en secondes selon upgrades
 
 function getShowroomCap(){
-  return (state.showroomCap ?? 3) + (state.talentShowroomSlots ?? 0);
+  const base = (state.showroomCap ?? 3) + (state.talentShowroomSlots ?? 0);
+  // Spécialisation Prestige : cap plafonné à 5
+  if(state.specShowroomCap !== null && state.specShowroomCap !== undefined){
+    return Math.min(base, state.specShowroomCap);
+  }
+  return base;
 }
 
 function getMaxOrders(){

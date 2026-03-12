@@ -7,6 +7,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png">
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -14,6 +17,27 @@
   <!-- ═══════════════════════════════════════════
        MODALES — dans le body, avant le layout
        ═══════════════════════════════════════════ -->
+
+  <!-- TUTO / AIDE -->
+  <div class="modal" id="helpModal" style="display:none;">
+    <div class="modal__backdrop" id="helpBackdrop"></div>
+    <div class="modal__panel helpModal">
+      <div class="helpModal__head">
+        <div class="helpModal__title">❓ Guide du Garage</div>
+        <button class="iconbtn" id="btnHelpClose">✖️</button>
+      </div>
+      <div class="helpModal__tabs" id="helpTabs">
+        <button class="helpTab helpTab--active" data-htab="intro">🏁 Début</button>
+        <button class="helpTab" data-htab="repair">🔧 Atelier</button>
+        <button class="helpTab" data-htab="showroom">🚗 Showroom</button>
+        <button class="helpTab" data-htab="rep">⭐ Réputation</button>
+        <button class="helpTab" data-htab="stock">📦 Stock</button>
+        <button class="helpTab" data-htab="prestige">🔥 Prestige</button>
+        <button class="helpTab" data-htab="tips">💡 Astuces</button>
+      </div>
+      <div class="helpModal__body" id="helpBody"></div>
+    </div>
+  </div>
 
   <!-- TALENTS -->
   <div class="modal" id="talentsModal" style="display:none;">
@@ -181,6 +205,23 @@
     </div>
   </div>
 
+  <!-- CHOIX SPÉCIALISATION -->
+  <div class="modal" id="specializationModal" style="display:none;z-index:210;">
+    <div class="modal__backdrop" id="specializationBackdrop"></div>
+    <div class="modal__panel specModal">
+      <div class="specModal__header">
+        <div class="specModal__title">🏭 Choisir une Spécialisation</div>
+        <div class="specModal__subtitle">Ce choix est permanent pour tout le run suivant</div>
+        <div class="specModal__prev" id="specModalPrev"></div>
+      </div>
+      <div class="specModal__grid" id="specModalGrid"></div>
+      <div class="specModal__actions">
+        <button class="btn" id="specModalCancel">Annuler</button>
+        <button class="btn btn--prestige-confirm" id="specModalConfirm" disabled>Confirmer la spécialisation</button>
+      </div>
+    </div>
+  </div>
+
   <!-- CONFIRMATION PRESTIGE -->
   <div class="modal" id="prestigeConfirmModal" style="display:none;z-index:200;">
     <div class="modal__backdrop" id="prestigeConfirmBackdrop"></div>
@@ -345,7 +386,7 @@
   <header class="topbar">
 
     <div class="brand">
-      <div class="brand__icon">🏆</div>
+      <img src="assets/logo.png" class="brand__logo" alt="Turbo Idle" draggable="false">
       <div class="brand__txt">
         <div class="brand__title" id="garageName" title="Cliquer pour renommer">Garage Turbo</div>
         <div class="brand__sub">Ventes <span id="carsSold">0</span></div>
@@ -387,6 +428,7 @@
       <button class="iconbtn" id="btnAchievements" title="Succès">🎖️</button>
       <button class="iconbtn" id="btnLeaderboard" title="Classement Mondial">🌍</button>
       <button class="iconbtn" id="btnStats" title="Statistiques">📊</button>
+      <button class="iconbtn iconbtn--help" id="btnHelp" title="Aide & Tutoriel">❓</button>
 
     </div>
 
@@ -406,6 +448,7 @@
         </div>
         <div class="panel__sub">Capacité Garage</div>
         <button class="bigAction" id="btnAnalyze">
+          <img src="assets/analyser-btn.png" class="bigAction__img" alt="" draggable="false">
           <div class="bigAction__meta">+<span id="diagReward">1</span>€ / analyse</div>
         </button>
       </div>
@@ -530,6 +573,7 @@
       <button class="mobileMore__btn" id="mobileChallenges">📅 Défis<span class="notifDot notifDot--cyan mobileMore__notif" id="mobileChallengesNotif" style="display:none"></span></button>
       <button class="mobileMore__btn" id="mobileTalents">⭐ Talents<span class="notifDot mobileMore__notif" id="mobileTalentsNotif" style="display:none"></span></button>
       <button class="mobileMore__btn" id="mobileAchievements">🎖️ Succès</button>
+      <button class="mobileMore__btn" id="mobileHelp">❓ Aide</button>
       <button class="mobileMore__btn" id="mobileLeaderboard">🌍 Classement</button>
       <button class="mobileMore__btn" id="mobileStats">📊 Statistiques</button>
     </div>
@@ -542,6 +586,7 @@
   <script src="app.js"></script>
   <script src="data/cars.js"></script>
   <script src="data/talents.js"></script>
+  <script src="data/specializations.js"></script>
   <script src="data/heritage.js"></script>
   <script src="data/achievements.js"></script>
   <script src="ui/render.js"></script>
@@ -554,6 +599,7 @@
   <script src="save/save-snapshot.js"></script>
   <script src="save/save-repository.js"></script>
   <script src="save/save-service.js"></script>
+  <script src="ui/help-ui.js"></script>
   <script src="ui/mobile-nav.js"></script>
   <script src="boot.js"></script>
 

@@ -54,6 +54,12 @@ function renderPrestigeModal(){
         <div class="prestige__infoVal" style="color:#a78bfa">+${Math.round(Math.min((state.prestigeCount??0)*0.01,0.50)*100)}%</div>
       </div>
     </div>
+    ${(()=>{ const sp = getSpecialization(state.specialization); return sp ? `
+    <div class="prestige__activeSpec" style="--spec-color:${sp.color}">
+      <span class="prestige__activeSpecIcon">${sp.icon}</span>
+      <span class="prestige__activeSpecName">${sp.name}</span>
+      <span class="prestige__activeSpecTag">${sp.tagline}</span>
+    </div>` : ''; })()}
 
     <button class="prestige__btn ${can ? '' : 'prestige__btn--locked'}" id="btnDoPrestige" ${can ? '' : 'disabled'}>
       ${can ? '🔥 LANCER LE PRESTIGE' : '🔒 Conditions non remplies'}
@@ -84,14 +90,14 @@ function renderPrestigeModal(){
         ${state.garageLevel >= 50 ? '✅' : '🔒'} Garage LVL 50
         <span>${state.garageLevel}/50</span>
       </div>
-      <div class="prestige__cond ${state.rep >= 40000 ? 'prestige__cond--ok' : ''}">
-        ${state.rep >= 40000 ? '✅' : '🔒'} 40 000 REP
-        <span>${state.rep.toLocaleString("fr-FR")}/40 000</span>
+      <div class="prestige__cond ${state.rep >= Math.round(40000*(state.specRepReqMult??1)) ? 'prestige__cond--ok' : ''}">
+        ${state.rep >= Math.round(40000*(state.specRepReqMult??1)) ? '✅' : '🔒'} ${Math.round(40000*(state.specRepReqMult??1)).toLocaleString("fr-FR")} REP
+        <span>${state.rep.toLocaleString("fr-FR")}/${Math.round(40000*(state.specRepReqMult??1)).toLocaleString("fr-FR")}</span>
       </div>
     </div>
     ${!can ? `<div class="prestige__missing">
       ${state.garageLevel < 50 ? `<div class="prestige__missing-line">🔒 Encore <b>${50 - state.garageLevel} niveau${50 - state.garageLevel > 1 ? 'x' : ''}</b> de garage manquant${50 - state.garageLevel > 1 ? 's' : ''}</div>` : ''}
-      ${state.rep < 40000 ? `<div class="prestige__missing-line">🔒 Encore <b>${(40000 - state.rep).toLocaleString("fr-FR")} REP</b> manquants</div>` : ''}
+      ${state.rep < Math.round(40000*(state.specRepReqMult??1)) ? `<div class="prestige__missing-line">🔒 Encore <b>${(Math.round(40000*(state.specRepReqMult??1)) - state.rep).toLocaleString("fr-FR")} REP</b> manquants</div>` : ''}
     </div>` : ''}
 
     <div class="prestige__runStats">
@@ -332,6 +338,67 @@ document.getElementById("prestigeConfirmBackdrop")?.addEventListener("click", ()
 document.getElementById("prestigeConfirmOk")?.addEventListener("click", () => {
   document.getElementById("prestigeConfirmModal").style.display = "none";
   closePrestige();
-  if(canPrestige()) doPrestige();
+  if(canPrestige()) openSpecializationModal();
+});
+
+// ── MODAL SPÉCIALISATION ──────────────────────────────────────────────────────
+let _selectedSpec = null;
+
+function openSpecializationModal() {
+  _selectedSpec = null;
+  const modal = document.getElementById("specializationModal");
+  if(!modal) { doPrestige(); return; } // fallback si pas de modal
+  modal.style.display = "block";
+
+  // Spécialisation précédente
+  const prevEl = document.getElementById("specModalPrev");
+  const prevSpec = getSpecialization(state.specialization ?? null);
+  prevEl.innerHTML = prevSpec
+    ? `Run précédent : <b>${prevSpec.icon} ${prevSpec.name}</b>`
+    : `Premier prestige — aucune spécialisation précédente`;
+
+  // Générer les cartes
+  const grid = document.getElementById("specModalGrid");
+  grid.innerHTML = SPECIALIZATIONS.map(spec => {
+    const isLocked = spec.id === (state.specialization ?? null);
+    return `
+    <div class="specCard ${isLocked ? 'specCard--locked' : ''}" data-sid="${spec.id}" style="--spec-color:${spec.color}">
+      <div class="specCard__icon">${spec.icon}</div>
+      <div class="specCard__name">${spec.name}</div>
+      <div class="specCard__tagline">${spec.tagline}</div>
+      <ul class="specCard__bonuses">
+        ${spec.bonuses.map(b => `
+          <li class="specCard__bonus specCard__bonus--${b.positive ? 'pos' : 'neg'}">
+            <span class="specCard__bonusVal">${b.value}</span>
+            <span class="specCard__bonusLabel">${b.label}</span>
+          </li>`).join('')}
+      </ul>
+      ${isLocked ? '<div class="specCard__lockedMsg">⛔ Déjà utilisée</div>' : ''}
+    </div>`;
+  }).join('');
+
+  // Bind clics
+  grid.querySelectorAll(".specCard:not(.specCard--locked)").forEach(card => {
+    card.addEventListener("click", () => {
+      grid.querySelectorAll(".specCard").forEach(c => c.classList.remove("specCard--selected"));
+      card.classList.add("specCard--selected");
+      _selectedSpec = card.dataset.sid;
+      document.getElementById("specModalConfirm").disabled = false;
+    });
+  });
+}
+
+function closeSpecializationModal() {
+  document.getElementById("specializationModal").style.display = "none";
+  _selectedSpec = null;
+}
+
+document.getElementById("specModalCancel")?.addEventListener("click", closeSpecializationModal);
+document.getElementById("specializationBackdrop")?.addEventListener("click", closeSpecializationModal);
+document.getElementById("specModalConfirm")?.addEventListener("click", () => {
+  if(!_selectedSpec) return;
+  state.specialization = _selectedSpec;
+  closeSpecializationModal();
+  doPrestige();
 });
 
