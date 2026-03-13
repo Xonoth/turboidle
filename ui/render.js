@@ -709,7 +709,7 @@ function renderOrderList(listEl, catFilter){
       `;
       row.querySelectorAll("[data-qty]").forEach(btn => {
         btn.addEventListener("click", () => {
-          const ok = orderPart(btn.dataset.pid, btn.dataset.sid, parseInt(btn.dataset.qty));
+          const ok = orderPart(btn.dataset.pid, btn.dataset.sid, parseInt(btn.dataset.qty), true);
           if(ok){ showToast(`🛒 Commande passée : ${part.name} ×${btn.dataset.qty}`); renderUpgrades(); }
         });
       });

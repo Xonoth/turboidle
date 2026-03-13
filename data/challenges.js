@@ -162,8 +162,8 @@ function initChallenges(){
         baseRepGained:   state.rep ?? 0,
         baseMoneyEarned: state.totalMoneyEarned ?? 0,
         baseClicks:      state.totalActionClicks ?? 0,
-        baseOrders:      state.totalOrders ?? 0,
-        baseAnySold:     state.totalCarsSold ?? 0,
+        baseOrders:      state.manualOrders      ?? 0,
+        baseAnySold:     state.manualCarsSold     ?? 0,
       },
     };
     save();
@@ -177,8 +177,8 @@ function updateChallengeSnap(){
   s.repGained   = Math.max(0, (state.rep ?? 0)                - s.baseRepGained);
   s.moneyEarned = Math.max(0, (state.totalMoneyEarned ?? 0)   - s.baseMoneyEarned);
   s.clicks      = Math.max(0, (state.totalActionClicks ?? 0)  - s.baseClicks);
-  s.orders      = Math.max(0, (state.totalOrders ?? 0)         - s.baseOrders);
-  s.anySold     = Math.max(0, (state.totalCarsSold ?? 0)       - (s.baseAnySold ?? 0));
+  s.orders      = Math.max(0, (state.manualOrders  ?? 0)       - s.baseOrders);
+  s.anySold     = Math.max(0, (state.manualCarsSold ?? 0)       - (s.baseAnySold ?? 0));
 }
 
 // Appelé à chaque vente pour tracker les tiers

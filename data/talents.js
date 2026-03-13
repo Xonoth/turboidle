@@ -78,7 +78,7 @@ const TALENTS = [
   // ══ BRANCHE DIAGNOSTIC ════════════════════════════════════════
   // T1 — 2 talents
   { id:"diag_1", name:"Œil de Lynx", maxRank:20, category:"Diagnostic", icon:"🔍", tier:1,
-    desc:"+3 € par analyse par rang",
+    desc:"+6 € par analyse par rang",
     requires:[] },
 
   { id:"rep_1", name:"Bouche-à-Oreille", maxRank:20, category:"Diagnostic", icon:"📣", tier:1,
@@ -87,7 +87,7 @@ const TALENTS = [
 
   // T2
   { id:"diag_2", name:"Scan Avancé", maxRank:20, category:"Diagnostic", icon:"🧠", tier:2,
-    desc:"+8 € par analyse par rang",
+    desc:"+16 € par analyse par rang",
     requires:[] },
 
   { id:"diag_rep_1", name:"Expertise Reconnue", maxRank:20, category:"Diagnostic", icon:"⭐", tier:2,
@@ -101,11 +101,6 @@ const TALENTS = [
 
 
   // ── ENTREPÔT ──────────────────────────────────────────────────────────
-  // T2
-  { id:"gestionnaire_stock", name:"Gestionnaire de Stock", maxRank:10, category:"Atelier", icon:"📋", tier:2,
-    desc:"Les pièces F/E/D n'occupent que 0.5 slot entrepôt (rang 1+)",
-    requires:[] },
-
   // T3
   { id:"logistique_avancee", name:"Logistique Avancée", maxRank:20, category:"Atelier", icon:"🏭", tier:3,
     desc:"+50 slots d'entrepôt par rang",

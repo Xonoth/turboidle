@@ -102,6 +102,11 @@ const HERITAGE_PERKS = [
     maxRank:3, costPerRank:1,
     requires:[] },
 
+  { id:"log_gestion",    branch:"Logistique", icon:"📋", name:"Gestionnaire de Stock",
+    desc:"Les pièces F/E/D n'occupent que 0.5 slot entrepôt (permanent, achat unique)",
+    maxRank:1, costPerRank:2,
+    requires:[{id:"log_slots_1", rank:1}] },
+
   { id:"log_delay_1",    branch:"Logistique", icon:"⏱️", name:"Réseau Rodé",
     desc:"−8% délai de livraison permanent par rang",
     maxRank:5, costPerRank:1,
@@ -147,20 +152,28 @@ function calcHeritagePoints(){
 function applyHeritageBonusesToState(){
   const b = state.heritageBonuses;
   if(!b) return;
-  state.speedMult    = b.repSpeed;
-  state.saleBonusPct = b.saleBonus;
-  state.diagReward   = 1 + b.diagBonus;
-  state.repairClick  = 0.5 + b.clickBonus;
-  state.repairAuto   = b.autoBonus;
-  // Milestones : slots et moneyMult (appliqués après un reload de save)
+  // Recalcule tout depuis les niveaux d'upgrades — évite d'écraser le speedMult des upgrades comp
+  recalcUpgradeEffects();
+  recalcRepairAuto();
+  // Milestones : slots (max pour ne pas réduire si déjà augmentés via upgrades)
   if(b.garageCap)   state.garageCap   = Math.max(state.garageCap,   1 + b.garageCap);
   if(b.showroomCap) state.showroomCap = Math.max(state.showroomCap, 3 + b.showroomCap);
-  recalcRepairAuto(); // ajoute l'apprenti/mécanicien par-dessus
+}
+
+function getPrestigeLevelReq(){
+  // Prestige 0 → niveau 50, puis +5 par prestige, plafonné à 200
+  const base = 50 + (state.prestigeCount ?? 0) * 5;
+  return Math.max(50, Math.min(200, base));
+}
+
+function getPrestigeRepReq(){
+  // REP de base 40 000, +5 000 par prestige, sans cap
+  const base = 40000 + (state.prestigeCount ?? 0) * 5000;
+  return Math.round(base * (state.specRepReqMult ?? 1.0));
 }
 
 function canPrestige(){
-  const repReq = Math.round(40000 * (state.specRepReqMult ?? 1.0));
-  return state.garageLevel >= 50 && state.rep >= repReq;
+  return state.garageLevel >= getPrestigeLevelReq() && state.rep >= getPrestigeRepReq();
 }
 
 
@@ -222,6 +235,7 @@ function applyHeritageBonuses(){
     warehouseBonus:      0,
     warehouseUltimateMult: 1.0,
     partsValueBonus:     0,
+    gestionStock:        false,  // gestionnaire de stock : pièces F/E/D = 0.5 slot
   };
 
   for(const p of HERITAGE_PERKS){
@@ -254,6 +268,7 @@ function applyHeritageBonuses(){
 
     // Logistique
     if(p.id === "log_slots_1")    b.extraDeliverySlots += rank * 1;
+    if(p.id === "log_gestion")    b.gestionStock        = true;
     if(p.id === "log_delay_1")    b.deliveryDisc       += rank * 0.08;
     if(p.id === "log_warehouse_1")b.warehouseBonus     += rank * 50;
     if(p.id === "log_parts_val_1")b.partsValueBonus    += rank * 0.05;
@@ -300,7 +315,6 @@ function doPrestige(){
   const persistTotalClicks  = state.totalActionClicks  ?? 0;
   const persistChallenges      = state.challenges         ?? null;
   const persistSpecialization  = state.specialization      ?? null;
-  const persistSession         = state.sessionStart;
 
   // Reset du state (même structure que state initial)
   const baseUpgrades = JSON.parse(JSON.stringify(
@@ -353,7 +367,7 @@ function doPrestige(){
     totalActionClicks:   persistTotalClicks,
     challenges:          persistChallenges,
     specialization:      persistSpecialization,
-    sessionStart:        persistSession,
+    sessionStart:        Date.now(),
     // Run stats — remises à 0 au prestige
     runMoneyPassive:   0,
     runMoneySales:     0,
@@ -402,6 +416,7 @@ const UPGRADE_BASE_COSTS = {
   loc_outils:6000, contrat_taxi:8000, assurance:20000, atelier_nuit:50000,
   franchise:150000, showroom_slot:35000,
   magasinier:40000, logiciel_stock:80000, slots_livraison:20000,
+  etageres:8000, rayonnage:35000, zone_logistique:150000, entrepot_auto:600000,
 };
 function getBaseUpgradeCost(id){ return UPGRADE_BASE_COSTS[id] ?? 100; }
 

@@ -82,15 +82,15 @@ const state = {
   // upgrades
   activeTab: "tools",
   upgrades: [
-    { id:"manual",  tab:"tools", icon:"📘", name:"Manuel de Réparation", lvl:0, desc:"+1€ par diag", cost:94 },
+    { id:"manual",  tab:"tools", icon:"📘", name:"Manuel de Réparation", lvl:0, desc:"+2€ par diag", cost:94 },
     { id:"toolbox", tab:"tools", icon:"🧰", name:"Caisse à Outils",      lvl:0, desc:"+0.05 Puissance Répa. Clic", cost:268 },
-    { id:"obd",     tab:"tools", icon:"🔎", name:"Scanner OBD Basique",   lvl:0, desc:"+5€ par diag", cost:337 },
+    { id:"obd",     tab:"tools", icon:"🔎", name:"Scanner OBD Basique",   lvl:0, desc:"+10€ par diag", cost:337 },
     { id:"impact",  tab:"tools", icon:"⚡", name:"Perceuse Pneumatique",  lvl:0, desc:"+0.08 Puissance Répa. Clic", cost:800 },
     { id:"nego",    tab:"deals", icon:"🧾", name:"Formation Négociation", lvl:0, desc:"+5% valeur de vente", cost:1000 },
     { id:"comp",    tab:"tools", icon:"🌀", name:"Compresseur Pro",       lvl:0, desc:"+10% Vitesse Réparation", cost:3500 },
     { id:"lift",    tab:"deals", icon:"🅿️", name:"Agrandissement Garage", lvl:0, desc:"+1 Emplacement de garage", cost:5000, maxLvl:5 },
     { id:"impact2", tab:"tools", icon:"🔧", name:"Pistolet à Choc",       lvl:0, desc:"+0.12 Puissance Répa. Clic", cost:7500 },
-    { id:"diagpro", tab:"tools", icon:"🧠", name:"Station Diag Pro",      lvl:0, desc:"+20€ par diag", cost:12000 },
+    { id:"diagpro", tab:"tools", icon:"🧠", name:"Station Diag Pro",      lvl:0, desc:"+40€ par diag", cost:12000 },
 
     // ÉQUIPE
     { id:"stagiaire",        tab:"team", icon:"🧑‍🔧", name:"Stagiaire Accueil",    lvl:0, desc:"Diagnostique auto toutes les 12s (min 6s au niv.max)",                    cost:15000,  maxLvl:10 },
@@ -353,8 +353,8 @@ function computeTalentEffects(){
   warehouseBonus += getTalentRank("logistique_avancee") * 50; // +50 slots/rang
 
   // ── Diagnostic ──────────────────────────────────────
-  diagBonus    += getTalentRank("diag_1")       * 3;
-  diagBonus    += getTalentRank("diag_2")       * 8;
+  diagBonus    += getTalentRank("diag_1")       * 3  * 2;   // ×2
+  diagBonus    += getTalentRank("diag_2")       * 8  * 2;   // ×2
   diagMult     *= (1 + getTalentRank("diag_3")  * 0.05);
   repGainBonus += getTalentRank("rep_1")        * 0.05;
   diagRepBonus += getTalentRank("diag_rep_1")   * 2;
@@ -423,6 +423,8 @@ if(!state.runMoneyDiag)      state.runMoneyDiag      = 0;
 if(!state.runMoneyParts)     state.runMoneyParts     = 0;
 if(!state.totalActionClicks) state.totalActionClicks = 0;
 if(!state.totalOrders)       state.totalOrders       = 0;
+if(!state.manualCarsSold)    state.manualCarsSold    = 0;  // ventes manuelles uniquement (défis)
+if(!state.manualOrders)      state.manualOrders      = 0;  // commandes manuelles uniquement (défis)
 if(!state.challenges)        state.challenges        = null;
 if(!state.sessionStart)      state.sessionStart      = Date.now();
 if(!state.specialization)    state.specialization    = null;
@@ -569,7 +571,8 @@ function calcEstimatedRepairTime(car){
   const speedMult  = (state.speedMult ?? 1) * (state.talentSpeedMult ?? 1) * partsMult;
   const secPerSec  = (state.repairAuto + (state.talentRepairAuto ?? 0)) * speedMult;
   if(secPerSec <= 0) return null;                      // pas de réparation auto active
-  return Math.round(car.repairTime / secPerSec);       // secondes réelles estimées
+  const remaining = car.timeRemaining ?? car.repairTime;
+  return Math.round(remaining / secPerSec);             // secondes réelles estimées
 }
 
 function calcSaleValue(car){
@@ -750,7 +753,8 @@ showroomListEl.addEventListener("click", (e) => {
   }
 
   state.carsSold += 1;
-  state.totalCarsSold = (state.totalCarsSold ?? 0) + 1;
+  state.totalCarsSold  = (state.totalCarsSold  ?? 0) + 1;
+  state.manualCarsSold = (state.manualCarsSold ?? 0) + 1;  // défi : ventes manuelles
   if(typeof trackChallengeSale === 'function') trackChallengeSale(car.tier);
   // Défi actions : clic vente manuelle (showroom n'était pas vide, sinon pas de bouton)
   state.totalActionClicks = (state.totalActionClicks ?? 0) + 1;
@@ -792,8 +796,8 @@ upgradeListEl.addEventListener("pointerdown", (e) => {
   u.lvl += 1;
 
 // EFFETS (version "temps", cohérente)
-if(id === "manual")  state.diagReward += 1;
-if(id === "obd")     state.diagReward += 5;
+if(id === "manual")  state.diagReward += 2;
+if(id === "obd")     state.diagReward += 10;
 
 // ✅ clic = secondes retirées par clic (petits gains)
 if(id === "toolbox") state.repairClick += 0.05;   // était 0.10 — +0.05/lvl
@@ -804,7 +808,7 @@ if(id === "impact2") state.repairClick += 0.12;   // était 0.25 — +0.12/lvl
 if(id === "nego")    state.saleBonusPct += 0.05;
 if(id === "comp")    state.speedMult *= 1.10;
 if(id === "lift")    state.garageCap += 1;
-if(id === "diagpro") state.diagReward += 20;
+if(id === "diagpro") state.diagReward += 40;
 if(id === "showroom_slot") state.showroomCap = (state.showroomCap ?? 3) + 2;
 
 // Équipe auto-repair : on recalcule repairAuto depuis les niveaux
@@ -843,9 +847,9 @@ function recalcUpgradeEffects(){
     const lvl = u.lvl || 0;
     if(lvl === 0) continue;
     switch(u.id){
-      case "manual":       state.diagReward   += 1    * lvl; break;
-      case "obd":          state.diagReward   += 5    * lvl; break;
-      case "diagpro":      state.diagReward   += 20   * lvl; break;
+      case "manual":       state.diagReward   += 2    * lvl; break;   // ×2
+      case "obd":          state.diagReward   += 10   * lvl; break;   // ×2
+      case "diagpro":      state.diagReward   += 40   * lvl; break;   // ×2
       case "toolbox":      state.repairClick  += 0.05 * lvl; break;
       case "impact":       state.repairClick  += 0.08 * lvl; break;
       case "impact2":      state.repairClick  += 0.12 * lvl; break;
@@ -968,7 +972,11 @@ function applyTickLogic(dt){
         if(isFinite(repGain)) state.rep += repGain;
         state.carsSold += 1;
         state.totalCarsSold = (state.totalCarsSold ?? 0) + 1;
-        if(typeof trackChallengeSale === 'function') trackChallengeSale(car.tier);
+        // Ventes auto en jeu actif → comptent pour les défis (sauf catchup AFK)
+        if(!_isOfflineCatchup){
+          state.manualCarsSold = (state.manualCarsSold ?? 0) + 1;
+          if(typeof trackChallengeSale === 'function') trackChallengeSale(car.tier);
+        }
         state.showroom.pop();
         updateGarageLevel();
         _needsFullRender = true;
@@ -1020,8 +1028,8 @@ function tick(now){
     btn.disabled = isMaxed || state.money < u.cost;
   });
 
-  // Mise à jour snap défis (léger, 1x/frame)
-  if(typeof updateChallengeSnap === 'function') updateChallengeSnap();
+  // Mise à jour snap défis (léger, 1x/frame) — ignoré pendant le catchup AFK
+  if(!_isOfflineCatchup && typeof updateChallengeSnap === 'function') updateChallengeSnap();
 
   requestAnimationFrame(tick);
 }

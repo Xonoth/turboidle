@@ -55,10 +55,22 @@ function renderPrestigeModal(){
       </div>
     </div>
     ${(()=>{ const sp = getSpecialization(state.specialization); return sp ? `
-    <div class="prestige__activeSpec" style="--spec-color:${sp.color}">
-      <span class="prestige__activeSpecIcon">${sp.icon}</span>
-      <span class="prestige__activeSpecName">${sp.name}</span>
-      <span class="prestige__activeSpecTag">${sp.tagline}</span>
+    <div class="prestige__specSection" style="--spec-color:${sp.color}">
+      <div class="prestige__specSection__title">⚡ Spécialisation active</div>
+      <div class="prestige__specSection__header">
+        <span class="prestige__specSection__icon">${sp.icon}</span>
+        <div class="prestige__specSection__info">
+          <div class="prestige__specSection__name">${sp.name}</div>
+          <div class="prestige__specSection__tagline">${sp.tagline}</div>
+        </div>
+      </div>
+      <div class="prestige__specSection__bonuses">
+        ${sp.bonuses.map(b => `
+        <div class="prestige__specSection__bonus prestige__specSection__bonus--${b.positive ? 'pos' : 'neg'}">
+          <span class="prestige__specSection__bonusVal">${b.value}</span>
+          <span class="prestige__specSection__bonusLabel">${b.label}</span>
+        </div>`).join('')}
+      </div>
     </div>` : ''; })()}
 
     <button class="prestige__btn ${can ? '' : 'prestige__btn--locked'}" id="btnDoPrestige" ${can ? '' : 'disabled'}>
@@ -85,24 +97,39 @@ function renderPrestigeModal(){
       </div>
     </div>
 
+    ${(()=>{ const _lvlReq = getPrestigeLevelReq(); const _repReq = getPrestigeRepReq();
+      const _lvlOk = state.garageLevel >= _lvlReq; const _repOk = state.rep >= _repReq; return `
     <div class="prestige__conditions">
-      <div class="prestige__cond ${state.garageLevel >= 50 ? 'prestige__cond--ok' : ''}">
-        ${state.garageLevel >= 50 ? '✅' : '🔒'} Garage LVL 50
-        <span>${state.garageLevel}/50</span>
+      <div class="prestige__cond ${_lvlOk ? 'prestige__cond--ok' : ''}">
+        ${_lvlOk ? '✅' : '🔒'} Garage LVL ${_lvlReq}
+        <span>${state.garageLevel}/${_lvlReq}</span>
       </div>
-      <div class="prestige__cond ${state.rep >= Math.round(40000*(state.specRepReqMult??1)) ? 'prestige__cond--ok' : ''}">
-        ${state.rep >= Math.round(40000*(state.specRepReqMult??1)) ? '✅' : '🔒'} ${Math.round(40000*(state.specRepReqMult??1)).toLocaleString("fr-FR")} REP
-        <span>${state.rep.toLocaleString("fr-FR")}/${Math.round(40000*(state.specRepReqMult??1)).toLocaleString("fr-FR")}</span>
+      <div class="prestige__cond ${_repOk ? 'prestige__cond--ok' : ''}">
+        ${_repOk ? '✅' : '🔒'} ${_repReq.toLocaleString('fr-FR')} REP
+        <span>${state.rep.toLocaleString('fr-FR')}/${_repReq.toLocaleString('fr-FR')}</span>
       </div>
     </div>
     ${!can ? `<div class="prestige__missing">
-      ${state.garageLevel < 50 ? `<div class="prestige__missing-line">🔒 Encore <b>${50 - state.garageLevel} niveau${50 - state.garageLevel > 1 ? 'x' : ''}</b> de garage manquant${50 - state.garageLevel > 1 ? 's' : ''}</div>` : ''}
-      ${state.rep < Math.round(40000*(state.specRepReqMult??1)) ? `<div class="prestige__missing-line">🔒 Encore <b>${(Math.round(40000*(state.specRepReqMult??1)) - state.rep).toLocaleString("fr-FR")} REP</b> manquants</div>` : ''}
-    </div>` : ''}
+      ${!_lvlOk ? `<div class="prestige__missing-line">🔒 Encore <b>${_lvlReq - state.garageLevel} niveau${(_lvlReq - state.garageLevel) > 1 ? 'x' : ''}</b> de garage manquant${(_lvlReq - state.garageLevel) > 1 ? 's' : ''}</div>` : ''}
+      ${!_repOk ? `<div class="prestige__missing-line">🔒 Encore <b>${(_repReq - state.rep).toLocaleString('fr-FR')} REP</b> manquants</div>` : ''}
+    </div>` : ''}`; })()}
 
     <div class="prestige__runStats">
       <div class="prestige__runTitle">📊 Run actuel</div>
       <div class="prestige__runGrid">
+        <div class="prestige__runItem prestige__runItem--duration">
+          <span class="prestige__runIcon">⏱️</span>
+          <span class="prestige__runLabel">Durée du run</span>
+          <span class="prestige__runVal">${(()=>{
+            const sec = Math.floor((Date.now() - (state.sessionStart ?? Date.now())) / 1000);
+            const h = Math.floor(sec / 3600);
+            const m = Math.floor((sec % 3600) / 60);
+            const s = sec % 60;
+            if(h > 0) return `${h}h ${String(m).padStart(2,'0')}m`;
+            if(m > 0) return `${m}m ${String(s).padStart(2,'0')}s`;
+            return `${s}s`;
+          })()}</span>
+        </div>
         <div class="prestige__runItem">
           <span class="prestige__runIcon">💸</span>
           <span class="prestige__runLabel">Revenus passifs</span>
@@ -179,7 +206,7 @@ function renderPrestigeModal(){
   });
 
   // Filters
-  const branches = ["Tous", "Mécanique", "Commerce", "Réputation"];
+  const branches = ["Tous", "Mécanique", "Commerce", "Réputation", "Logistique"];
   const filtersEl = document.getElementById("heritageFilters");
   if(filtersEl){
     filtersEl.innerHTML = branches.map(b => {
@@ -205,9 +232,10 @@ function renderPrestigeModal(){
     : HERITAGE_PERKS.filter(p => p.branch === _heritageFilter);
 
   const branchColors = {
-    "Mécanique":  { main:"#ff7043", bg:"rgba(255,112,67,.08)", border:"rgba(255,112,67,.2)" },
-    "Commerce":   { main:"#ffc83a", bg:"rgba(255,200,58,.08)", border:"rgba(255,200,58,.2)" },
+    "Mécanique":  { main:"#ff7043", bg:"rgba(255,112,67,.08)",  border:"rgba(255,112,67,.2)"  },
+    "Commerce":   { main:"#ffc83a", bg:"rgba(255,200,58,.08)",  border:"rgba(255,200,58,.2)"  },
     "Réputation": { main:"#a78bfa", bg:"rgba(167,139,250,.08)", border:"rgba(167,139,250,.2)" },
+    "Logistique": { main:"#2ee59d", bg:"rgba(46,229,157,.08)",  border:"rgba(46,229,157,.2)"  },
   };
 
   gridEl.innerHTML = "";
@@ -242,6 +270,17 @@ function renderPrestigeModal(){
     }
     else if(!canBuy) { btnLabel = `${cost} pt${cost>1?'s':''} requis`; btnClass = "heritageBtn heritageBtn--locked"; }
     else             { btnLabel = `Acheter — ${cost} pt${cost>1?'s':''}`; btnClass = "heritageBtn"; }
+
+    const reqsHtml = locked ? (() => {
+      const reqs = (p.requires || []).map(r => {
+        const dep = HERITAGE_PERKS.find(x => x.id === r.id);
+        const have = getHeritagePerkRank(r.id);
+        const ok = have >= r.rank;
+        return `<span class="heritageCard__req ${ok ? 'heritageCard__req--ok' : 'heritageCard__req--missing'}">`
+          + `${ok ? '✅' : '🔒'} ${dep?.icon ?? ''} ${dep?.name ?? r.id} <b>${have}/${r.rank}</b></span>`;
+      });
+      return reqs.length ? `<div class="heritageCard__reqs">${reqs.join('')}</div>` : '';
+    })() : '';
 
     const card = document.createElement("div");
     card.className = cardClass;

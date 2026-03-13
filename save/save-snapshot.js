@@ -15,7 +15,7 @@
 
 // Version courante du format de save.
 // À incrémenter à chaque changement de schéma (ajout/renommage de champ).
-const SAVE_VERSION = 6;
+const SAVE_VERSION = 7;
 
 // ─── buildSaveSnapshot ───────────────────────────────────────────────────────
 // Sérialise l'état courant du jeu en un objet JSON pur.
@@ -45,6 +45,8 @@ function buildSaveSnapshot() {
     totalClickRepairs: state.totalClickRepairs ?? 0,
     totalActionClicks: state.totalActionClicks ?? 0,
     totalOrders:       state.totalOrders       ?? 0,
+    manualCarsSold:    state.manualCarsSold     ?? 0,
+    manualOrders:      state.manualOrders       ?? 0,
     totalCarsSold:    state.totalCarsSold   ?? 0,
     runMoneyPassive:  state.runMoneyPassive  ?? 0,
     runMoneySales:    state.runMoneySales    ?? 0,
@@ -156,6 +158,13 @@ function migrateSaveSnapshot(raw) {
     data.v = 6;
   }
 
+  // ── v6 → v7 : compteurs manuels pour défis (hors AFK) ───────────────────
+  if(data.v < 7) {
+    data.manualCarsSold = data.manualCarsSold ?? 0;
+    data.manualOrders   = data.manualOrders   ?? 0;
+    data.v = 7;
+  }
+
   return data;
 }
 
@@ -186,6 +195,8 @@ function applySaveSnapshot(raw) {
   state.totalClickRepairs = data.totalClickRepairs ?? 0;
   state.totalActionClicks = data.totalActionClicks ?? 0;
   state.totalOrders       = data.totalOrders       ?? 0;
+  state.manualCarsSold    = data.manualCarsSold     ?? 0;
+  state.manualOrders      = data.manualOrders       ?? 0;
   state.totalCarsSold     = data.totalCarsSold     ?? 0;
   state.runMoneyPassive   = data.runMoneyPassive   ?? 0;
   state.runMoneySales     = data.runMoneySales     ?? 0;
@@ -208,8 +219,11 @@ function applySaveSnapshot(raw) {
     data.upgrades.forEach(saved => {
       const base = state.upgrades.find(u => u.id === saved.id);
       if(base) {
-        base.lvl  = saved.lvl  ?? 0;
-        base.cost = saved.cost ?? base.cost;
+        base.lvl = saved.lvl ?? 0;
+        // Garde le cost sauvegardé seulement s'il est >= au coût de base
+        // (protège contre les saves corrompues avec cost:100 par défaut)
+        const baseCost = getBaseUpgradeCost(base.id);
+        base.cost = (saved.cost && saved.cost >= baseCost) ? saved.cost : baseCost;
       }
     });
   }

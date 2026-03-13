@@ -154,12 +154,75 @@ const HELP_SECTIONS = {
 
         <div class="helpBlock">
           <div class="helpBlock__title">🏭 Fournisseurs</div>
-          <div class="helpTierList">
-            <div class="helpTier" style="color:#48c78e">🟢 Euroline — ⭐⭐⭐ · 1min30s · Pas cher · Gain net <b>+2%</b> · Spécialiste mécanique (moteur, freins, transmission, joint)</div>
-            <div class="helpTier" style="color:#ffd700">🟡 Valéo Plus — ⭐⭐⭐⭐ · 3min · Prix moyen · −15% temps répa · Gain net <b>+6%</b> · Généraliste équilibré</div>
-            <div class="helpTier" style="color:#ff8c00">🟠 NGX Parts — ⭐⭐⭐⭐ · 2min30s · Prix moyen-bas · −15% temps répa · Gain net <b>+4%</b> · Spécialiste électronique (+1 qualité sur pièces élec)</div>
-            <div class="helpTier" style="color:#4a9eff">🔵 Bochmann — ⭐⭐⭐⭐⭐ · 5min · Prix élevé · −30% temps répa · Gain net <b>+10%</b> · Meilleur rapport qualité/revente</div>
-            <div class="helpTier" style="color:#ff4d70">🔴 TopDrive — ⭐⭐ · 5 secondes fixe · Très pas cher · Gain net <b>−2%</b> · Livraison urgence, sans malus qualité</div>
+          <div class="helpSupplierGrid">
+            <div class="helpSupplierCard">
+              <div class="helpSupplierCard__head">
+                <div class="helpSupplierCard__dot" style="background:#48c78e;box-shadow:0 0 6px #48c78e66"></div>
+                <div class="helpSupplierCard__name" style="color:#48c78e">Euroline</div>
+                <div class="helpSupplierCard__stars">⭐⭐⭐</div>
+              </div>
+              <div class="helpSupplierCard__body">
+                <div class="helpSupplierCard__row"><span class="helpSupplierCard__label">Délai</span><span class="helpSupplierCard__val helpSupplierCard__val--neu">1 min 30s</span></div>
+                <div class="helpSupplierCard__row"><span class="helpSupplierCard__label">Prix</span><span class="helpSupplierCard__val helpSupplierCard__val--pos">Pas cher</span></div>
+                <div class="helpSupplierCard__row"><span class="helpSupplierCard__label">Gain net</span><span class="helpSupplierCard__val helpSupplierCard__val--pos">+2%</span></div>
+                <div class="helpSupplierCard__tag">Spécialiste mécanique (moteur, freins, transmission, joint)</div>
+              </div>
+            </div>
+            <div class="helpSupplierCard">
+              <div class="helpSupplierCard__head">
+                <div class="helpSupplierCard__dot" style="background:#ffd700;box-shadow:0 0 6px #ffd70066"></div>
+                <div class="helpSupplierCard__name" style="color:#ffd700">Valéo Plus</div>
+                <div class="helpSupplierCard__stars">⭐⭐⭐⭐</div>
+              </div>
+              <div class="helpSupplierCard__body">
+                <div class="helpSupplierCard__row"><span class="helpSupplierCard__label">Délai</span><span class="helpSupplierCard__val helpSupplierCard__val--neu">3 min</span></div>
+                <div class="helpSupplierCard__row"><span class="helpSupplierCard__label">Prix</span><span class="helpSupplierCard__val helpSupplierCard__val--neu">Moyen</span></div>
+                <div class="helpSupplierCard__row"><span class="helpSupplierCard__label">Temps répa</span><span class="helpSupplierCard__val helpSupplierCard__val--pos">−15%</span></div>
+                <div class="helpSupplierCard__row"><span class="helpSupplierCard__label">Gain net</span><span class="helpSupplierCard__val helpSupplierCard__val--pos">+6%</span></div>
+                <div class="helpSupplierCard__tag">Généraliste équilibré</div>
+              </div>
+            </div>
+            <div class="helpSupplierCard">
+              <div class="helpSupplierCard__head">
+                <div class="helpSupplierCard__dot" style="background:#ff8c00;box-shadow:0 0 6px #ff8c0066"></div>
+                <div class="helpSupplierCard__name" style="color:#ff8c00">NGX Parts</div>
+                <div class="helpSupplierCard__stars">⭐⭐⭐⭐</div>
+              </div>
+              <div class="helpSupplierCard__body">
+                <div class="helpSupplierCard__row"><span class="helpSupplierCard__label">Délai</span><span class="helpSupplierCard__val helpSupplierCard__val--neu">2 min 30s</span></div>
+                <div class="helpSupplierCard__row"><span class="helpSupplierCard__label">Prix</span><span class="helpSupplierCard__val helpSupplierCard__val--pos">Moyen-bas</span></div>
+                <div class="helpSupplierCard__row"><span class="helpSupplierCard__label">Temps répa</span><span class="helpSupplierCard__val helpSupplierCard__val--pos">−15%</span></div>
+                <div class="helpSupplierCard__row"><span class="helpSupplierCard__label">Gain net</span><span class="helpSupplierCard__val helpSupplierCard__val--pos">+4%</span></div>
+                <div class="helpSupplierCard__tag">Spécialiste électronique (+1 qualité pièces élec)</div>
+              </div>
+            </div>
+            <div class="helpSupplierCard">
+              <div class="helpSupplierCard__head">
+                <div class="helpSupplierCard__dot" style="background:#4a9eff;box-shadow:0 0 6px #4a9eff66"></div>
+                <div class="helpSupplierCard__name" style="color:#4a9eff">Bochmann</div>
+                <div class="helpSupplierCard__stars">⭐⭐⭐⭐⭐</div>
+              </div>
+              <div class="helpSupplierCard__body">
+                <div class="helpSupplierCard__row"><span class="helpSupplierCard__label">Délai</span><span class="helpSupplierCard__val helpSupplierCard__val--neg">5 min</span></div>
+                <div class="helpSupplierCard__row"><span class="helpSupplierCard__label">Prix</span><span class="helpSupplierCard__val helpSupplierCard__val--neg">Élevé</span></div>
+                <div class="helpSupplierCard__row"><span class="helpSupplierCard__label">Temps répa</span><span class="helpSupplierCard__val helpSupplierCard__val--pos">−30%</span></div>
+                <div class="helpSupplierCard__row"><span class="helpSupplierCard__label">Gain net</span><span class="helpSupplierCard__val helpSupplierCard__val--pos">+10%</span></div>
+                <div class="helpSupplierCard__tag">Meilleur rapport qualité/revente</div>
+              </div>
+            </div>
+            <div class="helpSupplierCard" style="grid-column:1/-1">
+              <div class="helpSupplierCard__head">
+                <div class="helpSupplierCard__dot" style="background:#ff4d70;box-shadow:0 0 6px #ff4d7066"></div>
+                <div class="helpSupplierCard__name" style="color:#ff4d70">TopDrive</div>
+                <div class="helpSupplierCard__stars">⭐⭐</div>
+              </div>
+              <div class="helpSupplierCard__body">
+                <div class="helpSupplierCard__row"><span class="helpSupplierCard__label">Délai</span><span class="helpSupplierCard__val helpSupplierCard__val--pos">5 secondes (urgence !)</span></div>
+                <div class="helpSupplierCard__row"><span class="helpSupplierCard__label">Prix</span><span class="helpSupplierCard__val helpSupplierCard__val--pos">Très pas cher</span></div>
+                <div class="helpSupplierCard__row"><span class="helpSupplierCard__label">Gain net</span><span class="helpSupplierCard__val helpSupplierCard__val--neg">−2%</span></div>
+                <div class="helpSupplierCard__tag">Livraison d'urgence — sans malus qualité. À utiliser quand le stock est vide et la voiture en attente.</div>
+              </div>
+            </div>
           </div>
           <p style="margin-top:8px;font-size:12px;color:#7788aa">Le gain net = bonus valeur revente − coût pièces (en % de la valeur du véhicule). Les délais indiqués sont sans upgrades.</p>
         </div>
@@ -241,9 +304,9 @@ const HELP_SECTIONS = {
         <div class="helpBlock">
           <div class="helpBlock__title">🔍 Diagnostic (T1–T3)</div>
           <ul class="helpList">
-            <li>🔍 Œil de Lynx (T1) — +3€ par analyse par rang</li>
+            <li>🔍 Œil de Lynx (T1) — +6€ par analyse par rang</li>
             <li>📣 Bouche-à-Oreille (T1) — +5% REP gagnée par vente par rang</li>
-            <li>🧠 Scan Avancé (T2) — +8€ par analyse par rang</li>
+            <li>🧠 Scan Avancé (T2) — +16€ par analyse par rang</li>
             <li>⭐ Expertise Reconnue (T2) — +2 REP par diagnostic manuel par rang</li>
             <li>🎓 Expert Certifié (T3) — +5% multiplicateur gain total diag par rang</li>
           </ul>
@@ -284,15 +347,102 @@ const HELP_SECTIONS = {
         </div>
 
         <div class="helpBlock">
-          <div class="helpBlock__title">🏭 Spécialisations</div>
-          <p>À partir du 1er prestige, tu choisis une spécialisation pour chaque run (pas deux fois de suite la même).</p>
-          <div class="helpTierList">
-            <div class="helpTier" style="color:#4a9eff">🔧 Atelier Turbo — Vitesse répa +40%, répa auto +40% / Valeur vente −15%, revenus passifs −25%</div>
-            <div class="helpTier" style="color:#ffc83a">💰 Garage Prestige — Valeur vente +35%, bonus tier S+ ×2 / Vitesse répa −20%, showroom limité à 5 slots</div>
-            <div class="helpTier" style="color:#2ee59d">🔍 Centre Diagnostic — Gain diag ×3, +1 pt talent/100 diags / Vitesse répa −10%, valeur vente −10%</div>
-            <div class="helpTier" style="color:#a78bfa">📦 Logistique Pro — Slots livraison ×2, délais −50%, bonus pièces +25% / Gain REP −20%</div>
-            <div class="helpTier" style="color:#ff8c40">⭐ Réputation Légendaire — Gain REP ×2, REP requise prestige −25% / Tous revenus −20%</div>
+          <div class="helpBlock__title">🏭 Spécialisations de run</div>
+          <p>À chaque prestige, tu choisis une <b>spécialisation</b> qui modifie profondément les règles du run suivant. Tu ne peux pas choisir deux fois de suite la même — cela force la variété et la découverte de styles de jeu différents.</p>
+          <p style="margin-top:6px">La spécialisation est active <b>dès le début du run</b> jusqu'au prochain prestige. Elle est affichée en permanence dans l'onglet Prestige.</p>
+          <div class="helpSpecGrid" style="margin-top:10px">
+
+            <div class="helpSpecCard" style="--spec-clr:#4a9eff">
+              <div class="helpSpecCard__head">
+                <div class="helpSpecCard__icon">🔧</div>
+                <div class="helpSpecCard__titles">
+                  <div class="helpSpecCard__name">Atelier Turbo</div>
+                  <div class="helpSpecCard__tagline">La vitesse avant tout</div>
+                </div>
+              </div>
+              <div class="helpSpecCard__body">
+                <div class="helpSpecCard__bonus helpSpecCard__bonus--pos"><span class="helpSpecCard__bonusVal">+40%</span><span class="helpSpecCard__bonusLabel">vitesse réparation</span></div>
+                <div class="helpSpecCard__bonus helpSpecCard__bonus--pos"><span class="helpSpecCard__bonusVal">+40%</span><span class="helpSpecCard__bonusLabel">réparation auto</span></div>
+                <div class="helpSpecCard__bonus helpSpecCard__bonus--neg"><span class="helpSpecCard__bonusVal">−15%</span><span class="helpSpecCard__bonusLabel">valeur de vente</span></div>
+                <div class="helpSpecCard__bonus helpSpecCard__bonus--neg"><span class="helpSpecCard__bonusVal">−25%</span><span class="helpSpecCard__bonusLabel">revenus passifs</span></div>
+                <div class="helpSpecCard__tip">🖱️ Idéal en jeu actif. Contre-indiqué en AFK.</div>
+              </div>
+            </div>
+
+            <div class="helpSpecCard" style="--spec-clr:#ffc83a">
+              <div class="helpSpecCard__head">
+                <div class="helpSpecCard__icon">💰</div>
+                <div class="helpSpecCard__titles">
+                  <div class="helpSpecCard__name">Garage Prestige</div>
+                  <div class="helpSpecCard__tagline">Le luxe ça se mérite</div>
+                </div>
+              </div>
+              <div class="helpSpecCard__body">
+                <div class="helpSpecCard__bonus helpSpecCard__bonus--pos"><span class="helpSpecCard__bonusVal">+35%</span><span class="helpSpecCard__bonusLabel">valeur de vente</span></div>
+                <div class="helpSpecCard__bonus helpSpecCard__bonus--pos"><span class="helpSpecCard__bonusVal">×2</span><span class="helpSpecCard__bonusLabel">bonus tier S+</span></div>
+                <div class="helpSpecCard__bonus helpSpecCard__bonus--neg"><span class="helpSpecCard__bonusVal">−20%</span><span class="helpSpecCard__bonusLabel">vitesse réparation</span></div>
+                <div class="helpSpecCard__bonus helpSpecCard__bonus--neg"><span class="helpSpecCard__bonusVal">5 max</span><span class="helpSpecCard__bonusLabel">slots showroom</span></div>
+                <div class="helpSpecCard__tip">💎 Vends manuellement tes S+ pour maximiser.</div>
+              </div>
+            </div>
+
+            <div class="helpSpecCard" style="--spec-clr:#2ee59d">
+              <div class="helpSpecCard__head">
+                <div class="helpSpecCard__icon">🔍</div>
+                <div class="helpSpecCard__titles">
+                  <div class="helpSpecCard__name">Centre Diagnostic</div>
+                  <div class="helpSpecCard__tagline">Chaque analyse compte</div>
+                </div>
+              </div>
+              <div class="helpSpecCard__body">
+                <div class="helpSpecCard__bonus helpSpecCard__bonus--pos"><span class="helpSpecCard__bonusVal">×3</span><span class="helpSpecCard__bonusLabel">gain diagnostic</span></div>
+                <div class="helpSpecCard__bonus helpSpecCard__bonus--pos"><span class="helpSpecCard__bonusVal">+1</span><span class="helpSpecCard__bonusLabel">pt talent / 100 diags</span></div>
+                <div class="helpSpecCard__bonus helpSpecCard__bonus--neg"><span class="helpSpecCard__bonusVal">−10%</span><span class="helpSpecCard__bonusLabel">vitesse réparation</span></div>
+                <div class="helpSpecCard__bonus helpSpecCard__bonus--neg"><span class="helpSpecCard__bonusVal">−10%</span><span class="helpSpecCard__bonusLabel">valeur de vente</span></div>
+                <div class="helpSpecCard__tip">⭐ Accélère les talents. Bon en AFK avec Stagiaire.</div>
+              </div>
+            </div>
+
+            <div class="helpSpecCard" style="--spec-clr:#a78bfa">
+              <div class="helpSpecCard__head">
+                <div class="helpSpecCard__icon">📦</div>
+                <div class="helpSpecCard__titles">
+                  <div class="helpSpecCard__name">Logistique Pro</div>
+                  <div class="helpSpecCard__tagline">La pièce, toujours disponible</div>
+                </div>
+              </div>
+              <div class="helpSpecCard__body">
+                <div class="helpSpecCard__bonus helpSpecCard__bonus--pos"><span class="helpSpecCard__bonusVal">×2</span><span class="helpSpecCard__bonusLabel">slots livraison</span></div>
+                <div class="helpSpecCard__bonus helpSpecCard__bonus--pos"><span class="helpSpecCard__bonusVal">−50%</span><span class="helpSpecCard__bonusLabel">délai livraison</span></div>
+                <div class="helpSpecCard__bonus helpSpecCard__bonus--pos"><span class="helpSpecCard__bonusVal">+25%</span><span class="helpSpecCard__bonusLabel">bonus pièces sur vente</span></div>
+                <div class="helpSpecCard__bonus helpSpecCard__bonus--neg"><span class="helpSpecCard__bonusVal">−20%</span><span class="helpSpecCard__bonusLabel">gain REP</span></div>
+                <div class="helpSpecCard__tip">💤 Meilleur choix pour jouer AFK.</div>
+              </div>
+            </div>
+
+            <div class="helpSpecCard" style="--spec-clr:#ff8c40;grid-column:1/-1">
+              <div class="helpSpecCard__head">
+                <div class="helpSpecCard__icon">⭐</div>
+                <div class="helpSpecCard__titles">
+                  <div class="helpSpecCard__name">Réputation Légendaire</div>
+                  <div class="helpSpecCard__tagline">Ton nom vaut de l'or</div>
+                </div>
+              </div>
+              <div class="helpSpecCard__body" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px 8px">
+                <div class="helpSpecCard__bonus helpSpecCard__bonus--pos"><span class="helpSpecCard__bonusVal">×2</span><span class="helpSpecCard__bonusLabel">gain REP</span></div>
+                <div class="helpSpecCard__bonus helpSpecCard__bonus--pos"><span class="helpSpecCard__bonusVal">−25%</span><span class="helpSpecCard__bonusLabel">REP requise prestige</span></div>
+                <div class="helpSpecCard__bonus helpSpecCard__bonus--neg"><span class="helpSpecCard__bonusVal">−20%</span><span class="helpSpecCard__bonusLabel">tous les revenus</span></div>
+                <div class="helpSpecCard__tip" style="grid-column:1/-1">🚀 Prestige speedrun. Compense avec les talents Business.</div>
+              </div>
+            </div>
+
           </div>
+          <div class="helpBlock__title" style="margin-top:14px">💡 Quel choix pour commencer ?</div>
+          <ul class="helpList">
+            <li>🖱️ Tu joues <b>actif</b> → <b>Atelier Turbo</b> ou <b>Garage Prestige</b></li>
+            <li>💤 Tu joues <b>AFK</b> → <b>Logistique Pro</b> ou <b>Centre Diagnostic</b></li>
+            <li>🚀 Tu veux <b>prestige rapide</b> → <b>Réputation Légendaire</b></li>
+          </ul>
         </div>
 
         <div class="helpBlock">
