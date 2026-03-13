@@ -230,7 +230,16 @@ function renderPrestigeModal(){
 
     let btnLabel, btnClass;
     if(maxed)        { btnLabel = "✅ Rang maximum"; btnClass = "heritageBtn heritageBtn--maxed"; }
-    else if(locked)  { btnLabel = "🔒 Prérequis manquant"; btnClass = "heritageBtn heritageBtn--locked"; }
+    else if(locked)  {
+      const missingReqs = (p.requires || [])
+        .filter(r => getHeritagePerkRank(r.id) < r.rank)
+        .map(r => {
+          const perkName = HERITAGE_PERKS.find(x => x.id === r.id)?.name ?? r.id;
+          return `${perkName} rang ${r.rank}`;
+        });
+      btnLabel = `🔒 Nécessite : ${missingReqs.join(" · ")}`;
+      btnClass = "heritageBtn heritageBtn--locked";
+    }
     else if(!canBuy) { btnLabel = `${cost} pt${cost>1?'s':''} requis`; btnClass = "heritageBtn heritageBtn--locked"; }
     else             { btnLabel = `Acheter — ${cost} pt${cost>1?'s':''}`; btnClass = "heritageBtn"; }
 

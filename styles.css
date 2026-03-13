@@ -912,14 +912,16 @@ body{
   gap:0;
   padding:0;
   overflow:hidden;
-  background: linear-gradient(160deg, #070d1a 0%, #0a1220 40%, #070c18 100%);
+  background:
+    linear-gradient(160deg, rgba(7,13,26,.94) 0%, rgba(10,18,32,.92) 40%, rgba(7,12,24,.94) 100%),
+    url('assets/talent_bg.png') center 15% / cover no-repeat;
   border:1px solid rgba(167,139,250,.12);
   box-shadow: 0 0 0 1px rgba(0,0,0,.8), 0 40px 120px rgba(0,0,0,.9), 0 0 80px rgba(167,139,250,.06);
 }
 
 /* Override header accent color pour talents (violet au lieu de cyan) */
 .modal__panel--talents .achModal__head{
-  background: linear-gradient(90deg, rgba(167,139,250,.04) 0%, transparent 60%);
+  background: linear-gradient(90deg, rgba(167,139,250,.06) 0%, transparent 60%);
   flex-shrink:0;
 }
 .modal__panel--talents .achModal__head::before{
@@ -2569,7 +2571,9 @@ body{
   gap:0;
   padding:0;
   overflow:hidden;
-  background: linear-gradient(160deg, #0d0806 0%, #120a04 40%, #0a0804 100%);
+  background:
+    linear-gradient(160deg, rgba(13,8,6,.94) 0%, rgba(18,10,4,.92) 40%, rgba(10,8,4,.94) 100%),
+    url('assets/prestige_bg.png') center 15% / cover no-repeat;
   border:1px solid rgba(255,140,64,.12);
   box-shadow: 0 0 0 1px rgba(0,0,0,.8), 0 40px 120px rgba(0,0,0,.9), 0 0 80px rgba(255,140,64,.06);
 }
@@ -3258,6 +3262,73 @@ body{
 
 /* Section stock */
 .stockSection{ margin-bottom:14px; }
+
+/* ── JAUGE ENTREPÔT ─────────────────────────────────── */
+.warehouseGauge{
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+}
+.warehouseGauge__header{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 7px;
+}
+.warehouseGauge__title{
+  font-size: 12px;
+  font-weight: 700;
+  color: #ccc;
+  letter-spacing: .04em;
+}
+.warehouseGauge__count{
+  font-size: 12px;
+  color: #48c78e;
+  font-weight: 600;
+}
+.warehouseGauge__count--full{
+  color: #ff4d70;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+.warehouseGauge__bar{
+  height: 8px;
+  background: rgba(255,255,255,.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.warehouseGauge__fill{
+  height: 100%;
+  background: linear-gradient(90deg, #48c78e, #36d1a8);
+  border-radius: 4px;
+  transition: width .4s ease;
+}
+.warehouseGauge__fill--warn{
+  background: linear-gradient(90deg, #ffd700, #ffaa00);
+}
+.warehouseGauge__fill--full{
+  background: linear-gradient(90deg, #ff4d70, #ff2050);
+}
+.warehouseGauge__alert{
+  margin-top: 7px;
+  font-size: 11px;
+  color: #ff4d70;
+  font-weight: 600;
+  text-align: center;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+.stockSupplRow--warehouse-full{ opacity: .6; }
+.stockSupplRow__warehouseFull{
+  font-size: 10px;
+  color: #ff4d70;
+  font-weight: 600;
+  margin-top: 3px;
+  display: block;
+  text-align: right;
+}
+
+
 .stockSection__title{
   font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
   color:#aaa; margin-bottom:7px; padding-bottom:5px;
@@ -3950,7 +4021,9 @@ body{
   gap: 0;
   padding: 0;
   overflow: hidden;
-  background: linear-gradient(160deg, #060d14 0%, #091219 40%, #060d14 100%);
+  background:
+    linear-gradient(160deg, rgba(6,13,20,.94) 0%, rgba(9,18,25,.92) 40%, rgba(6,13,20,.94) 100%),
+    url('assets/challenges_bg.png') center 20% / cover no-repeat;
   border: 1px solid rgba(49,214,255,.12);
   box-shadow: 0 0 0 1px rgba(0,0,0,.8), 0 40px 120px rgba(0,0,0,.9), 0 0 80px rgba(49,214,255,.05);
 }
@@ -4615,4 +4688,376 @@ body{
   .garageSlot__bar { height: 2px; margin: 0; }
 
 
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MOBILE OPTIMISÉ — Composants manquants / améliorés
+   Tout regroupé ici pour maintenance facile
+══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+
+  /* ── Bannière load-fail (#gt-load-fail-banner) ────────────── */
+  #gt-load-fail-banner {
+    font-size: 12px !important;
+    padding: 8px 10px !important;
+    flex-wrap: nowrap;
+  }
+  #gt-load-fail-banner span {
+    font-size: 11px;
+    line-height: 1.4;
+  }
+
+  /* ── Panel STOCK — vue inventaire ────────────────────────── */
+  .stockRow {
+    padding: 8px 10px;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .stockRow__name  { font-size: 12px; flex: 1 1 100%; }
+  .stockRow__supp  { font-size: 10px; min-width: 0; flex: 1; }
+  .stockRow__qty   { font-size: 12px; min-width: 40px; }
+  .stockRow__btn   {
+    padding: 5px 10px;
+    font-size: 11px;
+    min-height: 32px;
+    touch-action: manipulation;
+  }
+  .stockRow__tiers { flex-wrap: wrap; gap: 2px; }
+
+  /* Filtres catégorie : scroll horizontal */
+  .stockCatFilters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+    gap: 5px;
+  }
+  .stockCatFilters::-webkit-scrollbar { display: none; }
+  .stockCatFilter {
+    flex-shrink: 0;
+    padding: 5px 10px;
+    font-size: 11px;
+    min-height: 32px;
+    touch-action: manipulation;
+  }
+
+  /* ── Panel STOCK — vue Commander ─────────────────────────── */
+  /* Ligne fournisseur : stack vertical sur mobile */
+  .stockSupplRow {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    padding: 10px 12px;
+  }
+  .stockSupplRow__mid {
+    border: none;
+    padding: 0;
+    gap: 10px;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+  .stockSupplRow__stat b   { font-size: 11px; }
+  .stockSupplRow__stat span { font-size: 9px; }
+  .stockSupplRow__right {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .stockSupplRow__price  { font-size: 14px; }
+  .stockSupplRow__btns   { gap: 5px; }
+  .stockSupplRow__buy {
+    padding: 7px 12px;
+    font-size: 12px;
+    min-height: 36px;
+    touch-action: manipulation;
+  }
+
+  /* Jauge entrepôt */
+  .warehouseGauge { padding: 8px 10px; }
+  .warehouseGauge__title { font-size: 11px; }
+  .warehouseGauge__count { font-size: 11px; }
+
+  /* Settings stock : stack vertical */
+  .stockSettingsRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 8px 12px;
+  }
+  .stockSettingsRow__input  { width: 56px; font-size: 12px; }
+  .stockSettingsRow__select { font-size: 12px; }
+  .stockGlobalPanel { padding: 10px 12px; }
+
+  /* ── Talents — modal ─────────────────────────────────────── */
+  .talentGrid {
+    grid-template-columns: 1fr !important;
+    gap: 8px;
+  }
+  .talentCard {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+  .talentCard__iconWrap {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .talentCard__name { font-size: 12px; }
+  .talentCard__desc { font-size: 11px; }
+  .talentBtn {
+    min-height: 34px;
+    font-size: 11px;
+    padding: 6px 10px;
+    touch-action: manipulation;
+  }
+
+  /* Catégories talents : scroll horizontal */
+  .talentTabs,
+  .talentCatTabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 5px;
+    padding-bottom: 2px;
+  }
+  .talentTabs::-webkit-scrollbar,
+  .talentCatTabs::-webkit-scrollbar { display: none; }
+  .talentTab,
+  .talentCatTab {
+    flex-shrink: 0;
+    padding: 7px 12px;
+    font-size: 11px;
+    min-height: 34px;
+    touch-action: manipulation;
+  }
+
+  /* Tier cols → stack vertical */
+  .talentTierCols {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .talentTierCol { width: 100% !important; }
+
+  /* ── Héritage — modal prestige ───────────────────────────── */
+  .heritageFilters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 6px;
+    padding-bottom: 4px;
+  }
+  .heritageFilters::-webkit-scrollbar { display: none; }
+  .heritageFilter {
+    flex-shrink: 0;
+    padding: 5px 10px;
+    font-size: 11px;
+    touch-action: manipulation;
+  }
+
+  .heritageGrid {
+    grid-template-columns: 1fr !important;
+    gap: 8px;
+    max-height: none;
+    overflow: visible;
+  }
+  .heritageCard {
+    padding: 10px 12px;
+  }
+  .heritageCard__name  { font-size: 12px; }
+  .heritageCard__desc  { font-size: 11px; }
+  .heritageCard__iconWrap {
+    width: 34px;
+    height: 34px;
+    font-size: 17px;
+    flex-shrink: 0;
+  }
+
+  /* Boutons rang héritage */
+  .heritageRankBtn {
+    min-height: 34px;
+    padding: 5px 10px;
+    font-size: 11px;
+    touch-action: manipulation;
+  }
+
+  /* ── Panel prestige — header et stats ────────────────────── */
+  .prestige__runGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .prestige__runItem { padding: 7px 8px; gap: 6px; }
+  .prestige__runLabel { font-size: 10px; }
+  .prestige__runVal   { font-size: 12px; }
+  .prestige__runIcon  { font-size: 14px; }
+
+  /* ── Leaderboard ─────────────────────────────────────────── */
+  .lbModal,
+  .modal__panel--leaderboard {
+    width: 100vw !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+    top: 0 !important;
+    left: 0 !important;
+    transform: none !important;
+  }
+  .lbRow {
+    padding: 8px 10px;
+    gap: 6px;
+    font-size: 12px;
+  }
+  .lbRow__rank   { width: 28px; font-size: 13px; }
+  .lbRow__name   { font-size: 12px; }
+  .lbRow__score  { font-size: 11px; }
+
+  /* ── Profil modal ────────────────────────────────────────── */
+  .profileModal {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+    top: 0 !important;
+    left: 0 !important;
+    transform: none !important;
+    padding: 16px 14px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* ── Succès ──────────────────────────────────────────────── */
+  .achievItem {
+    padding: 9px 10px;
+    gap: 8px;
+  }
+  .achievItem__icon  { font-size: 20px; width: 36px; flex-shrink: 0; }
+  .achievItem__name  { font-size: 12px; }
+  .achievItem__desc  { font-size: 11px; }
+  .achievItem__reward { font-size: 10px; }
+
+  /* Filtres succès : scroll horizontal */
+  .achievFilters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 5px;
+  }
+  .achievFilters::-webkit-scrollbar { display: none; }
+  .achievFilter {
+    flex-shrink: 0;
+    padding: 5px 10px;
+    font-size: 11px;
+    min-height: 32px;
+    touch-action: manipulation;
+  }
+
+  /* ── Défis ───────────────────────────────────────────────── */
+  .challengeCard {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+  .challengeCard__title  { font-size: 13px; }
+  .challengeCard__desc   { font-size: 11px; }
+  .challengeCard__reward { font-size: 11px; }
+  .challengeCard__bar    { height: 6px; border-radius: 3px; }
+
+  /* ── Topbar : save indicator ─────────────────────────────── */
+  #saveIndicator {
+    font-size: 10px;
+    padding: 2px 6px;
+    max-width: 90px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* ── Upgrades bureau : boutons achat touch-friendly ─────── */
+  .upgradeSection__title { font-size: 12px; }
+  .upgradeRow { gap: 6px; padding: 8px 10px; }
+  .upgradeRow__name { font-size: 12px; }
+  .upgradeRow__desc { font-size: 11px; }
+  .upgradeRow__buy {
+    min-height: 36px;
+    min-width: 60px;
+    font-size: 11px;
+    touch-action: manipulation;
+  }
+
+  /* ── Menu Plus : handle bar ──────────────────────────────── */
+  .mobileMore__panel::before {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255,255,255,.2);
+    margin: 0 auto 8px;
+  }
+  .mobileMore__btn {
+    padding: 14px 16px;
+    font-size: 15px;
+    min-height: 50px;
+  }
+
+  /* ── Scroll indicators (fade au bord des listes) ─────────── */
+  .tabs::after,
+  .helpModal__tabs::after,
+  .stockCatFilters::after {
+    content: '';
+    position: sticky;
+    right: 0;
+    flex-shrink: 0;
+    width: 20px;
+    background: linear-gradient(to right, transparent, rgba(6,10,20,.9));
+    pointer-events: none;
+    align-self: stretch;
+  }
+
+  /* ── Toast : remonter au-dessus de la nav ────────────────── */
+  #partsToast {
+    bottom: calc(54px + 12px) !important;
+  }
+
+  /* ── Bouton bigAction : largeur pleine ───────────────────── */
+  .bigAction {
+    width: 100%;
+  }
+
+  /* ── Panel diag : formulaire compact ────────────────────── */
+  .diagForm    { gap: 6px; }
+  .diagRow     { flex-wrap: wrap; gap: 4px; }
+  .diagRow label { font-size: 11px; }
+
+  /* ── Confirm modal ───────────────────────────────────────── */
+  .modal__panel--confirm {
+    padding: 20px 16px !important;
+  }
+  .modal__panel--confirm .modal__actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .modal__panel--confirm .modal__actions button {
+    width: 100%;
+    min-height: 44px;
+    font-size: 14px;
+    touch-action: manipulation;
+  }
+
+}
+
+/* ── Très petits écrans (≤ 380px) ────────────────────────── */
+@media (max-width: 380px) {
+  .brand__title   { display: none; }
+  .money__amount  { font-size: 13px; }
+  .mobileNav__label { font-size: 8px; }
+  .mobileNav__icon  { font-size: 16px; }
+  .heritageGrid   { grid-template-columns: 1fr !important; }
+  .stockSupplRow__mid { gap: 6px; }
+  .talentCard__desc { display: none; }
 }

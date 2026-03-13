@@ -54,7 +54,7 @@ const ACHIEVEMENTS = [
   { id:"tier_S",       cat:"Tiers",        icon:"🌠", name:"Sportives Prestige",        desc:"Débloquer le tier S",                       cond:s=>s.rep>=25000,          reward:{rep:100,  money:120000,  talent:1} },
   { id:"tier_SS",      cat:"Tiers",        icon:"🌠", name:"Supercars",                 desc:"Débloquer le tier SS",                      cond:s=>s.rep>=70000,          reward:{rep:500,  money:400000,  talent:2} },
   { id:"tier_SSS",     cat:"Tiers",        icon:"💥", name:"Hypercars Rares",           desc:"Débloquer le tier SSS",                     cond:s=>s.rep>=200000,         reward:{rep:1000, money:1200000, talent:3} },
-  { id:"tier_SSSp",    cat:"Tiers",        icon:"💥", name:"Mythiques",                 desc:"Débloquer le tier SSS+",                    cond:s=>s.rep>=600000,         reward:{rep:5000, money:5000000, talent:5} },
+  { id:"tier_SSSp",    cat:"Tiers",        icon:"💥", name:"Mythiques",                 desc:"Débloquer le tier SSS+",                    cond:s=>s.rep>=450000,         reward:{rep:5000, money:5000000, talent:5} },
 
   // ── NIVEAU GARAGE ────────────────────────────────────
   { id:"lvl_5",        cat:"Garage",       icon:"🏠", name:"Atelier en Rodage",         desc:"Atteindre le niveau 5",                     cond:s=>s.garageLevel>=5,      reward:{rep:10,   money:500,     talent:0} },
@@ -158,6 +158,140 @@ const ACHIEVEMENTS = [
   { id:"rich_repair",  cat:"Divers",       icon:"💸", name:"Réparer du Luxe",          desc:"Réparer une voiture de tier A ou +",        cond:s=>["A","S","SS","SSS","SSS+"].includes(s._lastRepairedTier??""),reward:{rep:50,   money:5000,    talent:0} },
   { id:"broke",        cat:"Divers",       icon:"😅", name:"Dans le Rouge",            desc:"Passer sous 10 €",                          cond:s=>s._wasBroke===true,                                          reward:{rep:0,    money:0,     talent:0} },
 
+
+  // ── SPÉCIALISATIONS ──────────────────────────────────────────
+  { id:"spec_first",    cat:"Prestige",     icon:"🎯", name:"Spécialiste",              desc:"Choisir une spécialisation pour la première fois",  cond:s=>s.specialization!=null,                                              reward:{rep:200,  money:20000,   talent:1} },
+  { id:"spec_turbo",    cat:"Prestige",     icon:"🔧", name:"Atelier Turbo",            desc:"Choisir la spécialisation Atelier Turbo",           cond:s=>s.specialization==="turbo",                                         reward:{rep:100,  money:10000,   talent:0} },
+  { id:"spec_prestige", cat:"Prestige",     icon:"💰", name:"Garage Prestige",          desc:"Choisir la spécialisation Garage Prestige",         cond:s=>s.specialization==="prestige",                                      reward:{rep:100,  money:10000,   talent:0} },
+  { id:"spec_diag",     cat:"Prestige",     icon:"🔍", name:"Centre Diagnostic",        desc:"Choisir la spécialisation Centre Diagnostic",       cond:s=>s.specialization==="diag",                                          reward:{rep:100,  money:10000,   talent:0} },
+  { id:"spec_log",      cat:"Prestige",     icon:"📦", name:"Logistique Pro",           desc:"Choisir la spécialisation Logistique Pro",          cond:s=>s.specialization==="logistique",                                    reward:{rep:100,  money:10000,   talent:0} },
+  { id:"spec_rep",      cat:"Prestige",     icon:"⭐", name:"Réputation Légendaire",    desc:"Choisir la spécialisation Réputation Légendaire",   cond:s=>s.specialization==="rep",                                           reward:{rep:100,  money:10000,   talent:0} },
+
+  // ── ÉQUIPE MID/LATE ──────────────────────────────────────────
+  { id:"up_recept",     cat:"Améliorations",icon:"📋", name:"Réceptionnaire Recruté",  desc:"Embaucher le Réceptionnaire",                       cond:s=>(s.upgrades?.find(u=>u.id==="receptionnaire")?.lvl??0)>=1,          reward:{rep:100,  money:15000,   talent:0} },
+  { id:"up_recept_max", cat:"Améliorations",icon:"📋", name:"Réceptionnaire Expert",   desc:"Réceptionnaire niveau 10",                          cond:s=>(s.upgrades?.find(u=>u.id==="receptionnaire")?.lvl??0)>=10,         reward:{rep:800,  money:200000,  talent:2} },
+  { id:"up_vconf",      cat:"Améliorations",icon:"🤵", name:"Vendeur Confirmé Recruté",desc:"Embaucher le Vendeur Confirmé",                     cond:s=>(s.upgrades?.find(u=>u.id==="vendeur_confirme")?.lvl??0)>=1,        reward:{rep:150,  money:25000,   talent:0} },
+  { id:"up_vconf_max",  cat:"Améliorations",icon:"🤵", name:"Vendeur Confirmé Expert", desc:"Vendeur Confirmé niveau 10",                        cond:s=>(s.upgrades?.find(u=>u.id==="vendeur_confirme")?.lvl??0)>=10,       reward:{rep:1000, money:300000,  talent:2} },
+  { id:"up_mag_max",    cat:"Améliorations",icon:"📦", name:"Magasinier Expert",       desc:"Magasinier niveau 3 (maximum)",                     cond:s=>(s.upgrades?.find(u=>u.id==="magasinier")?.lvl??0)>=3,             reward:{rep:300,  money:60000,   talent:1} },
+  { id:"up_log_max",    cat:"Améliorations",icon:"💻", name:"Logiciel Full Stock",     desc:"Logiciel Stock niveau 3 — commandes auto activées", cond:s=>(s.upgrades?.find(u=>u.id==="logiciel_stock")?.lvl??0)>=3,         reward:{rep:200,  money:30000,   talent:1} },
+  { id:"up_appmax",     cat:"Améliorations",icon:"🔩", name:"Apprenti Chevronné",       desc:"Apprenti Mécanicien niveau 10",                                cond:s=>(s.upgrades?.find(u=>u.id==="apprenti")?.lvl??0)>=10,              reward:{rep:200,  money:30000,   talent:1} },
+  { id:"up_vend_max",   cat:"Améliorations",icon:"👔", name:"Vendeur Senior",          desc:"Vendeur Junior au niveau maximum (10)",                          cond:s=>(s.upgrades?.find(u=>u.id==="vendeur")?.lvl??0)>=10,               reward:{rep:400,  money:80000,   talent:1} },
+
+  // ── RÉPUTATION MID ───────────────────────────────────────────
+  { id:"rep_5000",      cat:"Réputation",   icon:"🌟", name:"Personnalité Locale",     desc:"Atteindre 5 000 REP",                               cond:s=>s.rep>=5000,                                                          reward:{rep:0,    money:12000,   talent:0} },
+  { id:"rep_25000",     cat:"Réputation",   icon:"💫", name:"Star Régionale",          desc:"Atteindre 25 000 REP",                              cond:s=>s.rep>=25000,                                                         reward:{rep:0,    money:100000,  talent:1} },
+  { id:"rep_100000",    cat:"Réputation",   icon:"🔱", name:"Référence Nationale",     desc:"Atteindre 100 000 REP",                             cond:s=>s.rep>=100000,                                                        reward:{rep:0,    money:400000,  talent:1} },
+
+  // ── VENTES MID ───────────────────────────────────────────────
+  { id:"sell_7500",     cat:"Ventes",       icon:"🏁", name:"Grand Volume",            desc:"Vendre 7 500 voitures",                             cond:s=>s.carsSold>=7500,                                                     reward:{rep:1500, money:300000,  talent:1} },
+  { id:"sell_25000",    cat:"Ventes",       icon:"👑", name:"Roi de la Vente",         desc:"Vendre 25 000 voitures",                            cond:s=>s.carsSold>=25000,                                                    reward:{rep:8000, money:2000000, talent:4} },
+
+  // ── HÉRITAGE MID ─────────────────────────────────────────────
+  { id:"heritage_8",    cat:"Prestige",     icon:"🏛️", name:"Héritage Accumulé",        desc:"Accumuler 8 points d'Héritage au total",            cond:s=>(s.heritagePoints??0)+(s.heritageSpent??0)>=8,                                         reward:{rep:500,  money:50000,   talent:1} },
+
+  // ── ARGENT MID ───────────────────────────────────────────────
+  { id:"money_5m",      cat:"Argent",       icon:"💎", name:"Cinq Millions",           desc:"Avoir 5 000 000 € en caisse",                       cond:s=>s.money>=5000000,                                                     reward:{rep:300,  money:0,       talent:1} },
+  { id:"passive_250",   cat:"Argent",       icon:"📈", name:"Rente Sérieuse",          desc:"Atteindre 250 €/s de revenu passif",                cond:s=>s.moneyPerSec>=250,                                                   reward:{rep:200,  money:50000,   talent:0} },
+  { id:"passive_2k",    cat:"Argent",       icon:"📊", name:"Pluie de Billets",        desc:"Atteindre 2 000 €/s de revenu passif",              cond:s=>s.moneyPerSec>=2000,                                                  reward:{rep:500,  money:100000,  talent:1} },
+  { id:"earned_10m",    cat:"Argent",       icon:"🏦", name:"Dix Millions Gagnés",     desc:"Avoir gagné 10 000 000 € au total",                 cond:s=>(s.totalMoneyEarned??0)>=10000000,                                    reward:{rep:100,  money:0,       talent:0} },
+  { id:"earned_1b",     cat:"Argent",       icon:"🏦", name:"Un Milliard Gagné",       desc:"Avoir gagné 1 000 000 000 € au total",              cond:s=>(s.totalMoneyEarned??0)>=1000000000,                                  reward:{rep:1000, money:0,       talent:2} },
+
+  // ── ATELIER MID ──────────────────────────────────────────────
+  { id:"auto_5ps",      cat:"Atelier",      icon:"🤖", name:"Atelier Semi-Auto",       desc:"Atteindre 5 s/s de réparation automatique",        cond:s=>(s.repairAuto??0)+(s.talentRepairAuto??0)>=5,                         reward:{rep:200,  money:20000,   talent:0} },
+  { id:"auto_25ps",     cat:"Atelier",      icon:"🤖", name:"Atelier Avancé",          desc:"Atteindre 25 s/s de réparation automatique",       cond:s=>(s.repairAuto??0)+(s.talentRepairAuto??0)>=25,                        reward:{rep:1500, money:200000,  talent:2} },
+  { id:"speed_4x",      cat:"Atelier",      icon:"⚡", name:"Sur-Régime",              desc:"Multiplicateur de vitesse ≥ 4×",                    cond:s=>(s.speedMult??1)*(s.talentSpeedMult??1)>=4,                           reward:{rep:1000, money:200000,  talent:2} },
+  { id:"slots_7",       cat:"Atelier",      icon:"🅿️", name:"Grand Parking",           desc:"Avoir 7 emplacements garage",                       cond:s=>s.garageCap>=7,                                                       reward:{rep:120,  money:20000,   talent:0} },
+  { id:"click_20000",   cat:"Atelier",      icon:"👊", name:"Mains Calleuses",         desc:"Effectuer 20 000 clics de réparation",              cond:s=>(s.totalClickRepairs??0)>=20000,                                      reward:{rep:200,  money:20000,   talent:0} },
+
+  // ── DIAGNOSTIC MID ───────────────────────────────────────────
+  { id:"diag_2500",     cat:"Diagnostic",   icon:"🔍", name:"Analyste Confirmé",       desc:"Effectuer 2 500 diagnostics",                       cond:s=>s.totalAnalyses>=2500,                                                reward:{rep:120,  money:8000,    talent:0} },
+  { id:"diag_5000",     cat:"Diagnostic",   icon:"🧠", name:"Expert des Pannes",       desc:"Effectuer 5 000 diagnostics",                       cond:s=>s.totalAnalyses>=5000,                                                reward:{rep:300,  money:25000,   talent:1} },
+  { id:"diag_reward_mid",cat:"Diagnostic",  icon:"💡", name:"Diagnostic Rentable",     desc:"Avoir +100 € par diagnostic",                       cond:s=>s.diagReward>=100,                                                    reward:{rep:150,  money:15000,   talent:0} },
+
+  // ── STOCK MID ────────────────────────────────────────────────
+  { id:"part_10types",  cat:"Stock",        icon:"📦", name:"Stock Équilibré",         desc:"Avoir 10 types de pièces en stock",                 cond:s=>Object.values(s.parts??{}).filter(p=>p.qty>0).length>=10,             reward:{rep:50,   money:5000,    talent:0} },
+  { id:"part_val_50k",  cat:"Stock",        icon:"💰", name:"Stock Premium",           desc:"Avoir un stock de pièces valant plus de 50 000 €",  cond:s=>Object.values(s.parts??{}).reduce((a,p)=>a+(p.qty*(p.lastPrice??0)),0)>=50000, reward:{rep:500, money:80000, talent:1} },
+  { id:"part_euroline", cat:"Stock",        icon:"🟢", name:"Vitesse Euroline",        desc:"Avoir des pièces Euroline en stock",                     cond:s=>Object.values(s.parts??{}).some(p=>p.supplier==="euroline"&&p.qty>0), reward:{rep:40, money:3000, talent:0} },
+  { id:"part_slots7",   cat:"Stock",        icon:"🚛", name:"Réseau Express",          desc:"Avoir 7 slots de livraison simultanés",             cond:s=>(s.upgrades?.find(u=>u.id==="slots_livraison")?.lvl??0)>=6,          reward:{rep:200, money:30000,  talent:0} },
+
+  // ── SHOWROOM MID ─────────────────────────────────────────────
+  { id:"show_5",        cat:"Showroom",     icon:"🏪", name:"Beau Showroom",           desc:"Avoir 5 voitures au showroom simultanément",        cond:s=>s.showroom?.length>=5,                                                reward:{rep:80,   money:8000,    talent:0} },
+  { id:"show_A",        cat:"Showroom",     icon:"🏆", name:"Voiture de Collection",   desc:"Avoir une voiture tier A au showroom",              cond:s=>s.showroom?.some(c=>c.tier==="A"),                                   reward:{rep:60,   money:5000,    talent:0} },
+  { id:"show_cap7",     cat:"Showroom",     icon:"🏪", name:"Showroom Élargi",         desc:"Avoir 7 emplacements showroom",                     cond:s=>(s.showroomCap??3)+(s.talentShowroomSlots??0)>=7,                     reward:{rep:200,  money:40000,   talent:0} },
+
+  // ── TALENTS MID ──────────────────────────────────────────────
+  { id:"tal_t2_unlock", cat:"Talents",      icon:"🌟", name:"Tier 2 Débloqué",         desc:"Avoir un talent Tier 1 à 10 rangs ou plus",         cond:s=>["passive_1","sale_1","speed_1","click_1","diag_1"].some(id=>(s.talents?.[id]??0)>=10),  reward:{rep:150,  money:15000,   talent:0} },
+  { id:"tal_tier3_unlock",cat:"Talents",    icon:"💫", name:"Tier 3 Débloqué",         desc:"Avoir un talent Tier 2 à 20 rangs (max)",           cond:s=>["passive_2","sale_2","speed_2","multi_repair_1","click_1","diag_2","diag_rep_1"].some(id=>(s.talents?.[id]??0)>=20),  reward:{rep:500,  money:60000,   talent:1} },
+
+  // ── GARAGE MID ───────────────────────────────────────────────
+  { id:"lvl_30",        cat:"Garage",       icon:"🏗️", name:"Garage en Croissance",    desc:"Atteindre le niveau 30",                            cond:s=>s.garageLevel>=30,                                                    reward:{rep:80,   money:20000,   talent:0} },
+  { id:"lvl_125",       cat:"Garage",       icon:"🏢", name:"Mega Atelier",            desc:"Atteindre le niveau 125",                           cond:s=>s.garageLevel>=125,                                                   reward:{rep:1000, money:500000,  talent:2} },
+
+
+  // ── DÉFIS JOURNALIERS ───────────────────────────────────────
+  { id:"challenge_first", cat:"Défis",       icon:"📋", name:"Premier Défi",             desc:"Compléter un défi journalier pour la première fois",cond:s=>s.challenges?.list?.some(d=>d.claimed),                              reward:{rep:30,   money:3000,    talent:0} },
+  { id:"challenge_all",   cat:"Défis",       icon:"🏆", name:"Journée Parfaite",         desc:"Compléter tous les défis du jour en une session",    cond:s=>s.challenges?.bonusClaimed===true,                                   reward:{rep:200,  money:20000,   talent:1} },
+  { id:"challenge_5",     cat:"Défis",       icon:"📋", name:"Compétiteur Assidu",  desc:"Compléter le bonus journalier après au moins 1 prestige", cond:s=>s.challenges?.bonusClaimed===true&&(s.prestigeCount??0)>=1,                                  reward:{rep:500,  money:80000,   talent:1} },
+
+  // ── CONTRATS PASSIFS ─────────────────────────────────────────
+  { id:"deal_taxi",       cat:"Améliorations",icon:"🚕", name:"Contrat Taxi Signé",       desc:"Acheter le Contrat Taxi Local",                     cond:s=>(s.upgrades?.find(u=>u.id==="contrat_taxi")?.lvl??0)>=1,             reward:{rep:20,   money:2000,    talent:0} },
+  { id:"deal_night",      cat:"Améliorations",icon:"🌙", name:"Atelier 24/7",             desc:"Acheter l'Atelier de Nuit",                         cond:s=>(s.upgrades?.find(u=>u.id==="atelier_nuit")?.lvl??0)>=1,             reward:{rep:80,   money:8000,    talent:0} },
+  { id:"deal_showroom4",  cat:"Améliorations",icon:"🖼️", name:"Vitrine Maxée",            desc:"Acheter les 4 extensions showroom (11 emplacements total)", cond:s=>(s.upgrades?.find(u=>u.id==="showroom_slot")?.lvl??0)>=4,       reward:{rep:600,  money:150000,  talent:2} },
+
+  // ── ÉQUIPE ───────────────────────────────────────────────────
+  { id:"team_full_t1",    cat:"Améliorations",icon:"👥", name:"Équipe de Base",           desc:"Avoir Stagiaire + Apprenti + Vendeur Junior recrutés", cond:s=>["stagiaire","apprenti","vendeur"].every(id=>(s.upgrades?.find(u=>u.id===id)?.lvl??0)>=1),  reward:{rep:100,  money:10000,   talent:0} },
+  { id:"team_full_t2",    cat:"Améliorations",icon:"👥", name:"Équipe Complète",          desc:"Avoir Mécanicien + Réceptionnaire + Vendeur Confirmé recrutés", cond:s=>["mecanicien","receptionnaire","vendeur_confirme"].every(id=>(s.upgrades?.find(u=>u.id===id)?.lvl??0)>=1), reward:{rep:500, money:100000, talent:2} },
+  { id:"up_meca_5",       cat:"Améliorations",icon:"🛠️", name:"Mécanicien Aguerri",       desc:"Mécanicien niveau 5",                               cond:s=>(s.upgrades?.find(u=>u.id==="mecanicien")?.lvl??0)>=5,               reward:{rep:150,  money:25000,   talent:0} },
+  { id:"up_stag_max",     cat:"Améliorations",icon:"🧑‍🔧",name:"Stagiaire Formé",          desc:"Stagiaire niveau 10 (maximum)",                     cond:s=>(s.upgrades?.find(u=>u.id==="stagiaire")?.lvl??0)>=10,               reward:{rep:200,  money:30000,   talent:1} },
+  { id:"up_lift_max",     cat:"Améliorations",icon:"🅿️", name:"Parking Maxi",             desc:"Agrandissement Garage niveau 5 (5 emplacements achetés)", cond:s=>(s.upgrades?.find(u=>u.id==="lift")?.lvl??0)>=5,                  reward:{rep:300,  money:60000,   talent:1} },
+
+  // ── HÉRITAGE PALIERS ─────────────────────────────────────────
+  { id:"heritage_3",      cat:"Prestige",     icon:"🏛️", name:"Premiers Legs",            desc:"Dépenser 3 points Héritage",                        cond:s=>(s.heritageSpent??0)>=3,                                             reward:{rep:50,   money:5000,    talent:0} },
+  { id:"heritage_20",     cat:"Prestige",     icon:"🏛️", name:"Héritage Épanoui",         desc:"Dépenser 20 points Héritage",                       cond:s=>(s.heritageSpent??0)>=20,                                            reward:{rep:800,  money:80000,   talent:1} },
+
+  // ── SPÉCIALISATIONS AVANCÉES ─────────────────────────────────
+  { id:"spec_all",        cat:"Prestige",     icon:"🎯", name:"Touche-à-Tout",            desc:"Effectuer 5 prestiges avec une spécialisation active", cond:s=>(s.prestigeCount??0)>=5&&s.specialization!=null,                               reward:{rep:2000, money:500000,  talent:3} },
+  { id:"spec_diag_x3",    cat:"Prestige",     icon:"🔍", name:"Analyste Total",            desc:"Effectuer 3+ prestiges ET utiliser la spécia Diagnostic",  cond:s=>(s.prestigeCount??0)>=3&&s.specialization==="diag",             reward:{rep:1000, money:200000,  talent:2} },
+  { id:"spec_turbo_x3",   cat:"Prestige",     icon:"🔧", name:"Turbo Légendaire",          desc:"Effectuer 3+ prestiges ET utiliser la spécia Atelier Turbo", cond:s=>(s.prestigeCount??0)>=3&&s.specialization==="turbo",          reward:{rep:1000, money:200000,  talent:2} },
+
+  // ── VENTES PAR TIER ──────────────────────────────────────────
+  { id:"sell_tier_B10",   cat:"Ventes",       icon:"🚙", name:"Spécialiste Sportives",    desc:"Vendre 10 voitures de tier B ou supérieur",         cond:s=>s.carsSold>=10&&s.rep>=5000, reward:{rep:80, money:8000, talent:0} },
+  { id:"sell_tier_S10",   cat:"Ventes",       icon:"🏎️", name:"Collectionneur Prestige",  desc:"Vendre 10 voitures de tier S ou supérieur",         cond:s=>s.carsSold>=50&&s.rep>=25000, reward:{rep:300, money:60000, talent:1} },
+
+  // ── ARGENT PALIERS FINS ──────────────────────────────────────
+  { id:"money_2m",        cat:"Argent",       icon:"💎", name:"Deux Millions",            desc:"Avoir 2 000 000 € en caisse simultanément",         cond:s=>s.money>=2000000,                                                    reward:{rep:0,    money:0,       talent:0} },
+  { id:"earned_50m",      cat:"Argent",       icon:"🏦", name:"Cinquante Millions Gagnés",desc:"Avoir gagné 50 000 000 € au total",                 cond:s=>(s.totalMoneyEarned??0)>=50000000,                                   reward:{rep:200,  money:0,       talent:1} },
+
+  // ── RÉPUTATION PALIERS ───────────────────────────────────────
+  { id:"rep_75000",       cat:"Réputation",   icon:"💫", name:"Référence Mondiale",       desc:"Atteindre 75 000 REP",                              cond:s=>s.rep>=75000,                                                        reward:{rep:0,    money:200000,  talent:1} },
+  { id:"rep_1000",        cat:"Réputation",   icon:"⭐", name:"Garage Bien Connu",        desc:"Atteindre 1 000 REP",                               cond:s=>s.rep>=1000,                                                         reward:{rep:0,    money:500,     talent:0} },
+
+  // ── GARAGE NIVEAUX FINS ──────────────────────────────────────
+  { id:"lvl_40",          cat:"Garage",       icon:"🏗️", name:"Atelier en Forme",         desc:"Atteindre le niveau 40",                            cond:s=>s.garageLevel>=40,                                                   reward:{rep:100,  money:30000,   talent:0} },
+  { id:"lvl_60",          cat:"Garage",       icon:"🏗️", name:"Vitesse de Croisière",     desc:"Atteindre le niveau 60",                            cond:s=>s.garageLevel>=60,                                                   reward:{rep:200,  money:80000,   talent:0} },
+
+  // ── STOCK PALIERS FINS ───────────────────────────────────────
+  { id:"part_orders10",   cat:"Stock",        icon:"📦", name:"Fournisseur Régulier",     desc:"Passer 10 commandes de pièces",                     cond:s=>(s.totalOrders??0)>=10,                                              reward:{rep:20,   money:1000,    talent:0} },
+  { id:"part_orders100",  cat:"Stock",        icon:"📦", name:"Acheteur Sérieux",         desc:"Passer 100 commandes de pièces",                    cond:s=>(s.totalOrders??0)>=100,                                             reward:{rep:80,   money:8000,    talent:0} },
+  { id:"part_orders1k",   cat:"Stock",        icon:"🗄️", name:"Central d'Achats",         desc:"Passer 1 000 commandes de pièces",                  cond:s=>(s.totalOrders??0)>=1000,                                            reward:{rep:300,  money:40000,   talent:1} },
+  { id:"part_orders5k",   cat:"Stock",        icon:"🗄️", name:"Grossiste",               desc:"Passer 5 000 commandes de pièces",                  cond:s=>(s.totalOrders??0)>=5000,                                            reward:{rep:1000, money:150000,  talent:2} },
+  { id:"part_20types",    cat:"Stock",        icon:"📦", name:"Catalogue Étendu",         desc:"Avoir 20 types de pièces en stock",                 cond:s=>Object.values(s.parts??{}).filter(p=>p.qty>0).length>=20,             reward:{rep:120,  money:15000,   talent:0} },
+  { id:"part_allsupplier",cat:"Stock",        icon:"🔄", name:"Multi-Fournisseur",        desc:"Avoir des pièces des 3 fournisseurs en stock simultanément", cond:s=>{const sups=new Set(Object.values(s.parts??{}).filter(p=>p.qty>0).map(p=>p.supplier));return sups.has("bochmann")&&sups.has("euroline")&&sups.has("topdrive");}, reward:{rep:200, money:25000, talent:1} },
+
+  // ── ATELIER PALIERS FINS ─────────────────────────────────────
+  { id:"repair_250",      cat:"Atelier",      icon:"🔧", name:"En Rodage",               desc:"Effectuer 250 réparations",                         cond:s=>(s.totalRepairs??0)>=250,                                            reward:{rep:80,   money:8000,    talent:0} },
+  { id:"repair_2500",     cat:"Atelier",      icon:"🔧", name:"Expert en Réparation",    desc:"Effectuer 2 500 réparations",                       cond:s=>(s.totalRepairs??0)>=2500,                                           reward:{rep:300,  money:30000,   talent:0} },
+  { id:"auto_2ps",        cat:"Atelier",      icon:"🤖", name:"Premier Automatisme",     desc:"Atteindre 2 s/s de réparation automatique",        cond:s=>(s.repairAuto??0)+(s.talentRepairAuto??0)>=2,                         reward:{rep:50,   money:5000,    talent:0} },
+  { id:"auto_100ps",      cat:"Atelier",      icon:"🤖", name:"Usine Fantôme",           desc:"Atteindre 100 s/s de réparation automatique",      cond:s=>(s.repairAuto??0)+(s.talentRepairAuto??0)>=100,                       reward:{rep:8000, money:2000000, talent:4} },
+
+  // ── DIAGNOSTIC PALIERS FINS ──────────────────────────────────
+  { id:"diag_250",        cat:"Diagnostic",   icon:"🔍", name:"Diagnostiqueur Actif",    desc:"Effectuer 250 diagnostics",                         cond:s=>s.totalAnalyses>=250,                                                reward:{rep:20,   money:500,     talent:0} },
+  { id:"diag_reward_75",  cat:"Diagnostic",   icon:"💡", name:"Scan Rentable",           desc:"Avoir +75 € par diagnostic",                        cond:s=>s.diagReward>=75,                                                    reward:{rep:80,   money:8000,    talent:0} },
+
+  // ── TALENTS PALIERS FINS ─────────────────────────────────────
+  { id:"tal_5",           cat:"Talents",      icon:"⭐", name:"Premiers Talents",         desc:"5 rangs de talents dépensés",                       cond:s=>Object.values(s.talents??{}).reduce((a,v)=>a+v,0)>=5,                reward:{rep:0,    money:500,     talent:0} },
+  { id:"tal_25",          cat:"Talents",      icon:"⭐", name:"Montée en Puissance",      desc:"25 rangs de talents dépensés",                      cond:s=>Object.values(s.talents??{}).reduce((a,v)=>a+v,0)>=25,               reward:{rep:20,   money:1000,    talent:0} },
+  { id:"tal_max5",        cat:"Talents",      icon:"💫", name:"Maître Polyvalent",        desc:"Maxer 5 talents à leur rang maximum",               cond:s=>Object.values(s.talents??{}).filter(v=>v>=20).length>=5,             reward:{rep:3000, money:300000,  talent:2} },
   // ── VENTES CUMULÉES (toutes parties) ────────────────
   { id:"total_sold_500",  cat:"Ventes",       icon:"🚗", name:"Demi-Millier Cumulé",       desc:"Vendre 500 voitures au total (tous prestiges)",    cond:s=>(s.totalCarsSold??0)>=500,       reward:{rep:100,  money:10000,   talent:0} },
   { id:"total_sold_2k",   cat:"Ventes",       icon:"🚙", name:"Deux Mille Cumulés",        desc:"Vendre 2 000 voitures au total",                   cond:s=>(s.totalCarsSold??0)>=2000,      reward:{rep:300,  money:40000,   talent:1} },
@@ -181,7 +315,6 @@ const ACHIEVEMENTS = [
   // ── NIVEAU GARAGE HIGH ───────────────────────────────
   { id:"lvl_200",         cat:"Garage",       icon:"🌆", name:"Méga Complexe",             desc:"Atteindre le niveau 200",                          cond:s=>s.garageLevel>=200,              reward:{rep:5000, money:2000000, talent:3} },
   { id:"lvl_300",         cat:"Garage",       icon:"🌇", name:"Maître du Garage",           desc:"Atteindre le niveau 175",                          cond:s=>s.garageLevel>=175,              reward:{rep:12000,money:5000000, talent:5} },
-  { id:"lvl_500",         cat:"Garage",       icon:"🌃", name:"Légendaire",                 desc:"Atteindre le niveau 200 (niveau maximum)",         cond:s=>s.garageLevel>=200,              reward:{rep:30000,money:15000000,talent:8} },
 
   // ── RÉPARATIONS CUMULÉES ────────────────────────────
   { id:"total_rep_5k",    cat:"Atelier",      icon:"🛠️", name:"Cinq Mille Réparations",   desc:"Effectuer 5 000 réparations au total",             cond:s=>(s.totalRepairs??0)>=5000,       reward:{rep:500,  money:100000,  talent:1} },
@@ -205,6 +338,16 @@ const ACHIEVEMENTS = [
   { id:"part_qty200",     cat:"Stock",        icon:"📦", name:"Revendeur Grossiste",       desc:"Avoir 200 unités d'une même pièce en stock",       cond:s=>Object.values(s.parts??{}).some(p=>p.qty>=200),  reward:{rep:2000, money:200000,  talent:2} },
   { id:"part_slots_max",  cat:"Stock",        icon:"🚛", name:"Hub Logistique",            desc:"Avoir 10 slots de livraison simultanés",           cond:s=>(s.upgrades?.find(u=>u.id==="slots_livraison")?.lvl??0)>=9, reward:{rep:500,money:80000,talent:1} },
 
+  // ── ENTREPÔT ─────────────────────────────────────────
+  { id:"warehouse_200",   cat:"Stock",        icon:"🏭", name:"Premier Entrepôt",          desc:"Atteindre 200 slots d'entrepôt",                   cond:s=>(s.upgrades?.find(u=>u.id==="etageres")?.lvl??0)*20+(s.upgrades?.find(u=>u.id==="rayonnage")?.lvl??0)*50>=100, reward:{rep:150,  money:15000,   talent:0} },
+  { id:"warehouse_500",   cat:"Stock",        icon:"🏭", name:"Entrepôt Régional",         desc:"Atteindre 500 slots d'entrepôt",                   cond:s=>{const e=s.upgrades?.find(u=>u.id==="etageres")?.lvl??0;const r=s.upgrades?.find(u=>u.id==="rayonnage")?.lvl??0;const z=s.upgrades?.find(u=>u.id==="zone_logistique")?.lvl??0;return 100+e*20+r*50+z*100>=500;}, reward:{rep:500,  money:80000,   talent:1} },
+  { id:"warehouse_1500",  cat:"Stock",        icon:"🤖", name:"Centre Logistique",         desc:"Atteindre 1 500 slots d'entrepôt",                  cond:s=>{const e=s.upgrades?.find(u=>u.id==="etageres")?.lvl??0;const r=s.upgrades?.find(u=>u.id==="rayonnage")?.lvl??0;const z=s.upgrades?.find(u=>u.id==="zone_logistique")?.lvl??0;const a=s.upgrades?.find(u=>u.id==="entrepot_auto")?.lvl??0;return 100+e*20+r*50+z*100+a*200>=1500;}, reward:{rep:2000, money:300000,  talent:2} },
+  { id:"warehouse_max",   cat:"Stock",        icon:"🏗️", name:"Méga-Entrepôt",             desc:"Débloquer tous les upgrades entrepôt au maximum",   cond:s=>(s.upgrades?.find(u=>u.id==="etageres")?.lvl??0)>=10&&(s.upgrades?.find(u=>u.id==="rayonnage")?.lvl??0)>=10&&(s.upgrades?.find(u=>u.id==="zone_logistique")?.lvl??0)>=5&&(s.upgrades?.find(u=>u.id==="entrepot_auto")?.lvl??0)>=5, reward:{rep:5000, money:1000000, talent:3} },
+  { id:"warehouse_full",  cat:"Stock",        icon:"⛔", name:"À Craquer",                 desc:"Remplir l'entrepôt à 100%",                         cond:s=>{const used=Object.values(s.parts??{}).reduce((a,p)=>a+(p.qty??0),0);const cap=100+(s.upgrades?.find(u=>u.id==="etageres")?.lvl??0)*20+(s.upgrades?.find(u=>u.id==="rayonnage")?.lvl??0)*50+(s.upgrades?.find(u=>u.id==="zone_logistique")?.lvl??0)*100+(s.upgrades?.find(u=>u.id==="entrepot_auto")?.lvl??0)*200+(s.talentWarehouseBonus??0);return used>=cap;}, reward:{rep:300, money:50000, talent:1} },
+  { id:"warehouse_bonus", cat:"Stock",        icon:"💰", name:"Stock Payant",               desc:"Vendre une voiture avec Entrepôt Automatisé actif (niv.1+)", cond:s=>(s.upgrades?.find(u=>u.id==="entrepot_auto")?.lvl??0)>=1&&(s.carsSold??0)>=1, reward:{rep:200,  money:25000,   talent:0} },
+  { id:"warehouse_talent",cat:"Stock",        icon:"📋", name:"Gestionnaire Confirmé",      desc:"Rang 5 du talent Gestionnaire de Stock",             cond:s=>(s.talents??{}).gestionnaire_stock>=5,  reward:{rep:400,  money:60000,   talent:1} },
+  { id:"warehouse_logadv",cat:"Stock",        icon:"🏭", name:"Logisticien Expert",         desc:"Rang 10 du talent Logistique Avancée",               cond:s=>(s.talents??{}).logistique_avancee>=10, reward:{rep:1000, money:150000,  talent:2} },
+
   // ── PRESTIGE HIGH END ────────────────────────────────
   { id:"prestige_20",     cat:"Prestige",     icon:"♾️", name:"Cycle Infini",              desc:"Effectuer 20 prestiges",                           cond:s=>(s.prestigeCount??0)>=20,        reward:{rep:0,    money:0,       talent:15} },
   { id:"prestige_50",     cat:"Prestige",     icon:"♾️", name:"Au-Delà du Temps",          desc:"Effectuer 50 prestiges",                           cond:s=>(s.prestigeCount??0)>=50,        reward:{rep:0,    money:0,       talent:30} },
@@ -222,7 +365,7 @@ const ACHIEVEMENTS = [
 
   // ── TALENTS HIGH END ─────────────────────────────────
   { id:"tal_300",         cat:"Talents",      icon:"🌟", name:"Transcendance",             desc:"300 rangs de talents dépensés",                    cond:s=>Object.values(s.talents??{}).reduce((a,v)=>a+v,0)>=300,  reward:{rep:3000, money:500000,  talent:2} },
-  { id:"tal_max_all",     cat:"Talents",      icon:"💫", name:"Maîtrise Totale",           desc:"Maxer les 15 talents à leur rang maximum",         cond:s=>{const t=s.talents??{};return ["passive_1","passive_2","sale_1","sale_2","showroom_1","rare_bonus_1","speed_1","speed_2","click_1","multi_repair_1","parts_2","diag_1","diag_2","diag_3"].every(id=>(t[id]??0)>=20)&&(t["parts_1"]??0)>=10;}, reward:{rep:20000,money:10000000,talent:10} },
+  { id:"tal_max_all",     cat:"Talents",      icon:"💫", name:"Maîtrise Totale",           desc:"Maxer les 22 talents à leur rang maximum",         cond:s=>{const t=s.talents??{};return ["passive_1","sale_1","speed_1","rep_1"].every(id=>(t[id]??0)>=20)&&["passive_2","sale_2","speed_2","click_1","multi_repair_1","diag_2","diag_rep_1"].every(id=>(t[id]??0)>=20)&&(t["showroom_1"]??0)>=10&&(t["parts_1"]??0)>=20&&["rare_bonus_1","parts_2","diag_1","diag_3","sale_mult_1","repair_bonus_1","repair_mult_1"].every(id=>(t[id]??0)>=20)&&(t["passive_3"]??0)>=10;}, reward:{rep:20000,money:10000000,talent:10} },
 
   // ── COMBOS & DÉFIS ───────────────────────────────────
   { id:"combo_rich_fast", cat:"Défis",        icon:"⚡", name:"Riche et Rapide",           desc:"Avoir 1M€ ET vitesse ≥ 3× en même temps",         cond:s=>s.money>=1000000&&(s.speedMult??1)*(s.talentSpeedMult??1)>=3,                        reward:{rep:500,  money:0,       talent:1} },

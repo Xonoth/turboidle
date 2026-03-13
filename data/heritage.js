@@ -95,6 +95,32 @@ const HERITAGE_PERKS = [
     desc:"×1.75 REP gagné sur toutes les ventes (unique)",
     maxRank:1, costPerRank:8,
     requires:[{id:"rep_gain_2", rank:2}, {id:"rep_prestige_1", rank:3}] },
+
+  // ══ BRANCHE LOGISTIQUE (cyan/vert) ════════════════════
+  { id:"log_slots_1",    branch:"Logistique", icon:"🚛", name:"Flotte de Départ",
+    desc:"+1 slot de livraison permanent par rang",
+    maxRank:3, costPerRank:1,
+    requires:[] },
+
+  { id:"log_delay_1",    branch:"Logistique", icon:"⏱️", name:"Réseau Rodé",
+    desc:"−8% délai de livraison permanent par rang",
+    maxRank:5, costPerRank:1,
+    requires:[{id:"log_slots_1", rank:1}] },
+
+  { id:"log_warehouse_1",branch:"Logistique", icon:"🏭", name:"Capacité Héritée",
+    desc:"+50 slots d'entrepôt permanent par rang",
+    maxRank:5, costPerRank:2,
+    requires:[{id:"log_slots_1", rank:2}] },
+
+  { id:"log_parts_val_1",branch:"Logistique", icon:"💰", name:"Expertise Pièces",
+    desc:"+5% valeur de revente si pièces utilisées par rang",
+    maxRank:3, costPerRank:3,
+    requires:[{id:"log_delay_1", rank:3}, {id:"log_warehouse_1", rank:2}] },
+
+  { id:"log_ultimate",   branch:"Logistique", icon:"🏗️", name:"Empire Logistique",
+    desc:"×2 capacité entrepôt · −25% délai livraison supplémentaire (unique)",
+    maxRank:1, costPerRank:8,
+    requires:[{id:"log_parts_val_1", rank:2}, {id:"log_warehouse_1", rank:4}] },
 ];
 
 function getHeritagePerkRank(id){
@@ -190,6 +216,12 @@ function applyHeritageBonuses(){
     garageCap:        0,    // bonus slots garage via milestones
     showroomCap:      0,    // bonus slots showroom via milestones
     isLegend:         false,
+    // Logistique
+    extraDeliverySlots:  0,
+    deliveryDisc:        0,
+    warehouseBonus:      0,
+    warehouseUltimateMult: 1.0,
+    partsValueBonus:     0,
   };
 
   for(const p of HERITAGE_PERKS){
@@ -213,12 +245,22 @@ function applyHeritageBonuses(){
     if(p.id === "com_ultimate")  b.passiveBonus   *= 2;
 
     // Réputation
-    if(p.id === "rep_gain_1")    b.repGainMult    *= Math.pow(1.10, rank);  // était 1.15 → ×1.61 max au lieu de ×2.01
+    if(p.id === "rep_gain_1")    b.repGainMult    *= Math.pow(1.10, rank);
     if(p.id === "rep_talent_1")  b.talentBonus    += rank * 1;
     if(p.id === "rep_prestige_1")b.prestigeGainMult += rank * 0.10;
-    if(p.id === "rep_gain_2")    b.repGainMult    *= Math.pow(1.15, rank);  // était 1.25 → ×1.52 max au lieu de ×1.95
+    if(p.id === "rep_gain_2")    b.repGainMult    *= Math.pow(1.15, rank);
     if(p.id === "rep_talent_2")  b.talentBonus    += rank * 2;
-    if(p.id === "rep_ultimate")  b.repGainMult    *= 1.75;                  // était ×2 → ×1.75
+    if(p.id === "rep_ultimate")  b.repGainMult    *= 1.75;
+
+    // Logistique
+    if(p.id === "log_slots_1")    b.extraDeliverySlots += rank * 1;
+    if(p.id === "log_delay_1")    b.deliveryDisc       += rank * 0.08;
+    if(p.id === "log_warehouse_1")b.warehouseBonus     += rank * 50;
+    if(p.id === "log_parts_val_1")b.partsValueBonus    += rank * 0.05;
+    if(p.id === "log_ultimate") {
+      b.warehouseUltimateMult = 2.0;
+      b.deliveryDisc          += 0.25;
+    }
   }
 
   // +1% argent par prestige total (plafonné à +50%)
@@ -377,10 +419,11 @@ function hasRequirements(talent){
   // Prérequis classiques (requires)
   const baseOk = (talent.requires || []).every(r => getTalentRank(r.id) >= r.rank);
   if(!baseOk) return false;
-  // Prérequis de tier : pour T2 → 10pts en T1, pour T3 → 10pts en T2
+  // Prérequis de tier : T2 → 10pts en T1, T3 → 20pts en T2 (cohérent avec l'UI)
   if(talent.tier >= 2){
+    const needed = talent.tier === 2 ? 10 : 20;
     const prevTierPoints = getTierPointsSpent(talent.category, talent.tier - 1);
-    if(prevTierPoints < 10) return false;
+    if(prevTierPoints < needed) return false;
   }
   return true;
 }
@@ -472,8 +515,10 @@ function renderTalentsUI(){
       let btnLabel = `Acheter — 1 point`;
       if(locked){
         btnClass += " talentBtn--locked";
-        const tierBlocked = (t.tier??1) >= 2 && getTierPointsSpent(t.category, (t.tier??1)-1) < 10;
-        btnLabel = tierBlocked ? `🔒 Tier ${(t.tier??1)-1} insuffisant` : "🔒 Prérequis manquant";
+        const tierNeeded  = (t.tier??1) === 3 ? 20 : 10;
+        const ptsHave     = getTierPointsSpent(t.category, (t.tier??1)-1);
+        const tierBlocked = (t.tier??1) >= 2 && ptsHave < tierNeeded;
+        btnLabel = tierBlocked ? `🔒 ${ptsHave}/${tierNeeded} pts Tier ${(t.tier??1)-1}` : "🔒 Prérequis manquant";
       }
       else if(maxed){ btnClass += " talentBtn--maxed"; btnLabel = "✅ Rang maximum"; }
 
@@ -521,6 +566,22 @@ talentListEl.addEventListener("pointerdown", (e) => {
 
   state.talentPoints -= 1;
   state.talents[id] = rank + 1;
+  const newRank = rank + 1;
+
+  // Toast débloquage de tier — vérifie si ce rang franchit un seuil pour d'autres talents
+  const TIER_THRESHOLDS = { 2: 10, 3: 20 };
+  for(const [nextTier, needed] of Object.entries(TIER_THRESHOLDS)){
+    const tierNum = parseInt(nextTier);
+    // Le talent qu'on vient d'acheter est en tier (tierNum-1), même catégorie
+    if((t.tier ?? 1) === tierNum - 1){
+      const ptsNow = getTierPointsSpent(t.category, tierNum - 1);
+      const ptsBefore = ptsNow - 1;
+      if(ptsBefore < needed && ptsNow >= needed){
+        const icons = { 2:"★★", 3:"★★★" };
+        setTimeout(() => showToast(`${icons[tierNum]} Tier ${tierNum} ${t.category} débloqué !`), 50);
+      }
+    }
+  }
 
   // Animation sur la carte talent
   const card = btn.closest(".talentCard");
@@ -561,6 +622,8 @@ if(btnTalentsReset) btnTalentsReset.addEventListener("click", () => {
   const cost = calcTalentResetCost();
   const costEl = document.getElementById("resetCostDisplay");
   if(costEl) costEl.textContent = formatMoney(cost);
+  const formulaEl = document.getElementById("resetCostFormula");
+  if(formulaEl) formulaEl.textContent = totalRanks > 0 ? `${totalRanks} rang${totalRanks>1?"s":""} × 500 €` : "";
 
   document.getElementById("talentResetModal").style.display = "block";
 });
@@ -588,13 +651,19 @@ document.getElementById("btnResetConfirm")?.addEventListener("click", () => {
   state.talentDiagBonus     = 0;
   state.talentDiagMult      = 1;
   state.talentSaleBonus     = 0;
+  state.talentSaleMult      = 1;
   state.talentClickBonus    = 0;
   state.talentShowroomSlots = 0;
   state.talentRareMult      = 1;
   state.talentQueueMult     = 1; // conservé pour compatibilité saves
   state.talentRepairAuto    = 0;
+  state.talentRepairBonus   = 0;
+  state.talentRepairMult    = 1;
+  state.talentRepGainBonus  = 0;
+  state.talentDiagRepBonus  = 0;
   state.talentDeliveryDisc  = 0;
   state.talentExtraSlots    = 0;
+  state.talentWarehouseBonus = 0;
 
   applyTalentEffects();
   document.getElementById("talentResetModal").style.display = "none";

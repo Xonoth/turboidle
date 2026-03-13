@@ -22,11 +22,81 @@ class SaveService {
   constructor(repository) {
     if(!repository) throw new Error("SaveService: repository requis");
 
-    this._repo    = repository;
+    this._repo        = repository;
     this._loading     = false;  // un cloudLoad est en cours
     this._saving      = false;  // un cloudSave est en cours
     this._ready       = false;  // true après le premier load (succès ou échec)
     this._pendingSave = false;  // un save a été demandé pendant qu'un autre tournait
+    this._loadFailed  = false;  // true si le load cloud a échoué — bloque l'autosave
+
+    this._LS_KEY = "garage_turbo_backup";  // clé localStorage
+  }
+
+  // ── Backup localStorage ──────────────────────────────────────────────────────
+
+  _lsWrite(snapshot) {
+    try {
+      localStorage.setItem(this._LS_KEY, JSON.stringify(snapshot));
+    } catch(e) {
+      dbg("[SaveService] localStorage write échoué:", e.message);
+    }
+  }
+
+  _lsRead() {
+    try {
+      const raw = localStorage.getItem(this._LS_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch(e) {
+      dbg("[SaveService] localStorage read échoué:", e.message);
+      return null;
+    }
+  }
+
+  _lsClear() {
+    try { localStorage.removeItem(this._LS_KEY); } catch(e) {}
+  }
+
+  // ── Bannière d'alerte load failed ───────────────────────────────────────────
+
+  _showLoadFailBanner() {
+    if(document.getElementById("gt-load-fail-banner")) return; // déjà affichée
+
+    const banner = document.createElement("div");
+    banner.id = "gt-load-fail-banner";
+    banner.style.cssText = [
+      "position:fixed","top:0","left:0","right:0","z-index:99999",
+      "background:linear-gradient(135deg,#7f1d1d,#991b1b)",
+      "border-bottom:2px solid #f87171",
+      "color:#fef2f2","font-size:13px","font-weight:600",
+      "display:flex","align-items:center","justify-content:space-between",
+      "padding:10px 16px","gap:12px","box-shadow:0 2px 12px rgba(0,0,0,.5)"
+    ].join(";");
+
+    const msg = document.createElement("span");
+    msg.innerHTML = "⚠️&nbsp; Connexion au cloud échouée au chargement — "
+      + "<strong>ta progression n'est pas sauvegardée</strong>. "
+      + "Recharge la page pour réessayer.";
+
+    const btn = document.createElement("button");
+    btn.textContent = "✕ Fermer";
+    btn.style.cssText = [
+      "background:rgba(255,255,255,.15)","border:1px solid rgba(255,255,255,.3)",
+      "color:#fef2f2","border-radius:6px","padding:4px 10px","cursor:pointer",
+      "font-size:12px","white-space:nowrap","flex-shrink:0"
+    ].join(";");
+    btn.onclick = () => banner.remove();
+
+    banner.appendChild(msg);
+    banner.appendChild(btn);
+
+    // Insérer en top du body dès que le DOM est prêt
+    const insert = () => document.body ? document.body.prepend(banner)
+                                       : document.addEventListener("DOMContentLoaded", insert);
+    insert();
+  }
+
+  _hideLoadFailBanner() {
+    document.getElementById("gt-load-fail-banner")?.remove();
   }
 
   // ── Accesseurs ──────────────────────────────────────────────────────────────
@@ -68,17 +138,38 @@ class SaveService {
         if(currentTab) state.activeTab = currentTab;
         updateTopbarProfile(); // rafraîchit le pseudo/avatar dès que le profil est chargé
         showSaveIndicator("☁️ Partie chargée");
+        this._hideLoadFailBanner();  // load réussi — on retire la bannière si elle était là
       } else {
         dbg("[SaveService] aucun snapshot — nouvelle partie");
+        this._hideLoadFailBanner();
       }
 
       renderAll(true, true);
       if(typeof initChallenges === 'function') initChallenges();
     } catch(e) {
       // Supabase cold start, réseau instable, etc.
-      // On laisse le jeu démarrer en état initial — pas de blocage.
       console.error("[SaveService] load() erreur:", e.message);
-      showSaveIndicator("⚠️ Cloud indisponible");
+      this._loadFailed = true;  // bloquer l'autosave — on n'a pas lu la save cloud
+      this._showLoadFailBanner();
+
+      // ── Fallback localStorage ─────────────────────────────────────────
+      const backup = this._lsRead();
+      if(backup) {
+        dbg("[SaveService] fallback localStorage — backup trouvé");
+        try {
+          const currentTab = state.activeTab;
+          applySaveSnapshot(backup);
+          if(currentTab) state.activeTab = currentTab;
+          updateTopbarProfile();
+          showSaveIndicator("⚠️ Cloud indispo — sauvegarde locale chargée");
+        } catch(e2) {
+          console.error("[SaveService] fallback LS échoué:", e2.message);
+          showSaveIndicator("⚠️ Cloud indisponible");
+        }
+      } else {
+        showSaveIndicator("⚠️ Cloud indisponible");
+      }
+
       renderAll(true, true);
       if(typeof initChallenges === 'function') initChallenges();
     } finally {
@@ -96,8 +187,13 @@ class SaveService {
    * @param {string} userId
    */
   async save(userId) {
-    if(!this._ready)  { dbg("[SaveService] save() ignoré — pas encore prêt"); return; }
-    if(this._loading) { dbg("[SaveService] save() ignoré — load en cours");    return; }
+    if(!this._ready)      { dbg("[SaveService] save() ignoré — pas encore prêt"); return; }
+    if(this._loading)     { dbg("[SaveService] save() ignoré — load en cours");    return; }
+    if(this._loadFailed)  {
+      dbg("[SaveService] save() BLOQUÉ — load cloud a échoué, protection anti-écrasement");
+      showSaveIndicator("⚠️ Sauvegarde cloud bloquée (erreur de chargement)");
+      return;
+    }
 
     // Si un save tourne déjà, on mémorise qu'un nouveau save est nécessaire.
     // Le finally du save en cours le déclenchera automatiquement.
@@ -111,15 +207,23 @@ class SaveService {
     this._pendingSave = false;
     dbg("[SaveService] save() pour user:", userId);
 
+    // Snapshot déclaré ici pour être accessible dans le catch (fallback LS)
+    let snapshot = null;
     try {
-      // Snapshot capturé AVANT le await — reflète l'état exact au moment du clic.
-      const snapshot = buildSaveSnapshot();
+      snapshot = buildSaveSnapshot();
       await this._repo.upsert(userId, snapshot);
+      this._lsWrite(snapshot);  // backup local systématique après save cloud OK
       dbg("[SaveService] save() ✅ succès");
       showSaveIndicator("☁️ Sauvegardé");
     } catch(e) {
       console.error("[SaveService] save() erreur:", e.message);
-      showSaveIndicator("⚠️ Erreur cloud");
+      // Même si Supabase échoue, on préserve en localStorage
+      try {
+        this._lsWrite(snapshot);
+        showSaveIndicator("⚠️ Cloud KO — sauvegarde locale");
+      } catch(e2) {
+        showSaveIndicator("⚠️ Erreur cloud");
+      }
     } finally {
       this._saving = false;
       // Si un save a été demandé pendant qu'on tournait, on le relance immédiatement.
@@ -142,6 +246,8 @@ class SaveService {
     this._saving      = false;
     this._ready       = false;
     this._pendingSave = false;
+    this._loadFailed  = false;
+    this._hideLoadFailBanner();
     dbg("[SaveService] reset()");
   }
 }

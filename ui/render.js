@@ -403,6 +403,26 @@ function renderStockUI(){
 function renderStockView(el){
   const logLvl = getLogicielLvl();
 
+  // ── JAUGE ENTREPÔT ──────────────────────────────────────────────────
+  const wCap  = typeof getWarehouseCap  === "function" ? getWarehouseCap()  : 100;
+  const wUsed = typeof getWarehouseUsed === "function" ? getWarehouseUsed() : 0;
+  const wPct  = Math.min(100, Math.round((wUsed / wCap) * 100));
+  const wFull = wUsed >= wCap;
+  const wGauge = document.createElement("div");
+  wGauge.className = "warehouseGauge";
+  wGauge.innerHTML = `
+    <div class="warehouseGauge__header">
+      <span class="warehouseGauge__title">🏭 Entrepôt</span>
+      <span class="warehouseGauge__count ${wFull ? "warehouseGauge__count--full" : ""}">${Math.floor(wUsed)} / ${wCap} slots</span>
+    </div>
+    <div class="warehouseGauge__bar">
+      <div class="warehouseGauge__fill ${wFull ? "warehouseGauge__fill--full" : wPct >= 80 ? "warehouseGauge__fill--warn" : ""}"
+           style="width:${wPct}%"></div>
+    </div>
+    ${wFull ? '<div class="warehouseGauge__alert">⚠️ Entrepôt plein — commandes bloquées</div>' : ""}
+  `;
+  el.appendChild(wGauge);
+
   // Commandes en cours
   if(state.orders?.length){
     const sec = document.createElement("div");
@@ -660,8 +680,11 @@ function renderOrderList(listEl, catFilter){
       if(isSpecBonus) badges.push(`<span class="supplBadge" style="color:${sid==="ngx"?"#ff8c00":"#4ec97b"}">${sid==="ngx"?"⚡":"🔧"} Spécialiste</span>`);
       if(supp.noMalus) badges.push(`<span class="supplBadge" style="color:#ff9950">⚡ 5s · sans malus</span>`);
 
+      const wCap   = typeof getWarehouseCap  === "function" ? getWarehouseCap()  : 100;
+      const wUsed  = typeof getWarehouseUsed === "function" ? getWarehouseUsed() : 0;
+      const wFull  = wUsed >= wCap;
       const row = document.createElement("div");
-      row.className = `stockSupplRow ${canAfford?"":"stockSupplRow--broke"}`;
+      row.className = `stockSupplRow ${canAfford?"":" stockSupplRow--broke"}${wFull?" stockSupplRow--warehouse-full":""}`;
       row.innerHTML = `
         <div class="stockSupplRow__left">
           <span class="stockSupplRow__name" style="color:${supp.color}">${supp.icon} ${supp.name}</span>
@@ -677,10 +700,11 @@ function renderOrderList(listEl, catFilter){
         <div class="stockSupplRow__right">
           <span class="stockSupplRow__price" style="color:${canAfford?"#48c78e":"#ff4d70"}">${formatMoney(price)}</span>
           <div class="stockSupplRow__btns">
-            <button class="stockSupplRow__buy" data-pid="${part.id}" data-sid="${sid}" data-qty="1"  ${canAfford   ?"":"disabled"}>×1</button>
-            <button class="stockSupplRow__buy" data-pid="${part.id}" data-sid="${sid}" data-qty="10" ${canAfford10 ?"":"disabled"}>×10</button>
-            <button class="stockSupplRow__buy" data-pid="${part.id}" data-sid="${sid}" data-qty="50" ${canAfford50 ?"":"disabled"}>×50</button>
+            <button class="stockSupplRow__buy" data-pid="${part.id}" data-sid="${sid}" data-qty="1"  ${(canAfford && !wFull)   ?"":"disabled"}>×1</button>
+            <button class="stockSupplRow__buy" data-pid="${part.id}" data-sid="${sid}" data-qty="10" ${(canAfford10 && !wFull) ?"":"disabled"}>×10</button>
+            <button class="stockSupplRow__buy" data-pid="${part.id}" data-sid="${sid}" data-qty="50" ${(canAfford50 && !wFull) ?"":"disabled"}>×50</button>
           </div>
+          ${wFull ? '<span class="stockSupplRow__warehouseFull">🏭 Entrepôt plein</span>' : ""}
         </div>
       `;
       row.querySelectorAll("[data-qty]").forEach(btn => {

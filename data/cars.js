@@ -381,7 +381,50 @@ function getShowroomCap(){
 
 function getMaxOrders(){
   const lvl = getUpgrade("slots_livraison")?.lvl || 0;
-  return 1 + lvl + (state.talentExtraSlots ?? 0);
+  const heritageSlots = state.heritageBonuses?.extraDeliverySlots ?? 0;
+  return 1 + lvl + (state.talentExtraSlots ?? 0) + heritageSlots;
+}
+
+// ── ENTREPÔT ──────────────────────────────────────────────────────────
+// Capacité de stockage totale (slots pièces)
+function getWarehouseCap(){
+  const etageres   = getUpgrade("etageres")?.lvl        || 0;
+  const rayonnage  = getUpgrade("rayonnage")?.lvl       || 0;
+  const zoneLog    = getUpgrade("zone_logistique")?.lvl || 0;
+  const entAuto    = getUpgrade("entrepot_auto")?.lvl   || 0;
+  const talentBonus    = (state.talentWarehouseBonus ?? 0);              // talent Logistique Avancée
+  const heritageBonus  = state.heritageBonuses?.warehouseBonus    ?? 0;  // perk Capacité Héritée
+  const heritageMult   = state.heritageBonuses?.warehouseUltimateMult ?? 1.0; // perk Empire Logistique
+  const base = 100 + etageres*20 + rayonnage*50 + zoneLog*100 + entAuto*200 + talentBonus + heritageBonus;
+  return Math.round(base * heritageMult);
+}
+
+// Nombre de slots entrepôt actuellement utilisés
+function getWarehouseUsed(){
+  if(!state.parts) return 0;
+  const gestionLvl = (typeof getUpgrade === "function") ? (getUpgrade("gestionnaire_stock")?.lvl || 0) : 0;
+  const smallTiers = ["F","E","D"];
+  let used = 0;
+  for(const [partId, slot] of Object.entries(state.parts)){
+    if(!slot || slot.qty <= 0) continue;
+    const part = PARTS_CATALOG.find(p => p.id === partId);
+    const isSmall = part && smallTiers.includes(part.tier);
+    const slotCost = (gestionLvl > 0 && isSmall) ? 0.5 : 1;
+    used += slot.qty * slotCost;
+  }
+  return used;
+}
+
+// Bonus valeur revente Entrepôt Automatisé (+4%/rang si pièces utilisées du stock)
+function getWarehouseValueBonus(){
+  const lvl = getUpgrade("entrepot_auto")?.lvl || 0;
+  return lvl * 0.02;
+}
+
+// Bonus délai livraison Zone Logistique (-10%/rang)
+function getZoneLogistiqueDisc(){
+  const lvl = getUpgrade("zone_logistique")?.lvl || 0;
+  return lvl * 0.10;
 }
 function getDeliveryDelay(supplierId){
   const supp = SUPPLIERS[supplierId];
@@ -390,7 +433,9 @@ function getDeliveryDelay(supplierId){
   const magLvl = getUpgrade("magasinier")?.lvl || 0;
   let delay = supp.deliveryBase;
   delay *= Math.pow(0.75, magLvl);
-  delay *= (1 - (state.talentDeliveryDisc ?? 0));  // talent parts_1 : -5%/rang
+  delay *= (1 - (state.talentDeliveryDisc ?? 0));  // talent parts_1 : -3%/rang (max -30%)
+  delay *= (1 - getZoneLogistiqueDisc());            // zone_logistique : -10%/rang
+  delay *= (1 - Math.min(0.80, state.heritageBonuses?.deliveryDisc ?? 0)); // héritage Logistique
   return Math.max(5, Math.round(delay));
 }
 
@@ -409,16 +454,19 @@ function consumeParts(partIds, car){
     const p = PARTS_CATALOG.find(x => x.id === pid);
     return sum + (p?.priceFactor ?? 0.05);
   }, 0) || 1;
+  let usedFromStock = false;
   for(const pid of partIds){
     const slot = state.parts[pid];
     if(slot && slot.qty > 0){
       slot.qty--;
+      usedFromStock = true;
       const effQ = getEffectiveQuality(slot.supplier, pid);
       totalQ += effQ;
       count++;
-      // Argent déjà débité à la commande (orderPart) — pas de double débit ici
     }
   }
+  // Marquer la voiture pour le bonus Entrepôt Automatisé
+  if(car && usedFromStock) car.repairedFromStock = true;
   return count > 0 ? totalQ / count : null;
 }
 
@@ -434,6 +482,17 @@ function orderPart(partId, supplierId, qty = 1){
   if(!state.orders) state.orders = [];
   if(state.orders.length >= getMaxOrders()){
     showToast("⚠️ Slots de livraison pleins ! Améliorez les Slots Livraison.");
+    return false;
+  }
+  // Vérifier capacité entrepôt
+  const cap  = getWarehouseCap();
+  const used = getWarehouseUsed();
+  const gestionLvl = getUpgrade("gestionnaire_stock")?.lvl || 0;
+  const part = PARTS_CATALOG.find(p => p.id === partId);
+  const isSmall = part && ["F","E","D"].includes(part.tier);
+  const slotCost = (gestionLvl > 0 && isSmall) ? 0.5 : 1;
+  if(used + slotCost * qty > cap){
+    showToast("🏭 Entrepôt plein ! Agrandissez votre entrepôt.");
     return false;
   }
   // Vérifier et débiter l'argent à la commande

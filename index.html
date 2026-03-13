@@ -32,6 +32,7 @@
         <button class="helpTab" data-htab="showroom">🚗 Showroom</button>
         <button class="helpTab" data-htab="rep">⭐ Réputation</button>
         <button class="helpTab" data-htab="stock">📦 Stock</button>
+        <button class="helpTab" data-htab="talents">🌟 Talents</button>
         <button class="helpTab" data-htab="prestige">🔥 Prestige</button>
         <button class="helpTab" data-htab="tips">💡 Astuces</button>
       </div>
@@ -57,7 +58,7 @@
       <div class="talentScroll">
         <div class="talentGrid" id="talentList"></div>
       </div>
-      <div class="talentModal__hint">Les talents s'achètent avec 1 point par rang. Certains nécessitent un prérequis.</div>
+      <div class="talentModal__hint">1 point par rang · Tier 2 = 10 pts en T1 requis · Tier 3 = 20 pts en T2 requis</div>
     </div>
   </div>
 
@@ -261,6 +262,7 @@
       <div class="confirmModal__desc">
         Tous tes rangs seront remboursés en points.<br>
         Coût : <span id="resetCostDisplay" class="confirmModal__costHighlight">0 €</span>
+        <span id="resetCostFormula" style="font-size:11px;opacity:.5;display:block;margin-top:4px"></span>
       </div>
       <div class="confirmModal__actions">
         <button class="btn" id="btnResetCancel">Annuler</button>

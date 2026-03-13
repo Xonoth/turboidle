@@ -112,6 +112,12 @@ const state = {
     { id:"magasinier",      tab:"stock", icon:"📦", name:"Magasinier",      lvl:0, desc:"-20% délai livraison par rang",                                               cost:40000, maxLvl:3 },
     { id:"logiciel_stock",  tab:"stock", icon:"📊", name:"Logiciel Stock",  lvl:0, desc:"Niv.1: alertes rupture · Niv.2: seuils configurables · Niv.3: commandes auto", cost:80000, maxLvl:3 },
     { id:"slots_livraison", tab:"stock", icon:"🚛", name:"Slots Livraison", lvl:0, desc:"Niv.1→9 : +1 livraison simultanée par rang (max 10)",                         cost:20000, maxLvl:9 },
+
+    // ENTREPÔT
+    { id:"etageres",        tab:"stock", icon:"📚", name:"Étagères Basiques",    lvl:0, desc:"+20 slots entrepôt par rang",                                         cost:8000,   maxLvl:10 },
+    { id:"rayonnage",       tab:"stock", icon:"🏗️", name:"Rayonnage Métallique", lvl:0, desc:"+50 slots entrepôt par rang",                                         cost:35000,  maxLvl:10 },
+    { id:"zone_logistique", tab:"stock", icon:"🏭", name:"Zone Logistique",      lvl:0, desc:"+100 slots entrepôt par rang · livraisons 10% plus vite par rang",     cost:150000, maxLvl:5  },
+    { id:"entrepot_auto",   tab:"stock", icon:"🤖", name:"Entrepôt Automatisé",  lvl:0, desc:"+200 slots par rang · +2% valeur revente si pièces en stock par rang", cost:600000, maxLvl:5  },
   ],
 };
 
@@ -306,40 +312,56 @@ function renderGarageProgress(){
 
 function computeTalentEffects(){
   let passive      = 0;
+  let passiveMult  = 1.0; // passive_3 : +5%/rang sur tous les passifs (T3 Business)
   let speedMult    = 1.0;
   let diagBonus    = 0;
   let diagMult     = 1.0; // multiplicateur final sur la récompense totale (diag_3)
+  let diagAutoDisc = 0;   // réservé future use
   let saleBonus    = 0;
+  let saleMult     = 1.0; // sale_mult_1 : +2%/rang multiplicateur ventes (T3 Business)
   let clickBonus   = 0;
   let showroomSlots= 0;
   let rareMult     = 1.0; // multiplicateur valeur voitures S+
   let repairAuto   = 0;
+  let repairBonus  = 0;   // repair_bonus_1 : +50€/rang bonus fixe par réparation (T1 Atelier)
+  let repairMult   = 1.0; // repair_mult_1  : +3%/rang multiplicateur sur repairBonus (T3 Atelier)
+  let repGainBonus = 0;   // rep_1 : +5%/rang REP par vente (T1 Diagnostic)
+  let diagRepBonus = 0;   // diag_rep_1 : +2 REP par diag manuel (T2 Diagnostic)
   let deliveryDisc = 0;
   let extraSlots   = 0;
+  let warehouseBonus = 0; // logistique_avancee : +50 slots/rang
 
   // ── Business ────────────────────────────────────────
   passive      += getTalentRank("passive_1")    * 5;
   passive      += getTalentRank("passive_2")    * 20;
+  passiveMult  *= (1 + getTalentRank("passive_3")   * 0.05);
   saleBonus    += getTalentRank("sale_1")       * 0.03;
   saleBonus    += getTalentRank("sale_2")       * 0.08;
+  saleMult     *= (1 + getTalentRank("sale_mult_1") * 0.02);
   showroomSlots += getTalentRank("showroom_1");
   rareMult     *= (1 + getTalentRank("rare_bonus_1") * 0.03);
 
   // ── Atelier ─────────────────────────────────────────
-  speedMult    *= (1 + getTalentRank("speed_1")       * 0.04);
-  speedMult    *= (1 + getTalentRank("speed_2")       * 0.07);
-  clickBonus   += getTalentRank("click_1")            * 0.10;
-  repairAuto   += getTalentRank("multi_repair_1")     * 0.5;
-  deliveryDisc  = Math.min(0.30, getTalentRank("parts_1") * 0.03); // -3%/rang, plafonné à -30%
+  speedMult    *= (1 + getTalentRank("speed_1")         * 0.04);
+  speedMult    *= (1 + getTalentRank("speed_2")         * 0.07);
+  repairBonus  += getTalentRank("repair_bonus_1")       * 50;
+  clickBonus   += getTalentRank("click_1")              * 0.10;
+  repairAuto   += getTalentRank("multi_repair_1")       * 0.5;
+  repairMult   *= (1 + getTalentRank("repair_mult_1")   * 0.03);
+  deliveryDisc  = Math.min(0.30, getTalentRank("parts_1") * 0.015); // -1.5%/rang, plafonné à -30%
   extraSlots   += Math.floor(getTalentRank("parts_2") / 5);
+  warehouseBonus += getTalentRank("logistique_avancee") * 50; // +50 slots/rang
 
   // ── Diagnostic ──────────────────────────────────────
-  diagBonus    += getTalentRank("diag_1") * 3;
-  diagBonus    += getTalentRank("diag_2") * 8;
-  diagMult     *= (1 + getTalentRank("diag_3") * 0.05); // +5%/rang sur la récompense totale
+  diagBonus    += getTalentRank("diag_1")       * 3;
+  diagBonus    += getTalentRank("diag_2")       * 8;
+  diagMult     *= (1 + getTalentRank("diag_3")  * 0.05);
+  repGainBonus += getTalentRank("rep_1")        * 0.05;
+  diagRepBonus += getTalentRank("diag_rep_1")   * 2;
 
-  return { passive, speedMult, diagBonus, diagMult, saleBonus, clickBonus,
-           showroomSlots, rareMult, repairAuto, deliveryDisc, extraSlots };
+  return { passive, passiveMult, speedMult, diagBonus, diagMult, diagAutoDisc, saleBonus, saleMult,
+           clickBonus, showroomSlots, rareMult, repairAuto, repairBonus, repairMult,
+           repGainBonus, diagRepBonus, deliveryDisc, extraSlots, warehouseBonus };
 }
 
 function calcDealsPassive(){
@@ -359,7 +381,8 @@ function applyTalentEffects(){
   if(typeof applySpecializationEffects === 'function') applySpecializationEffects();
 
   state.moneyPerSec         = (fx.passive + calcDealsPassive() + (state.heritageBonuses?.passiveBonus ?? 0))
-                              * (state.specPassiveMult ?? 1.0);
+                              * (state.specPassiveMult ?? 1.0)
+                              * fx.passiveMult;        // passive_3 : +5%/rang
   state.talentSpeedMult     = fx.speedMult * (state.specSpeedMult ?? 1.0);
   state.talentDiagBonus     = fx.diagBonus;
   state.talentDiagMult      = fx.diagMult  * (state.specDiagMult  ?? 1.0);
@@ -368,8 +391,14 @@ function applyTalentEffects(){
   state.talentShowroomSlots = fx.showroomSlots;
   state.talentRareMult      = fx.rareMult  * (state.specRareMult  ?? 1.0);
   state.talentRepairAuto    = fx.repairAuto * (state.specAutoMult  ?? 1.0);
+  state.talentRepairBonus   = fx.repairBonus;
+  state.talentRepairMult    = fx.repairMult;
+  state.talentSaleMult      = fx.saleMult;
+  state.talentRepGainBonus  = fx.repGainBonus;
+  state.talentDiagRepBonus  = fx.diagRepBonus;
   state.talentDeliveryDisc  = Math.min(0.90, fx.deliveryDisc + (state.specDeliveryDisc ?? 0));
   state.talentExtraSlots    = Math.round(fx.extraSlots * (state.specDeliverySlotsMult ?? 1.0));
+  state.talentWarehouseBonus = fx.warehouseBonus;
 }
 
 // =====================
@@ -410,6 +439,7 @@ if(state.specShowroomCap === undefined) state.specShowroomCap = null;
 if(!state.specDeliverySlotsMult) state.specDeliverySlotsMult = 1.0;
 if(!state.specDeliveryDisc)      state.specDeliveryDisc      = 0.0;
 if(!state.specPartsValueBonus)   state.specPartsValueBonus   = 0.0;
+if(state.talentWarehouseBonus === undefined) state.talentWarehouseBonus = 0;
 
 function renderStatsUI(){
   if(!statsGridEl) return;
@@ -554,8 +584,13 @@ function calcSaleValue(car){
     : partsValueMult;
   const rareTiers = ["S","SS","SSS","SSS+"];
   const rareMult  = rareTiers.includes(car.tier) ? (state.talentRareMult ?? 1) : 1;
-  // Spécialisation Prestige : showroom limité (déjà géré via specShowroomCap)
-  return Math.round(car.baseValue * bonus * specSale * partsMult * rareMult);
+  const saleMult  = state.talentSaleMult ?? 1.0; // sale_mult_1 : +2%/rang multiplicateur global
+  // entrepot_auto : +2%/rang si la voiture a été réparée avec des pièces du stock
+  // + héritage log_parts_val_1 : +5%/rang supplémentaire
+  const heritagePartsBonus = car.repairedFromStock ? (state.heritageBonuses?.partsValueBonus ?? 0) : 0;
+  const warehouseBonus = (car.repairedFromStock && typeof getWarehouseValueBonus === "function")
+    ? (1 + getWarehouseValueBonus() + heritagePartsBonus) : 1.0;
+  return Math.round(car.baseValue * bonus * specSale * partsMult * rareMult * saleMult * warehouseBonus);
 }
 
 function finishRepair(){
@@ -585,6 +620,16 @@ function finishRepair(){
   _showroomJustAdded = true;
   state.active = null;
   state.totalRepairs = (state.totalRepairs ?? 0) + 1;
+
+  // repair_bonus_1 : bonus fixe par réparation, amplifié par repair_mult_1
+  const rb = (state.talentRepairBonus ?? 0);
+  if(rb > 0){
+    const gain = Math.round(rb * (state.talentRepairMult ?? 1.0));
+    state.money += gain;
+    state.totalMoneyEarned = (state.totalMoneyEarned ?? 0) + gain;
+    state.runMoneyRepair   = (state.runMoneyRepair   ?? 0) + gain;
+  }
+
   tryStartNextRepair();
   // Ne pas renderAll pendant le catchup offline (sera fait une seule fois après)
   if(!_isOfflineCatchup) _needsFullRender = true;
@@ -628,6 +673,9 @@ btnAnalyze.addEventListener("click", () => {
     spawnFloatText("+" + formatMoney(diagGain), "diag", document.getElementById("btnAnalyze"));
   }
   state.totalAnalyses = (state.totalAnalyses ?? 0) + 1;
+  // diag_rep_1 : +2 REP par diag manuel par rang
+  const drb = state.talentDiagRepBonus ?? 0;
+  if(drb > 0) state.rep += drb;
   // Spécialisation Centre Diagnostic : +1 pt talent toutes les 100 analyses
   if(state.specialization === "diag" && state.totalAnalyses % 100 === 0){
     state.talentPoints = (state.talentPoints ?? 0) + 1;
@@ -695,7 +743,7 @@ showroomListEl.addEventListener("click", (e) => {
   }
   const tierData = TIERS[car.tier] || TIERS["F"];
   const repMult = state.heritageBonuses?.repGainMult ?? 1.0;
-  const repGain = Math.round(tierData.repGain * repMult * (state.specRepMult ?? 1.0));
+  const repGain = Math.round(tierData.repGain * repMult * (state.specRepMult ?? 1.0) * (1 + (state.talentRepGainBonus ?? 0)));
   if(isFinite(repGain)) {
     state.rep += repGain;
     setTimeout(() => spawnFloatText("+" + repGain + " REP", "rep", btnPos), 120);
@@ -721,6 +769,7 @@ const UPGRADE_MULT = {
   stagiaire:1.35, receptionnaire:1.40, vendeur:1.35, vendeur_confirme:1.40,
   apprenti:1.30, mecanicien:1.35,
   magasinier:4.00, logiciel_stock:4.00, slots_livraison:2.00,
+  etageres:2.00, rayonnage:3.00, zone_logistique:4.00, entrepot_auto:5.00,
 };
 
 // L1 — Achat upgrade : après achat, rebuildUpgradeMap() est appelé AVANT applyTalentEffects()
@@ -915,7 +964,7 @@ function applyTickLogic(dt){
         }
         const tierData = TIERS[car.tier] || TIERS["F"];
         const repMult = state.heritageBonuses?.repGainMult ?? 1.0;
-        const repGain = Math.round(tierData.repGain * repMult * (state.specRepMult ?? 1.0));
+        const repGain = Math.round(tierData.repGain * repMult * (state.specRepMult ?? 1.0) * (1 + (state.talentRepGainBonus ?? 0)));
         if(isFinite(repGain)) state.rep += repGain;
         state.carsSold += 1;
         state.totalCarsSold = (state.totalCarsSold ?? 0) + 1;
