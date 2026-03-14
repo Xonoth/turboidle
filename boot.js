@@ -102,8 +102,103 @@ setTimeout(() => {
   }
 }, 6000);
 
-// btnSave supprimé du header
-const btnAuth = document.getElementById("btnAuth");
+// ── Side Menu Drawer ──────────────────────────────────────────────────────
+const _sideDrawer   = document.getElementById("sideMenuDrawer");
+const _sideBackdrop = document.getElementById("sideMenuBackdrop");
+const _btnSideMenu  = document.getElementById("btnSideMenu");
+
+function openSideMenu(){
+  _sideDrawer?.classList.add("open");
+  _sideBackdrop?.classList.add("open");
+  _btnSideMenu?.classList.add("active");
+  _updateSideMenuLastSave();
+}
+function closeSideMenu(){
+  _sideDrawer?.classList.remove("open");
+  _sideBackdrop?.classList.remove("open");
+  _btnSideMenu?.classList.remove("active");
+}
+
+function _updateSideMenuLastSave(){
+  const el = document.getElementById("sideMenuLastSave");
+  if(!el) return;
+  const snap = _saveService?._lsRead?.();
+  if(snap?.savedAt){
+    const d = new Date(snap.savedAt);
+    el.textContent = "Dernière save : " + d.toLocaleTimeString("fr-FR");
+  } else {
+    el.textContent = "Autosave toutes les 60s";
+  }
+}
+
+if(_btnSideMenu)  _btnSideMenu.addEventListener("click", openSideMenu);
+document.getElementById("btnSideMenuClose")?.addEventListener("click", closeSideMenu);
+_sideBackdrop?.addEventListener("click", closeSideMenu);
+
+// Wiring items vers leurs actions existantes
+function _wireSideItem(sideId, targetId, closeAfter = true){
+  const sideBtn = document.getElementById(sideId);
+  const target  = document.getElementById(targetId);
+  if(sideBtn && target){
+    sideBtn.addEventListener("click", () => {
+      if(closeAfter) closeSideMenu();
+      target.click();
+    });
+  }
+}
+_wireSideItem("sideMenuLeaderboard",  "btnLeaderboard");
+_wireSideItem("sideMenuAchievements", "btnAchievements");
+_wireSideItem("sideMenuStats",        "btnStats");
+_wireSideItem("sideMenuHelp",         "btnHelp");
+_wireSideItem("sideMenuProfile",      "btnProfile");
+
+// ── Sauvegarde manuelle (depuis le drawer) ─────────────────────────────────
+async function doManualSave() {
+  if(!currentUser || !_authReady) return;
+  const btn    = document.getElementById("sideMenuSave");
+  const subEl  = document.getElementById("sideMenuSaveStatus");
+  if(btn?.classList.contains("saving")) return;
+
+  if(btn)   btn.classList.add("saving");
+  if(subEl) subEl.textContent = "En cours…";
+
+  try {
+    const snap = buildSaveSnapshot();
+    _saveService._lsWrite(snap);
+    await _supa.from("saves").upsert(
+      { user_id: currentUser.id, save_data: snap, updated_at: new Date().toISOString() },
+      { onConflict: "user_id" }
+    );
+    if(btn){
+      btn.classList.remove("saving");
+      btn.classList.add("save-ok");
+    }
+    if(subEl) subEl.textContent = "Sauvegardé ✅";
+    _updateSideMenuLastSave();
+    showSaveIndicator("☁️ Sauvegarde manuelle OK");
+    setTimeout(() => {
+      btn?.classList.remove("save-ok");
+      if(subEl) subEl.textContent = "Autosave actif";
+    }, 2500);
+  } catch(e) {
+    if(btn){
+      btn.classList.remove("saving");
+      btn.classList.add("save-err");
+    }
+    if(subEl) subEl.textContent = "Erreur ❌ — réessaie";
+    showSaveIndicator("⚠️ Erreur de sauvegarde");
+    setTimeout(() => {
+      btn?.classList.remove("save-err");
+      if(subEl) subEl.textContent = "Autosave actif";
+    }, 3000);
+    dbg("[manualSave] erreur:", e.message);
+  }
+}
+
+document.getElementById("sideMenuSave")?.addEventListener("click", doManualSave);
+
+// Aussi exposer pour mobile nav si besoin
+window._doManualSave = doManualSave;
 if(btnAuth) btnAuth.addEventListener("click", openAuth);
 
 const btnAchievements = document.getElementById("btnAchievements");
@@ -121,8 +216,18 @@ requestAnimationFrame(tick);
 setInterval(() => { if(_authReady && currentUser) _saveService.save(currentUser.id); }, CONFIG.CLOUD_SAVE_INTERVAL);
 setInterval(() => { if(currentUser) pushLeaderboard(); }, CONFIG.LB_PUSH_INTERVAL);
 
-// Sauvegarde d'urgence à la fermeture de page (persist savedAt pour le catchup au reload)
-window.addEventListener("beforeunload", () => { save(); });
+// Sauvegarde d'urgence à la fermeture de page
+// Note : save() est async et peut être annulé par le navigateur avant complétion.
+// On écrit au moins le timestamp dans localStorage pour que le prochain
+// chargement ait un savedAt correct pour le catchup offline.
+window.addEventListener("beforeunload", () => {
+  try {
+    const snap = buildSaveSnapshot();
+    // Backup localStorage synchrone — garanti même si Supabase est annulé
+    if(typeof _saveService !== "undefined") _saveService._lsWrite(snap);
+  } catch(e) {}
+  save();
+});
 
 // Évite le spike de dt quand l'onglet redevient visible après une longue absence
 document.addEventListener("visibilitychange", () => {
@@ -135,7 +240,10 @@ document.addEventListener("visibilitychange", () => {
     const now = performance.now();
     const offlineSec = (now - last) / 1000;
 
-    if(offlineSec > 2){
+    // Ne pas recatchup si applySaveSnapshot l'a déjà fait dans les 10 dernières secondes
+    // (évite le double catchup au premier chargement)
+    const msSinceSnapshotCatchup = now - (window._lastSnapshotCatchup ?? 0);
+    if(offlineSec > 2 && msSinceSnapshotCatchup > 10000){
       // Plafond : max 4h de progression offline (évite les abus)
       const catchup = Math.min(offlineSec, 4 * 3600);
 
@@ -167,11 +275,4 @@ document.addEventListener("visibilitychange", () => {
   }
 });
 
-// Fallback auth timeout — affiche le login wall si Supabase ne répond pas
-setTimeout(() => {
-  if(!_authReady && !currentUser){
-    dbg("[init] auth timeout — affichage login wall");
-    showLoginWall();
-  }
-}, 5000);
 

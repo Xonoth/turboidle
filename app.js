@@ -124,6 +124,14 @@ const state = {
 // =====================
 // GARAGE LEVELING
 // =====================
+// Cache O(1) pour les lookups upgrades — DOIT être déclaré ici (avant tout listener)
+let _upgradeMap = {};
+function rebuildUpgradeMap(){
+  _upgradeMap = {};
+  for(const u of state.upgrades) _upgradeMap[u.id] = u;
+}
+function getUpgrade(id){ return _upgradeMap[id] ?? state.upgrades.find(u => u.id === id); }
+
 // ventes nécessaires pour atteindre chaque niveau (index = niveau)
 const GARAGE_LEVEL_REQUIREMENTS = {
   1: 0, 2: 1, 3: 4, 4: 11, 5: 22, 6: 38, 7: 59, 8: 85, 9: 118, 10: 156,
@@ -880,20 +888,13 @@ function recalcRepairAuto(){
 let _needsFullRender    = false; // render complet (showroom, queue, active...)
 let _needsUpgradeRender = false; // rebuild colonne droite (upgrades/stock)
 let _needsTalentRender  = false; // rebuild panel talents
-let last = performance.now();
+var last = performance.now();    // var = pas de TDZ — utilisé par boot.js visibilitychange
 let autoAnalyzeTimer = 0;
 let autoSellTimer = 0;
 
 let achCheckTimer = 0;
 let stockTimerAccu = 0;
 
-// Cache O(1) pour les lookups upgrades fréquents — reconstruit après chaque achat/prestige
-let _upgradeMap = {};
-function rebuildUpgradeMap(){
-  _upgradeMap = {};
-  for(const u of state.upgrades) _upgradeMap[u.id] = u;
-}
-function getUpgrade(id){ return _upgradeMap[id] ?? state.upgrades.find(u => u.id === id); }
 
 // Logique pure du tick — utilisable offline et dans le loop normal
 function applyTickLogic(dt){

@@ -285,6 +285,8 @@ function applySaveSnapshot(raw) {
         const mins = Math.floor(catchupSec / 60);
         setTimeout(() => showToast(`⏱️ Progression hors-ligne : ${mins} min rattrapées`), 500);
       }
+      // Marquer que le catchup vient d'être fait — évite le double avec visibilitychange
+      window._lastSnapshotCatchup = performance.now();
     }
   }
 }

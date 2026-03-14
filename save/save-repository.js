@@ -87,6 +87,29 @@ class SupabaseSaveRepository extends SaveRepository {
   }
 
   async upsert(userId, snapshot) {
+    // ── Protection multi-onglets : ne sauvegarder que si notre save est la plus récente ──
+    // Lit le savedAt actuel en base et le compare au nôtre avant d'écraser.
+    // Évite le rollback quand deux onglets du même compte sauvegardent en parallèle.
+    try {
+      const { data: current } = await this._client
+        .from("saves")
+        .select("save_data->savedAt")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      const remoteSavedAt = current?.savedAt ?? 0;
+      const localSavedAt  = snapshot.savedAt  ?? 0;
+
+      if(remoteSavedAt > localSavedAt) {
+        // La save en base est plus récente — on n'écrase pas
+        dbg("[SaveRepo] upsert ignoré — save cloud plus récente", remoteSavedAt, ">", localSavedAt);
+        return;
+      }
+    } catch(e) {
+      // Si la lecture échoue, on continue quand même l'upsert (fail-safe)
+      dbg("[SaveRepo] lecture savedAt échouée, upsert forcé:", e.message);
+    }
+
     const { error } = await this._client
       .from("saves")
       .upsert(

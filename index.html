@@ -428,10 +428,14 @@
       <button class="btn btn--ghost btn--notif btn--challenges" id="btnChallenges">📅 Défis<span class="notifDot notifDot--cyan" id="challengesNotifDot" style="display:none"></span></button>
       <button class="btn btn--ghost btn--notif" id="btnTalents">⭐ Talents<span class="notifDot" id="talentNotifDot" style="display:none"></span></button>
       <button class="repbtn">🏆 <span id="rep">0</span> REP</button>
-      <button class="iconbtn" id="btnAchievements" title="Succès">🎖️</button>
-      <button class="iconbtn" id="btnLeaderboard" title="Classement Mondial">🌍</button>
-      <button class="iconbtn" id="btnStats" title="Statistiques">📊</button>
-      <button class="iconbtn iconbtn--help" id="btnHelp" title="Aide & Tutoriel">❓</button>
+      <button class="iconbtn iconbtn--menu" id="btnSideMenu" title="Menu">☰</button>
+
+      <!-- Boutons conservés pour compatibilité JS — masqués visuellement -->
+      <button id="btnAchievements" style="display:none">🎖️</button>
+      <button id="btnLeaderboard"  style="display:none">🌍</button>
+      <button id="btnStats"        style="display:none">📊</button>
+      <button id="btnHelp"         style="display:none">❓</button>
+      <button id="btnManualSave"   style="display:none">💾</button>
 
     </div>
 
@@ -579,8 +583,69 @@
       <button class="mobileMore__btn" id="mobileHelp">❓ Aide</button>
       <button class="mobileMore__btn" id="mobileLeaderboard">🌍 Classement</button>
       <button class="mobileMore__btn" id="mobileStats">📊 Statistiques</button>
+      <button class="mobileMore__btn" id="mobileSave">💾 Sauvegarder</button>
     </div>
   </div>
+
+  <!-- ═══════════════════════════════════════════
+       SIDE MENU DRAWER
+       ═══════════════════════════════════════════ -->
+  <div id="sideMenuBackdrop" class="sideMenu__backdrop"></div>
+  <aside id="sideMenuDrawer" class="sideMenu__drawer">
+
+    <div class="sideMenu__header">
+      <div class="sideMenu__brand">
+        <span class="sideMenu__brandIcon">🏎️</span>
+        <span class="sideMenu__brandName">Garage Turbo</span>
+      </div>
+      <button class="sideMenu__close" id="btnSideMenuClose">✕</button>
+    </div>
+
+    <!-- Section Compte -->
+    <div class="sideMenu__section">
+      <div class="sideMenu__sectionLabel">Compte</div>
+      <button class="sideMenu__item" id="sideMenuProfile">
+        <span class="sideMenu__itemIcon">👤</span>
+        <span class="sideMenu__itemLabel">Mon profil</span>
+      </button>
+      <button class="sideMenu__item sideMenu__item--save" id="sideMenuSave">
+        <span class="sideMenu__itemIcon">💾</span>
+        <span class="sideMenu__itemLabel">Sauvegarder</span>
+        <span class="sideMenu__itemSub" id="sideMenuSaveStatus">Autosave actif</span>
+      </button>
+    </div>
+
+    <!-- Section Classements & Stats -->
+    <div class="sideMenu__section">
+      <div class="sideMenu__sectionLabel">Classements & Stats</div>
+      <button class="sideMenu__item" id="sideMenuLeaderboard">
+        <span class="sideMenu__itemIcon">🌍</span>
+        <span class="sideMenu__itemLabel">Classement Mondial</span>
+      </button>
+      <button class="sideMenu__item" id="sideMenuAchievements">
+        <span class="sideMenu__itemIcon">🎖️</span>
+        <span class="sideMenu__itemLabel">Succès</span>
+      </button>
+      <button class="sideMenu__item" id="sideMenuStats">
+        <span class="sideMenu__itemIcon">📊</span>
+        <span class="sideMenu__itemLabel">Statistiques</span>
+      </button>
+    </div>
+
+    <!-- Section Aide -->
+    <div class="sideMenu__section">
+      <div class="sideMenu__sectionLabel">Aide</div>
+      <button class="sideMenu__item" id="sideMenuHelp">
+        <span class="sideMenu__itemIcon">❓</span>
+        <span class="sideMenu__itemLabel">Tutoriel & Aide</span>
+      </button>
+    </div>
+
+    <div class="sideMenu__footer">
+      <div class="sideMenu__footerSave" id="sideMenuLastSave">Chargement…</div>
+    </div>
+
+  </aside>
 
   <!-- SCRIPTS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.98.0/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
