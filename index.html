@@ -187,6 +187,14 @@
       <div class="prestigeTabPanel prestigeTabPanel--hidden" id="ptab-heritage">
         <div class="heritageFilters" id="heritageFilters"></div>
         <div class="heritageGrid" id="heritageGrid"></div>
+        <!-- Marché Héritage -->
+        <div class="hMarket" id="hMarket">
+          <div id="hMarketTitle"></div>
+          <div id="hMarketBody">
+            <div class="hMarket__sub">Convertir des points héritage en avantages ponctuels</div>
+            <div class="hMarket__grid" id="heritageMarketGrid"></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -219,6 +227,22 @@
       <div class="specModal__actions">
         <button class="btn" id="specModalCancel">Annuler</button>
         <button class="btn btn--prestige-confirm" id="specModalConfirm" disabled>Confirmer la spécialisation</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2e SPÉCIALISATION (P40 — Double Expertise) -->
+  <div class="modal" id="spec2Modal" style="display:none;z-index:215;">
+    <div class="modal__backdrop"></div>
+    <div class="modal__panel specModal">
+      <div class="specModal__header">
+        <div class="specModal__title">⚡ Double Expertise — 2e Spécialisation</div>
+        <div class="specModal__subtitle">Prestige 40 débloqué ! Choisissez une 2e spécialisation (effets combinés)</div>
+      </div>
+      <div class="specModal__grid" id="spec2ModalGrid"></div>
+      <div class="specModal__actions">
+        <button class="btn" id="spec2ModalCancel">Passer (sans 2e spécialisation)</button>
+        <button class="btn btn--prestige-confirm" id="spec2ModalConfirm" disabled>Confirmer</button>
       </div>
     </div>
   </div>

@@ -83,14 +83,17 @@ function processAutoOrders(dt = 0){
     const supplierId  = settings.autoSupplier || globalSupplier;
     if(!supplierId) continue;
     const threshold   = settings.threshold !== undefined ? settings.threshold : globalThreshold;
-    const orderQty    = settings.qty       !== undefined ? settings.qty       : globalQty;
+    const baseQty     = settings.qty       !== undefined ? settings.qty       : globalQty;
+    // log_auto_order : multiplicateur quantité commandes auto
+    const autoQtyMult = state.heritageBonuses?.autoOrderQtyMult ?? 1.0;
+    const orderQty    = Math.max(1, Math.round(baseQty * autoQtyMult));
     const qty = state.parts?.[part.id]?.qty ?? 0;
     const alreadyOrdering = state.orders?.some(o => o.partId === part.id);
     if(qty <= threshold && !alreadyOrdering){
       const price = getPartPrice(part.id, supplierId) * orderQty;
       if(state.money >= price && price <= budgetLeft){
-        if(orderPart(part.id, supplierId, orderQty, false, !_isOfflineCatchup)){
-          budgetLeft -= price; // mise à jour du budget local pour les commandes suivantes
+        if(orderPart(part.id, supplierId, orderQty, false, false, true)){ // isAutoOrder=true
+          budgetLeft -= price;
         }
       }
     }
@@ -402,14 +405,14 @@ function getWarehouseCap(){
 // Nombre de slots entrepôt actuellement utilisés
 function getWarehouseUsed(){
   if(!state.parts) return 0;
-  const hasGestion = !!(state.heritageBonuses?.gestionStock) || (typeof getTalentRank === "function" && getTalentRank("gestionnaire_stock") > 0);
+  const gestionLvl = (typeof getUpgrade === "function") ? (getUpgrade("gestionnaire_stock")?.lvl || 0) : 0;
   const smallTiers = ["F","E","D"];
   let used = 0;
   for(const [partId, slot] of Object.entries(state.parts)){
     if(!slot || slot.qty <= 0) continue;
     const part = PARTS_CATALOG.find(p => p.id === partId);
     const isSmall = part && smallTiers.includes(part.tier);
-    const slotCost = (hasGestion && isSmall) ? 0.5 : 1;
+    const slotCost = (gestionLvl > 0 && isSmall) ? 0.5 : 1;
     used += slot.qty * slotCost;
   }
   return used;
@@ -436,6 +439,8 @@ function getDeliveryDelay(supplierId){
   delay *= (1 - (state.talentDeliveryDisc ?? 0));  // talent parts_1 : -3%/rang (max -30%)
   delay *= (1 - getZoneLogistiqueDisc());            // zone_logistique : -10%/rang
   delay *= (1 - Math.min(0.80, state.heritageBonuses?.deliveryDisc ?? 0)); // héritage Logistique
+  // log_auto_order : réduction délai commandes auto (appliqué uniquement via processAutoOrders)
+  if(state._isAutoOrder) delay *= (1 - Math.min(0.80, state.heritageBonuses?.autoOrderDisc ?? 0));
   return Math.max(5, Math.round(delay));
 }
 
@@ -478,7 +483,7 @@ function checkPartsAvailability(partIds){
 }
 
 // Lance une commande fournisseur — gratuit à la commande, coût déduit à l'utilisation
-function orderPart(partId, supplierId, qty = 1, isManual = false, countForChallenge = false){
+function orderPart(partId, supplierId, qty = 1, isManual = false, countForChallenge = false, isAutoOrder = false){
   if(!state.orders) state.orders = [];
   if(state.orders.length >= getMaxOrders()){
     showToast("⚠️ Slots de livraison pleins ! Améliorez les Slots Livraison.");
@@ -487,10 +492,10 @@ function orderPart(partId, supplierId, qty = 1, isManual = false, countForChalle
   // Vérifier capacité entrepôt
   const cap  = getWarehouseCap();
   const used = getWarehouseUsed();
-  const hasGestion2 = !!(state.heritageBonuses?.gestionStock) || (typeof getTalentRank === "function" && getTalentRank("gestionnaire_stock") > 0);
+  const gestionLvl = getUpgrade("gestionnaire_stock")?.lvl || 0;
   const part = PARTS_CATALOG.find(p => p.id === partId);
   const isSmall = part && ["F","E","D"].includes(part.tier);
-  const slotCost = (hasGestion2 && isSmall) ? 0.5 : 1;
+  const slotCost = (gestionLvl > 0 && isSmall) ? 0.5 : 1;
   if(used + slotCost * qty > cap){
     showToast("🏭 Entrepôt plein ! Agrandissez votre entrepôt.");
     return false;
@@ -502,7 +507,9 @@ function orderPart(partId, supplierId, qty = 1, isManual = false, countForChalle
     return false;
   }
   state.money -= price;
+  state._isAutoOrder = isAutoOrder; // flag pour getDeliveryDelay
   const delay = getDeliveryDelay(supplierId);
+  state._isAutoOrder = false;
   state.orders.push({
     id: crypto.randomUUID(),
     partId,
@@ -512,10 +519,8 @@ function orderPart(partId, supplierId, qty = 1, isManual = false, countForChalle
     timeLeft:      delay,
     originalDelay: delay,
   });
-  // Tracker pour le défi journalier
+  // Tracker pour le défi journalier (manuel + auto)
   state.totalOrders = (state.totalOrders ?? 0) + 1;
-  // Compte pour les défis si : commande manuelle OU auto en jeu actif (pas AFK)
-  if(isManual || countForChallenge) state.manualOrders = (state.manualOrders ?? 0) + 1;
   return true;
 }
 

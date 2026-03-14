@@ -30,6 +30,23 @@ function renderPrestigeModal(){
   const nextShowroomCap= 3 + (bNext.showroomCap ?? 0);
   const nextMoneyMult  = bNext.moneyMult - 1.0;
 
+  // Conditions progressives (utilisent les fonctions dynamiques)
+  const lvlReq     = getPrestigeLevelReq();
+  const repReq     = getPrestigeRepReq();
+  // Simuler les conditions du PROCHAIN prestige (après celui-ci)
+  const _savedCount = state.prestigeCount;
+  state.prestigeCount = (state.prestigeCount ?? 0) + 1;
+  const nextLvlReq  = getPrestigeLevelReq();
+  const nextRepReq  = getPrestigeRepReq();
+  state.prestigeCount = _savedCount;
+
+  // Durée du run actuel
+  const _runSec  = Math.floor((Date.now() - (state.sessionStart ?? Date.now())) / 1000);
+  const _runH    = Math.floor(_runSec / 3600);
+  const _runM    = Math.floor((_runSec % 3600) / 60);
+  const _runS    = _runSec % 60;
+  const _runTime = _runH > 0 ? `${_runH}h ${_runM}m` : _runM > 0 ? `${_runM}m ${_runS}s` : `${_runS}s`;
+
   // Prochain milestone
   const nextMilestone  = PRESTIGE_MILESTONES.find(m => (state.prestigeCount ?? 0) < m.count);
 
@@ -54,24 +71,30 @@ function renderPrestigeModal(){
         <div class="prestige__infoVal" style="color:#a78bfa">+${Math.round(Math.min((state.prestigeCount??0)*0.01,0.50)*100)}%</div>
       </div>
     </div>
-    ${(()=>{ const sp = getSpecialization(state.specialization); return sp ? `
-    <div class="prestige__specSection" style="--spec-color:${sp.color}">
-      <div class="prestige__specSection__title">⚡ Spécialisation active</div>
+    ${(()=>{
+      const sp = getSpecialization(state.specialization ?? null);
+      if(!sp) return '';
+      const sp2 = state.heritageBonuses?.dualSpec ? getSpecialization(state.specialization2 ?? null) : null;
+      const allBonuses = [...sp.bonuses, ...(sp2 ? sp2.bonuses.map(b => ({...b, label: b.label + ' (2e)'})) : [])];
+      return `
+    <div class="prestige__specSection">
+      <div class="prestige__specSection__title">Spécialisation active</div>
       <div class="prestige__specSection__header">
-        <span class="prestige__specSection__icon">${sp.icon}</span>
+        <div class="prestige__specSection__icon">${sp.icon}</div>
         <div class="prestige__specSection__info">
-          <div class="prestige__specSection__name">${sp.name}</div>
-          <div class="prestige__specSection__tagline">${sp.tagline}</div>
+          <div class="prestige__specSection__name">${sp.name}${sp2 ? ` + ${sp2.name}` : ''}</div>
+          <div class="prestige__specSection__tagline">${sp.tagline}${sp2 ? ` · ${sp2.tagline}` : ''}</div>
         </div>
       </div>
       <div class="prestige__specSection__bonuses">
-        ${sp.bonuses.map(b => `
-        <div class="prestige__specSection__bonus prestige__specSection__bonus--${b.positive ? 'pos' : 'neg'}">
-          <span class="prestige__specSection__bonusVal">${b.value}</span>
-          <span class="prestige__specSection__bonusLabel">${b.label}</span>
-        </div>`).join('')}
+        ${allBonuses.map(b => `
+          <div class="prestige__specSection__bonus prestige__specSection__bonus--${b.positive ? 'pos' : 'neg'}">
+            <span class="prestige__specSection__bonusVal">${b.value}</span>
+            <span class="prestige__specSection__bonusLabel">${b.label}</span>
+          </div>`).join('')}
       </div>
-    </div>` : ''; })()}
+    </div>`;
+    })()}
 
     <button class="prestige__btn ${can ? '' : 'prestige__btn--locked'}" id="btnDoPrestige" ${can ? '' : 'disabled'}>
       ${can ? '🔥 LANCER LE PRESTIGE' : '🔒 Conditions non remplies'}
@@ -97,38 +120,31 @@ function renderPrestigeModal(){
       </div>
     </div>
 
-    ${(()=>{ const _lvlReq = getPrestigeLevelReq(); const _repReq = getPrestigeRepReq();
-      const _lvlOk = state.garageLevel >= _lvlReq; const _repOk = state.rep >= _repReq; return `
     <div class="prestige__conditions">
-      <div class="prestige__cond ${_lvlOk ? 'prestige__cond--ok' : ''}">
-        ${_lvlOk ? '✅' : '🔒'} Garage LVL ${_lvlReq}
-        <span>${state.garageLevel}/${_lvlReq}</span>
+      <div class="prestige__cond ${state.garageLevel >= lvlReq ? 'prestige__cond--ok' : ''}">
+        ${state.garageLevel >= lvlReq ? '✅' : '🔒'} Garage LVL ${lvlReq}
+        <span>${state.garageLevel}/${lvlReq}</span>
       </div>
-      <div class="prestige__cond ${_repOk ? 'prestige__cond--ok' : ''}">
-        ${_repOk ? '✅' : '🔒'} ${_repReq.toLocaleString('fr-FR')} REP
-        <span>${state.rep.toLocaleString('fr-FR')}/${_repReq.toLocaleString('fr-FR')}</span>
+      <div class="prestige__cond ${state.rep >= repReq ? 'prestige__cond--ok' : ''}">
+        ${state.rep >= repReq ? '✅' : '🔒'} ${repReq.toLocaleString("fr-FR")} REP
+        <span>${state.rep.toLocaleString("fr-FR")}/${repReq.toLocaleString("fr-FR")}</span>
       </div>
     </div>
     ${!can ? `<div class="prestige__missing">
-      ${!_lvlOk ? `<div class="prestige__missing-line">🔒 Encore <b>${_lvlReq - state.garageLevel} niveau${(_lvlReq - state.garageLevel) > 1 ? 'x' : ''}</b> de garage manquant${(_lvlReq - state.garageLevel) > 1 ? 's' : ''}</div>` : ''}
-      ${!_repOk ? `<div class="prestige__missing-line">🔒 Encore <b>${(_repReq - state.rep).toLocaleString('fr-FR')} REP</b> manquants</div>` : ''}
-    </div>` : ''}`; })()}
+      ${state.garageLevel < lvlReq ? `<div class="prestige__missing-line">🔒 Encore <b>${lvlReq - state.garageLevel} niveau${lvlReq - state.garageLevel > 1 ? 'x' : ''}</b> de garage manquants</div>` : ''}
+      ${state.rep < repReq ? `<div class="prestige__missing-line">🔒 Encore <b>${(repReq - state.rep).toLocaleString("fr-FR")} REP</b> manquants</div>` : ''}
+    </div>` : ''}
+    <div class="prestige__nextReq">
+      <span>⬆️ Prochain prestige : LVL ${nextLvlReq} requis · ${nextRepReq.toLocaleString("fr-FR")} REP</span>
+    </div>
 
     <div class="prestige__runStats">
       <div class="prestige__runTitle">📊 Run actuel</div>
       <div class="prestige__runGrid">
-        <div class="prestige__runItem prestige__runItem--duration">
+        <div class="prestige__runItem">
           <span class="prestige__runIcon">⏱️</span>
           <span class="prestige__runLabel">Durée du run</span>
-          <span class="prestige__runVal">${(()=>{
-            const sec = Math.floor((Date.now() - (state.sessionStart ?? Date.now())) / 1000);
-            const h = Math.floor(sec / 3600);
-            const m = Math.floor((sec % 3600) / 60);
-            const s = sec % 60;
-            if(h > 0) return `${h}h ${String(m).padStart(2,'0')}m`;
-            if(m > 0) return `${m}m ${String(s).padStart(2,'0')}s`;
-            return `${s}s`;
-          })()}</span>
+          <span class="prestige__runVal">${_runTime}</span>
         </div>
         <div class="prestige__runItem">
           <span class="prestige__runIcon">💸</span>
@@ -206,7 +222,7 @@ function renderPrestigeModal(){
   });
 
   // Filters
-  const branches = ["Tous", "Mécanique", "Commerce", "Réputation", "Logistique"];
+  const branches = ["Tous", "Mécanique", "Commerce", "Réputation", "Logistique", "Expertise"];
   const filtersEl = document.getElementById("heritageFilters");
   if(filtersEl){
     filtersEl.innerHTML = branches.map(b => {
@@ -236,13 +252,15 @@ function renderPrestigeModal(){
     "Commerce":   { main:"#ffc83a", bg:"rgba(255,200,58,.08)",  border:"rgba(255,200,58,.2)"  },
     "Réputation": { main:"#a78bfa", bg:"rgba(167,139,250,.08)", border:"rgba(167,139,250,.2)" },
     "Logistique": { main:"#2ee59d", bg:"rgba(46,229,157,.08)",  border:"rgba(46,229,157,.2)"  },
+    "Expertise":  { main:"#31d6ff", bg:"rgba(49,214,255,.08)",  border:"rgba(49,214,255,.2)"  },
   };
 
   gridEl.innerHTML = "";
   for(const p of list){
     const rank    = getHeritagePerkRank(p.id);
+    const isInfinite = p.maxRank === null;
     const locked  = !hasHeritageRequirements(p);
-    const maxed   = rank >= p.maxRank;
+    const maxed   = !isInfinite && rank >= p.maxRank;
     const cost    = p.costPerRank;
     const canBuy  = !locked && !maxed && state.heritagePoints >= cost;
     const col     = branchColors[p.branch] || { main:"#888", bg:"rgba(0,0,0,.1)", border:"rgba(255,255,255,.1)" };
@@ -252,9 +270,11 @@ function renderPrestigeModal(){
     else if(rank > 0) cardClass += " heritageCard--active";
     else if(locked)  cardClass += " heritageCard--locked";
 
-    const dots = Array.from({length: p.maxRank}, (_, i) =>
-      `<div class="heritageCard__dot${i < rank ? " heritageCard__dot--filled" : ""}" style="${i < rank ? `background:${col.main};border-color:${col.main};box-shadow:0 0 5px ${col.main}40` : ""}"></div>`
-    ).join("");
+    const dots = isInfinite
+      ? `<div class="heritageCard__infinite" style="color:${col.main}">∞ rang ${rank}</div>`
+      : Array.from({length: p.maxRank}, (_, i) =>
+          `<div class="heritageCard__dot${i < rank ? " heritageCard__dot--filled" : ""}" style="${i < rank ? `background:${col.main};border-color:${col.main};box-shadow:0 0 5px ${col.main}40` : ""}"></div>`
+        ).join("");
 
     let btnLabel, btnClass;
     if(maxed)        { btnLabel = "✅ Rang maximum"; btnClass = "heritageBtn heritageBtn--maxed"; }
@@ -270,17 +290,6 @@ function renderPrestigeModal(){
     }
     else if(!canBuy) { btnLabel = `${cost} pt${cost>1?'s':''} requis`; btnClass = "heritageBtn heritageBtn--locked"; }
     else             { btnLabel = `Acheter — ${cost} pt${cost>1?'s':''}`; btnClass = "heritageBtn"; }
-
-    const reqsHtml = locked ? (() => {
-      const reqs = (p.requires || []).map(r => {
-        const dep = HERITAGE_PERKS.find(x => x.id === r.id);
-        const have = getHeritagePerkRank(r.id);
-        const ok = have >= r.rank;
-        return `<span class="heritageCard__req ${ok ? 'heritageCard__req--ok' : 'heritageCard__req--missing'}">`
-          + `${ok ? '✅' : '🔒'} ${dep?.icon ?? ''} ${dep?.name ?? r.id} <b>${have}/${r.rank}</b></span>`;
-      });
-      return reqs.length ? `<div class="heritageCard__reqs">${reqs.join('')}</div>` : '';
-    })() : '';
 
     const card = document.createElement("div");
     card.className = cardClass;
@@ -333,6 +342,9 @@ function renderPrestigeModal(){
   // Points restants en header
   const ptsEl = document.getElementById("heritagePointsDisplay");
   if(ptsEl) ptsEl.textContent = "Points disponibles : " + state.heritagePoints;
+
+  // Marché Héritage
+  renderHeritageMarket();
 }
 
 function showPrestigePopup(pts, count){
@@ -360,6 +372,70 @@ function _updateHeritageTabBadge(){
   tab.innerHTML = hasBuyable
     ? '✨ Héritage <span class="prestigeTab__badge">' + pts + '</span>'
     : '✨ Héritage';
+}
+
+
+// ── MARCHÉ HÉRITAGE ───────────────────────────────────────────────────────────
+const HERITAGE_MARKET = [
+  { id:"mkt_money",  icon:"💰", label:"Pack Capital",       desc:"+50 000€ au prochain prestige",  cost:100, apply: () => { state.heritageBonuses.startMoney = (state.heritageBonuses.startMoney ?? 0) + 50000; } },
+  { id:"mkt_talent", icon:"⭐", label:"Pack Talent",        desc:"+5 points talent au démarrage",  cost:50,  apply: () => { state.heritageBonuses.talentBonus  = (state.heritageBonuses.talentBonus  ?? 0) + 5;     } },
+  { id:"mkt_rep",    icon:"🔥", label:"Boost REP ×2",       desc:"×2 REP gagné pendant 30 minutes",cost:75,  apply: () => { state._heritageRepBoost = { mult:2.0, until: Date.now() + 30*60*1000 }; } },
+];
+
+let _marketVisible = false;
+
+function renderHeritageMarket() {
+  const el = document.getElementById("heritageMarketGrid");
+  if(!el) return;
+
+  // Titre cliquable avec toggle
+  const titleEl = document.getElementById("hMarketTitle");
+  if(titleEl){
+    titleEl.innerHTML = `
+      <button class="hMarket__toggle" id="btnMarketToggle">
+        <span>${_marketVisible ? '🔼' : '🔽'} 🛒 Marché Héritage</span>
+        <span class="hMarket__toggleSub">${_marketVisible ? 'Masquer' : 'Afficher'}</span>
+      </button>`;
+    titleEl.querySelector("#btnMarketToggle").addEventListener("click", () => {
+      _marketVisible = !_marketVisible;
+      renderHeritageMarket();
+    });
+  }
+
+  // Corps masqué si non visible
+  const bodyEl = document.getElementById("hMarketBody");
+  if(bodyEl) bodyEl.style.display = _marketVisible ? "block" : "none";
+  if(!_marketVisible) return;
+
+  el.innerHTML = HERITAGE_MARKET.map(item => {
+    const canBuy = state.heritagePoints >= item.cost;
+    return `
+    <div class="hMarketCard">
+      <div class="hMarketCard__icon">${item.icon}</div>
+      <div class="hMarketCard__body">
+        <div class="hMarketCard__name">${item.label}</div>
+        <div class="hMarketCard__desc">${item.desc}</div>
+      </div>
+      <button class="hMarketCard__btn${canBuy ? '' : ' hMarketCard__btn--locked'}"
+              data-mkt="${item.id}" ${canBuy ? '' : 'disabled'}>
+        ${item.cost} pts
+      </button>
+    </div>`;
+  }).join('');
+
+  el.querySelectorAll("[data-mkt]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const item = HERITAGE_MARKET.find(i => i.id === btn.dataset.mkt);
+      if(!item || state.heritagePoints < item.cost) return;
+      state.heritagePoints -= item.cost;
+      item.apply();
+      applyHeritageBonuses();
+      renderPrestigeModal();
+      renderAll(true, false);
+      save();
+      showToast(`✅ ${item.label} acheté !`);
+    });
+  });
 }
 
 function openPrestige(){
@@ -447,6 +523,55 @@ document.getElementById("specModalConfirm")?.addEventListener("click", () => {
   if(!_selectedSpec) return;
   state.specialization = _selectedSpec;
   closeSpecializationModal();
+  // P40 dualSpec : ouvrir le choix de la 2e spécialisation
+  if(state.heritageBonuses?.dualSpec){
+    openSpec2Modal();
+  } else {
+    doPrestige();
+  }
+});
+
+// ── MODAL 2e SPÉCIALISATION (P40) ─────────────────────────────────────────
+let _selectedSpec2 = null;
+
+function openSpec2Modal() {
+  const modal = document.getElementById("spec2Modal");
+  if(!modal){ doPrestige(); return; }
+  _selectedSpec2 = null;
+  document.getElementById("spec2ModalConfirm").disabled = true;
+  modal.style.display = "block";
+
+  const grid = document.getElementById("spec2ModalGrid");
+  grid.innerHTML = SPECIALIZATIONS.map(spec => {
+    const isLocked = spec.id === state.specialization;
+    return `
+    <div class="specCard ${isLocked ? 'specCard--locked' : ''}" data-sid2="${spec.id}" style="--spec-color:${spec.color}">
+      <div class="specCard__icon">${spec.icon}</div>
+      <div class="specCard__name">${spec.name}</div>
+      <div class="specCard__tagline">${spec.tagline}</div>
+      ${isLocked ? '<div class="specCard__lockedMsg">⛔ Déjà choisie comme principale</div>' : ''}
+    </div>`;
+  }).join('');
+
+  grid.querySelectorAll(".specCard:not(.specCard--locked)").forEach(card => {
+    card.addEventListener("click", () => {
+      grid.querySelectorAll(".specCard").forEach(c => c.classList.remove("specCard--selected"));
+      card.classList.add("specCard--selected");
+      _selectedSpec2 = card.dataset.sid2;
+      document.getElementById("spec2ModalConfirm").disabled = false;
+    });
+  });
+}
+
+document.getElementById("spec2ModalCancel")?.addEventListener("click", () => {
+  document.getElementById("spec2Modal").style.display = "none";
+  state.specialization2 = null;
+  doPrestige();
+});
+document.getElementById("spec2ModalConfirm")?.addEventListener("click", () => {
+  if(!_selectedSpec2) return;
+  state.specialization2 = _selectedSpec2;
+  document.getElementById("spec2Modal").style.display = "none";
   doPrestige();
 });
 

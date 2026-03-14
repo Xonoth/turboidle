@@ -73,8 +73,9 @@ function renderTop(){
 }
 
 function renderQueue(){
-  // Occupés = voiture en atelier + voitures en file
-  const occupied = (state.active ? 1 : 0) + state.queue.length;
+  // Occupés = voiture en atelier (slot 0 + slots chef_atelier) + voitures en file
+  const activeCount = (state.active ? 1 : 0) + (state.actives?.filter(Boolean).length ?? 0);
+  const occupied = activeCount + state.queue.length;
   queueCountEl.textContent = occupied;
   garageCapEl.textContent  = state.garageCap;
 
@@ -89,11 +90,36 @@ function renderQueue(){
     ? `🛠️ Méca. niv.${mecanicienLvl}`
     : `🔩 Apprenti niv.${apprentiLvl}`;
 
+  // Construire la liste des voitures affichées dans les slots garage
+  // Slot 0 = state.active, slots 1..N = state.actives[], reste = state.queue[]
+  const chefSlots = typeof getActiveRepairSlots === "function" ? getActiveRepairSlots() : 1;
+
   for(let i = 0; i < state.garageCap; i++){
     const slot = document.createElement("div");
 
+    // Déterminer la voiture dans ce slot
+    let isChefSlot = false;
+    let chefSlotIndex = -1; // index dans actives[] (0-based)
+    let car_i;
+
     if(i === 0){
-      const car = state.active;
+      car_i = state.active;
+    } else if(i < chefSlots){
+      // Slot supplémentaire Chef d'Atelier
+      isChefSlot = true;
+      chefSlotIndex = i - 1;
+      car_i = state.actives?.[chefSlotIndex] ?? null;
+    } else {
+      // File d'attente (décalée selon le nombre de slots actifs)
+      const queueIdx = i - chefSlots;
+      car_i = state.queue[queueIdx] ?? null;
+    }
+
+    if(i === 0 || isChefSlot){
+      const car = car_i;
+      const slotMalusLabel = isChefSlot
+        ? `<span class="garageSlot__malus">−${(i) * 10}% ⚡</span>`
+        : "";
       if(car){
         const pct = car.repairTime > 0 ? Math.max(0, (1 - car.timeRemaining / car.repairTime) * 100) : 100;
         const t = TIERS[car.tier] || TIERS["F"];
@@ -102,10 +128,8 @@ function renderQueue(){
         const hasMissingParts = car.failure?.parts?.length && !checkPartsAvailability(car.failure.parts).ok;
         const barColor = hasMissingParts ? "#ff8c40" : "";
         slot.className = "garageSlot garageSlot--active";
-        // V3 — Bordure gauche colorée selon le tier de la voiture
         slot.style.setProperty("--tier-color", t.color);
-        // V1 — Animation d'entrée : classe --entering retirée après 400ms
-        if(_activeJustStarted){
+        if(i === 0 && _activeJustStarted){
           _activeJustStarted = false;
           slot.classList.add("garageSlot--entering");
           requestAnimationFrame(() => requestAnimationFrame(() => slot.classList.remove("garageSlot--entering")));
@@ -120,7 +144,10 @@ function renderQueue(){
                 ${fail ? `<span class="failBadge" style="color:${fail.color}">${fail.icon} ${car.failure.name}</span>` : ""}
                 <div class="garageSlot__name">${car.name}</div>
               </div>
-              <span class="garageSlot__status garageSlot__status--active">${hasMissingParts ? "⚠️ PIÈCE MANQUANTE" : "EN RÉPARATION"}</span>
+              <div style="display:flex;align-items:center;gap:6px">
+                ${slotMalusLabel}
+                <span class="garageSlot__status garageSlot__status--active">${hasMissingParts ? "⚠️ PIÈCE MANQUANTE" : "EN RÉPARATION"}</span>
+              </div>
             </div>
             <div class="garageSlot__bar">
               <div class="garageSlot__barFill" style="width:${pct.toFixed(1)}%;${barColor?"background:"+barColor:""}"></div>
@@ -138,14 +165,16 @@ function renderQueue(){
       } else {
         slot.className = "garageSlot garageSlot--empty";
         slot.innerHTML = `
-          <div class="garageSlot__num">🔧</div>
+          <div class="garageSlot__num">${isChefSlot ? "👑" : "🔧"}</div>
           <div class="garageSlot__body">
-            <div class="garageSlot__label">Emplacement libre</div>
+            <div class="garageSlot__label">${isChefSlot
+              ? `Slot Chef d'Atelier ${slotMalusLabel}`
+              : "Emplacement libre"}</div>
           </div>
         `;
       }
     } else {
-      const car = state.queue[i - 1];
+      const car = car_i;
       if(car){
         const t = TIERS[car.tier] || TIERS["F"];
         const fail = car.failure ? FAILURE_CATEGORIES[car.failure.category] : null;
@@ -204,32 +233,69 @@ function renderActive(){
     activeCarTimeEl.textContent = "—";
     activeCarTierEl.textContent = "—";
     repairBarEl.style.width = "0%";
-    return;
+  } else {
+    activeCarTitleEl.textContent = car.name;
+    activeCarValueEl.textContent = formatMoney(car.baseValue);
+    activeCarTimeEl.textContent = car.timeRemaining.toFixed(1);
+    activeCarTierEl.textContent = car.tier;
+
+    const total = car.repairTime;
+    const left  = Math.max(0, car.timeRemaining);
+    const pct   = total > 0 ? (1 - (left / total)) : 1;
+    repairBarEl.style.width = `${(pct * 100).toFixed(1)}%`;
+    repairBarEl.classList.toggle("garageSlot__barFill--almostDone", pct >= 0.85);
+
+    // Mettre à jour la mini barre slot 0 dans la grille
+    if(!_activeBarFill) _activeBarFill = garageSlotsEl?.querySelector(".garageSlot--active .garageSlot__barFill");
+    if(!_activeMetaEl)  _activeMetaEl  = garageSlotsEl?.querySelector(".garageSlot--active .garageSlot__meta");
+    if(_activeBarFill){
+      _activeBarFill.style.width = `${(pct * 100).toFixed(1)}%`;
+      _activeBarFill.classList.toggle("garageSlot__barFill--almostDone", pct >= 0.85);
+    }
+    const t = TIERS[car.tier] || TIERS["F"];
+    const timeLeft = Math.max(0, car.timeRemaining ?? 0);
+    if(_activeMetaEl) _activeMetaEl.textContent = `${t.desc} · ${formatMoney(car.baseValue)} · ⏱️ ${formatTime(timeLeft)} · ${(pct*100).toFixed(0)}%`;
   }
 
-  activeCarTitleEl.textContent = car.name;
-  activeCarValueEl.textContent = formatMoney(car.baseValue);
-  activeCarTimeEl.textContent = car.timeRemaining.toFixed(1);
-  activeCarTierEl.textContent = car.tier;
+  // ── Mise à jour temps réel des slots Chef d'Atelier (actives[]) ──────────
+  if(!state.actives) return;
+  const activeSlots = garageSlotsEl?.querySelectorAll(".garageSlot--active");
+  if(!activeSlots) return;
 
-  const total = car.repairTime;
-  const left  = Math.max(0, car.timeRemaining);
-  const pct   = total > 0 ? (1 - (left / total)) : 1;
-  repairBarEl.style.width = `${(pct * 100).toFixed(1)}%`;
-  // Pulse quand > 85% terminé
-  repairBarEl.classList.toggle("garageSlot__barFill--almostDone", pct >= 0.85);
+  // activeSlots[0] = slot principal (déjà traité ci-dessus)
+  // activeSlots[1..N] = slots Chef d'Atelier
+  state.actives.forEach((activeCar, idx) => {
+    if(!activeCar) return;
+    const slotEl = activeSlots[idx + 1]; // +1 car slot 0 = principal
+    if(!slotEl) return;
 
-  // Mettre à jour la mini barre dans le slot actif de la grille (refs cachées)
-  if(!_activeBarFill) _activeBarFill = garageSlotsEl?.querySelector(".garageSlot--active .garageSlot__barFill");
-  if(!_activeMetaEl)  _activeMetaEl  = garageSlotsEl?.querySelector(".garageSlot--active .garageSlot__meta");
-  if(_activeBarFill){
-    _activeBarFill.style.width = `${(pct * 100).toFixed(1)}%`;
-    _activeBarFill.classList.toggle("garageSlot__barFill--almostDone", pct >= 0.85);
-  }
-  const t = TIERS[car.tier] || TIERS["F"];
-  // U1 — Temps restant formaté lisiblement (ex: 1h 23m 45s)
-  const timeLeft = Math.max(0, car.timeRemaining ?? 0);
-  if(_activeMetaEl) _activeMetaEl.textContent = `${t.desc} · ${formatMoney(car.baseValue)} · ⏱️ ${formatTime(timeLeft)} · ${(pct*100).toFixed(0)}%`;
+    const barFill = slotEl.querySelector(".garageSlot__barFill");
+    const metaEl  = slotEl.querySelector(".garageSlot__meta");
+    const timeEl  = slotEl.querySelector("[data-time]");
+
+    const pct = activeCar.repairTime > 0
+      ? Math.max(0, (1 - activeCar.timeRemaining / activeCar.repairTime)) * 100
+      : 100;
+
+    if(barFill){
+      barFill.style.width = `${pct.toFixed(1)}%`;
+      barFill.classList.toggle("garageSlot__barFill--almostDone", pct >= 85);
+    }
+    const t = TIERS[activeCar.tier] || TIERS["F"];
+    const timeLeft = Math.max(0, activeCar.timeRemaining ?? 0);
+    if(metaEl){
+      metaEl.textContent = `${t.desc} · ${formatMoney(activeCar.baseValue)} · ⏱️ ${formatTime(timeLeft)} · ${pct.toFixed(0)}%`;
+    }
+    // Mettre à jour le temps restant dans la status bar aussi
+    const statusEl = slotEl.querySelector(".garageSlot__status--active");
+    // Le temps restant dans le slot (affiché dans le meta row)
+    const timeSpan = slotEl.querySelectorAll(".garageSlot__meta span");
+    if(timeSpan[1]){
+      const s = Math.round(timeLeft);
+      timeSpan[1].textContent = `⏱️ ${s >= 60 ? `${Math.floor(s/60)}m${s%60>0?s%60+'s':''}` : s+'s'}`;
+    }
+    if(timeSpan[2]) timeSpan[2].textContent = `${pct.toFixed(0)}%`;
+  });
 }
 
 function renderShowroom(){
@@ -312,37 +378,191 @@ function renderUpgrades(){
     return;
   }
 
-  const filteredUpgrades = state.upgrades.filter(u => u.tab === state.activeTab);
+  // ── Barre filtre / tri ─────────────────────────────────────────────────────
+  const filterBar = document.createElement("div");
+  filterBar.className = "upgradeFilterBar";
+
+  const hasActiveFilter = _upgradeFilter.status !== "all" || _upgradeFilter.effect !== "all" || _upgradeSort !== "default";
+
+  filterBar.innerHTML = `
+    <div class="upgradeFilterBar__topRow">
+      <button class="upgradeFilterBar__toggle ${_upgradeFilterVisible ? 'upgradeFilterBar__toggle--open' : ''} ${hasActiveFilter ? 'upgradeFilterBar__toggle--active' : ''}" id="btnToggleFilter">
+        <span>🔽 Filtres & Tri</span>
+        ${hasActiveFilter ? '<span class="upgradeFilterBar__dot"></span>' : ''}
+      </button>
+      ${hasActiveFilter ? `<button class="upgradeFilterBar__reset" id="btnResetFilter">✕ Réinitialiser</button>` : ''}
+    </div>
+    <div class="upgradeFilterBar__body ${_upgradeFilterVisible ? '' : 'upgradeFilterBar__body--hidden'}">
+      <div class="upgradeFilterBar__group">
+        <button class="upgradeFilterBtn ${_upgradeFilter.status==='all'?'upgradeFilterBtn--active':''}" data-fstatus="all">Tous</button>
+        <button class="upgradeFilterBtn ${_upgradeFilter.status==='buyable'?'upgradeFilterBtn--active':''}" data-fstatus="buyable">💰 Achetable</button>
+        <button class="upgradeFilterBtn ${_upgradeFilter.status==='unlocked'?'upgradeFilterBtn--active':''}" data-fstatus="unlocked">🔓 Déverrouillé</button>
+        <button class="upgradeFilterBtn ${_upgradeFilter.status==='locked'?'upgradeFilterBtn--active':''}" data-fstatus="locked">🔒 Verrouillé</button>
+        <button class="upgradeFilterBtn ${_upgradeFilter.status==='maxed'?'upgradeFilterBtn--active':''}" data-fstatus="maxed">✅ Max</button>
+      </div>
+      <div class="upgradeFilterBar__group">
+        <button class="upgradeFilterBtn ${_upgradeFilter.effect==='all'?'upgradeFilterBtn--active':''}" data-feffect="all">Tout</button>
+        <button class="upgradeFilterBtn ${_upgradeFilter.effect==='vitesse'?'upgradeFilterBtn--active':''}" data-feffect="vitesse">⚡ Vitesse</button>
+        <button class="upgradeFilterBtn ${_upgradeFilter.effect==='argent'?'upgradeFilterBtn--active':''}" data-feffect="argent">💰 Argent</button>
+        <button class="upgradeFilterBtn ${_upgradeFilter.effect==='vente'?'upgradeFilterBtn--active':''}" data-feffect="vente">🚗 Vente</button>
+        <button class="upgradeFilterBtn ${_upgradeFilter.effect==='diagnostic'?'upgradeFilterBtn--active':''}" data-feffect="diagnostic">🔍 Diag</button>
+        <button class="upgradeFilterBtn ${_upgradeFilter.effect==='stock'?'upgradeFilterBtn--active':''}" data-feffect="stock">📦 Stock</button>
+      </div>
+      <div class="upgradeFilterBar__group upgradeFilterBar__group--right">
+        <button class="upgradeFilterBtn upgradeFilterBtn--sort ${_upgradeSort==='default'?'upgradeFilterBtn--active':''}" data-fsort="default">⚙️ Défaut</button>
+        <button class="upgradeFilterBtn upgradeFilterBtn--sort ${_upgradeSort==='price_asc'?'upgradeFilterBtn--active':''}" data-fsort="price_asc">💲↑ Prix</button>
+        <button class="upgradeFilterBtn upgradeFilterBtn--sort ${_upgradeSort==='price_desc'?'upgradeFilterBtn--active':''}" data-fsort="price_desc">💲↓ Prix</button>
+      </div>
+    </div>
+  `;
+
+  // Listeners toggle + reset
+  filterBar.querySelector("#btnToggleFilter").addEventListener("click", () => {
+    _upgradeFilterVisible = !_upgradeFilterVisible;
+    renderUpgrades();
+  });
+  filterBar.querySelector("#btnResetFilter")?.addEventListener("click", () => {
+    _upgradeFilter = { status: "all", effect: "all" };
+    _upgradeSort   = "default";
+    renderUpgrades();
+  });
+
+  // Listeners filtre/tri
+  filterBar.querySelectorAll("[data-fstatus]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      _upgradeFilter.status = btn.dataset.fstatus;
+      renderUpgrades();
+    });
+  });
+  filterBar.querySelectorAll("[data-feffect]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      _upgradeFilter.effect = btn.dataset.feffect;
+      renderUpgrades();
+    });
+  });
+  filterBar.querySelectorAll("[data-fsort]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      _upgradeSort = btn.dataset.fsort;
+      renderUpgrades();
+    });
+  });
+  upgradeListEl.appendChild(filterBar);
+
+  // ── Filtrage & tri ──────────────────────────────────────────────────────────
+  let filteredUpgrades = state.upgrades.filter(u => u.tab === state.activeTab);
 
   // Prérequis des upgrades avec dépendances
+  // Format : { upgrades: [{id, lvl}], prestige: N }
   const UPGRADE_PREREQS = {
-    "receptionnaire":  { id: "stagiaire",  lvl: 10 },
-    "vendeur_confirme":{ id: "vendeur",    lvl: 10 },
+    "receptionnaire":  { upgrades:[{ id:"stagiaire",        lvl:10 }], prestige:0 },
+    "vendeur_confirme":{ upgrades:[{ id:"vendeur",          lvl:10 }], prestige:0 },
+    "vendeur_expert":  { upgrades:[{ id:"vendeur_confirme", lvl:10 }], prestige:5 },
+    "ia_diagnostic":   { upgrades:[{ id:"receptionnaire",   lvl:10 }], prestige:5 },
+    "chef_atelier":    { upgrades:[],                                   prestige:7 },
+    "scanner_pro":        { upgrades:[], prestige:3 },
+    "cle_dynamometrique": { upgrades:[], prestige:4 },
+    "turbocompresseur":   { upgrades:[], prestige:5 },
+    "reseau_national":    { upgrades:[], prestige:2 },
+    "holding_auto":       { upgrades:[], prestige:4 },
+    "galerie_marchande":  { upgrades:[{ id:"showroom_slot", lvl:4 }], prestige:2 },
+    "extension_atelier":  { upgrades:[{ id:"lift",          lvl:5 }], prestige:3 },
   };
+
+  // Helper — vérifie tous les prérequis d'un upgrade
+  function checkPrereqs(id){
+    const p = UPGRADE_PREREQS[id];
+    if(!p) return { met:true, reasons:[] };
+    const reasons = [];
+    for(const req of p.upgrades){
+      const have = state.upgrades.find(x => x.id === req.id)?.lvl ?? 0;
+      if(have < req.lvl){
+        const name = state.upgrades.find(x => x.id === req.id)?.name ?? req.id;
+        reasons.push(`${name} niv.${req.lvl} (${have}/${req.lvl})`);
+      }
+    }
+    if(p.prestige > 0 && (state.prestigeCount ?? 0) < p.prestige){
+      reasons.push(`Prestige ${p.prestige} (${state.prestigeCount ?? 0}/${p.prestige})`);
+    }
+    return { met: reasons.length === 0, reasons };
+  }
+
+  // Upgrades prestige verrouillés toujours en dernier (par onglet)
+  const PRESTIGE_BY_TAB = {
+    team:  ["vendeur_expert", "ia_diagnostic", "chef_atelier"],
+    deals: ["reseau_national", "holding_auto", "galerie_marchande", "extension_atelier"],
+    tools: ["scanner_pro", "cle_dynamometrique", "turbocompresseur"],
+  };
+  const prestigeList = PRESTIGE_BY_TAB[state.activeTab] ?? [];
+  if(prestigeList.length){
+    filteredUpgrades.sort((a, b) => {
+      const aLocked = prestigeList.includes(a.id) && !checkPrereqs(a.id).met;
+      const bLocked = prestigeList.includes(b.id) && !checkPrereqs(b.id).met;
+      if(aLocked && !bLocked) return 1;
+      if(!aLocked && bLocked) return -1;
+      return 0;
+    });
+  }
+
+  // Appliquer filtres statut & effet
+  filteredUpgrades = filteredUpgrades.filter(u => {
+    const isMaxed   = u.maxLvl !== undefined && u.lvl >= u.maxLvl;
+    const { met }   = checkPrereqs(u.id);
+    const canBuy    = !isMaxed && met && state.money >= u.cost;
+
+    if(_upgradeFilter.status === "buyable"  && !canBuy)       return false;
+    if(_upgradeFilter.status === "unlocked" && (!met || isMaxed)) return false;
+    if(_upgradeFilter.status === "locked"   && met)           return false;
+    if(_upgradeFilter.status === "maxed"    && !isMaxed)      return false;
+
+    if(_upgradeFilter.effect !== "all"){
+      const tags = (typeof UPGRADE_TAGS !== "undefined" ? UPGRADE_TAGS[u.id] : null) ?? [];
+      if(!tags.includes(_upgradeFilter.effect)) return false;
+    }
+    return true;
+  });
+
+  // Trier
+  if(_upgradeSort === "price_asc")  filteredUpgrades.sort((a,b) => a.cost - b.cost);
+  if(_upgradeSort === "price_desc") filteredUpgrades.sort((a,b) => b.cost - a.cost);
+
+  if(filteredUpgrades.length === 0){
+    const empty = document.createElement("div");
+    empty.className = "upgradeFilter__empty";
+    empty.textContent = "Aucune amélioration ne correspond à ces filtres.";
+    upgradeListEl.appendChild(empty);
+    return;
+  }
 
   for(const u of filteredUpgrades){
     const isMaxed = u.maxLvl !== undefined && u.lvl >= u.maxLvl;
 
-    // Vérifier prérequis
-    const prereq = UPGRADE_PREREQS[u.id];
-    const prereqMet = !prereq || (state.upgrades.find(x => x.id === prereq.id)?.lvl ?? 0) >= prereq.lvl;
-    const prereqUpgrade = prereq ? state.upgrades.find(x => x.id === prereq.id) : null;
-
+    // Vérifier prérequis (nouveau système multi-prérequis + prestige)
+    const { met: prereqMet, reasons: prereqReasons } = checkPrereqs(u.id);
     const canBuy  = !isMaxed && prereqMet && state.money >= u.cost;
 
     const maxLvlHtml = u.maxLvl !== undefined
       ? `<div class="item__maxlvl">${isMaxed ? `✅ Niveau maximum atteint (${u.maxLvl})` : `Niveau max : ${u.maxLvl}`}</div>`
       : "";
 
-    const prereqHtml = prereq && !prereqMet
-      ? `<div class="item__prereq">🔒 Nécessite ${prereqUpgrade?.name ?? prereq.id} niv.${prereq.lvl} (actuellement niv.${prereqUpgrade?.lvl ?? 0})</div>`
+    const prereqHtml = !prereqMet
+      ? prereqReasons.map(r => `<div class="item__prereq">🔒 Nécessite : ${r}</div>`).join("")
       : "";
 
+    // Tags d'effet pour le tooltip
+    const tags = (typeof UPGRADE_TAGS !== "undefined" ? UPGRADE_TAGS[u.id] : null) ?? [];
+    const tagsHtml = tags.map(t => `<span class="upgradeTooltip__tag upgradeTooltip__tag--${t}">${
+      {vitesse:"⚡ Vitesse", argent:"💰 Argent", vente:"🚗 Vente", diagnostic:"🔍 Diagnostic", stock:"📦 Stock"}[t] ?? t
+    }</span>`).join("");
+
+    // Infos prochain niveau
+    const nextCost = Math.ceil(u.cost * (UPGRADE_MULT[u.id] ?? 1.25));
+    const progressPct = u.maxLvl ? Math.round((u.lvl / u.maxLvl) * 100) : 0;
+
     const item = document.createElement("div");
-    item.className = `item${prereq && !prereqMet ? " item--locked" : ""}`;
+    item.className = `item${!prereqMet ? " item--locked" : ""}`;
     item.innerHTML = `
       <div class="item__left">
-        <div class="item__icon">${u.icon}</div>
+        <div class="item__icon upgradeIconBtn" data-uid="${u.id}" title="Détails">${u.icon}</div>
         <div class="item__txt">
           <div class="item__name">${u.name} <span class="pill">niv. ${u.lvl}</span></div>
           <div class="item__desc">${u.desc}</div>
@@ -353,18 +573,169 @@ function renderUpgrades(){
       </div>
       <div class="item__right">
         <button class="buy" ${canBuy ? "" : "disabled"} data-buy="${u.id}">
-          ${isMaxed ? "Max" : prereq && !prereqMet ? "🔒" : formatMoney(u.cost)}
+          ${isMaxed ? "Max" : !prereqMet ? "🔒" : formatMoney(u.cost)}
         </button>
       </div>
     `;
+
+    // Tooltip au clic sur l'icône
+    item.querySelector(".upgradeIconBtn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      showUpgradeTooltip(u, {
+        isMaxed, prereqMet, prereqReasons, canBuy,
+        tags, tagsHtml, nextCost, progressPct
+      });
+    });
+
     upgradeListEl.appendChild(item);
   }
+}
+
+// =====================
+// UPGRADE TOOLTIP
+// =====================
+function showUpgradeTooltip(u, { isMaxed, prereqMet, prereqReasons, canBuy, tags, tagsHtml, nextCost, progressPct }){
+  document.getElementById("upgradeTooltipOverlay")?.remove();
+
+  const overlay = document.createElement("div");
+  overlay.id = "upgradeTooltipOverlay";
+  overlay.className = "upgradeTooltip__overlay";
+
+  const mult = (typeof UPGRADE_MULT !== "undefined" ? UPGRADE_MULT[u.id] : null) ?? 1.25;
+
+  // ── Barre de progression ─────────────────────────────────────────────────
+  const progressHtml = u.maxLvl
+    ? `<div class="upgradeTooltip__progressTrack">
+        <div class="upgradeTooltip__progressFill ${isMaxed ? 'upgradeTooltip__progressFill--maxed' : ''}"
+             style="width:${progressPct}%"></div>
+      </div>
+      <div class="upgradeTooltip__progressLabel">${u.lvl} / ${u.maxLvl} niveaux${isMaxed ? ' — <span style="color:#2ee59d">MAX ✅</span>' : ''}</div>`
+    : "";
+
+  // ── Prérequis manquants ──────────────────────────────────────────────────
+  const prereqHtml = !prereqMet
+    ? prereqReasons.map(r => `<div class="upgradeTooltip__prereq">🔒 ${r}</div>`).join("")
+    : "";
+
+  // ── Tableau des 10 prochains niveaux ─────────────────────────────────────
+  function getEffectLabel(lvl){
+    // Retourne le label de l'effet total à un niveau donné
+    switch(u.id){
+      case "scanner_pro":         return `F:+${15*lvl}€ · S:+${800*lvl}€ · SSS+:+${6000*lvl}€/diag`;
+      case "cle_dynamometrique":  return `+${(0.5*lvl).toFixed(1)}s/clic`;
+      case "turbocompresseur":    return `×${Math.pow(1.15,lvl).toFixed(3)} vitesse`;
+      case "obd":           return `+${10*lvl}€/diag`;
+      case "diagpro":       return `+${40*lvl}€/diag`;
+      case "toolbox":       return `+${(0.05*lvl).toFixed(2)}s/clic`;
+      case "impact":        return `+${(0.08*lvl).toFixed(2)}s/clic`;
+      case "impact2":       return `+${(0.12*lvl).toFixed(2)}s/clic`;
+      case "nego":          return `+${(5*lvl)}% vente`;
+      case "comp":          return `×${Math.pow(1.10,lvl).toFixed(3)} vitesse`;
+      case "lift":          return `+${lvl} slot(s) garage`;
+      case "showroom_slot": return `+${2*lvl} slot(s) showroom`;
+      case "apprenti":      return `+${(0.15*lvl).toFixed(2)}s/s auto`;
+      case "mecanicien":    return `+${(0.5*lvl).toFixed(1)}s/s auto`;
+      case "stagiaire":     return `Diag toutes ${Math.max(6, 12-(lvl*0.6)).toFixed(1)}s`;
+      case "receptionnaire":return `Min ${Math.max(1, 6-(lvl*0.5)).toFixed(1)}s diag`;
+      case "vendeur":       return `Vente toutes ${Math.max(8, 15-(lvl*0.7)).toFixed(1)}s`;
+      case "vendeur_confirme":return `Min ${Math.max(1, 8-(lvl*0.7)).toFixed(1)}s vente`;
+      case "vendeur_expert":  return `Min ${Math.max(0.5, 1-(lvl*0.1)).toFixed(1)}s vente`;
+      case "ia_diagnostic":   return `Min ${Math.max(0.5, 1-(lvl*0.1)).toFixed(1)}s diag`;
+      case "chef_atelier":    return `+${lvl} slot(s) répa`;
+      case "reseau_national":   return `+${100*lvl}€/s passif`;
+      case "holding_auto":      return `+${250*lvl}€/s passif`;
+      case "galerie_marchande": return `+${2*lvl} slots showroom`;
+      case "extension_atelier": return `+${lvl} slot(s) garage`;
+      case "contrat_taxi":  return `+${5*lvl}€/s passif`;
+      case "assurance":     return `+${10*lvl}€/s passif`;
+      case "atelier_nuit":  return `+${20*lvl}€/s passif`;
+      case "franchise":     return `+${50*lvl}€/s passif`;
+      case "magasinier":    return `-${Math.round((1-Math.pow(0.75,lvl))*100)}% délai livraison`;
+      case "slots_livraison":return `+${lvl} slot(s) livraison`;
+      case "etageres":      return `+${20*lvl} slots entrepôt`;
+      case "rayonnage":     return `+${50*lvl} slots entrepôt`;
+      case "zone_logistique":return `+${100*lvl} slots · -${10*lvl}% délai`;
+      case "entrepot_auto": return `+${200*lvl} slots · +${2*lvl}% valeur`;
+      case "logiciel_stock":return lvl>=3?"Auto-commande":"Fonctionnalités basiques";
+      default:              return `Niv. ${lvl}`;
+    }
+  }
+
+  const startLvl = u.lvl;
+  const maxLvlCap = u.maxLvl ?? 999;
+  const levelsToShow = Math.min(10, maxLvlCap - startLvl);
+
+  let levelsHtml = "";
+  if(levelsToShow > 0 && prereqMet){
+    let costAccum = u.cost;
+    const rows = [];
+    for(let i = 1; i <= levelsToShow; i++){
+      const targetLvl = startLvl + i;
+      const canAfford = state.money >= costAccum;
+      rows.push(`
+        <tr class="upgradeTooltip__lvlRow ${i===1 ? 'upgradeTooltip__lvlRow--next' : ''}">
+          <td class="upgradeTooltip__lvlNum">Niv.${targetLvl}</td>
+          <td class="upgradeTooltip__lvlEffect">${getEffectLabel(targetLvl)}</td>
+          <td class="upgradeTooltip__lvlCost ${canAfford ? 'upgradeTooltip__lvlCost--ok' : 'upgradeTooltip__lvlCost--miss'}">${formatMoney(Math.ceil(costAccum))}</td>
+        </tr>
+      `);
+      costAccum = Math.ceil(costAccum * mult);
+    }
+    levelsHtml = `
+      <div class="upgradeTooltip__tableTitle">📈 Prochains niveaux</div>
+      <div class="upgradeTooltip__tableWrap">
+        <table class="upgradeTooltip__table">
+          <thead><tr>
+            <th>Niv.</th><th>Effet total</th><th>Prix</th>
+          </tr></thead>
+          <tbody>${rows.join("")}</tbody>
+        </table>
+      </div>`;
+  } else if(isMaxed){
+    levelsHtml = `<div class="upgradeTooltip__row upgradeTooltip__row--maxed">✅ Niveau maximum atteint</div>`;
+  }
+
+  overlay.innerHTML = `
+    <div class="upgradeTooltip__backdrop"></div>
+    <div class="upgradeTooltip__card">
+      <button class="upgradeTooltip__close">✕</button>
+
+      <div class="upgradeTooltip__header">
+        <div class="upgradeTooltip__icon">${u.icon}</div>
+        <div class="upgradeTooltip__titles">
+          <div class="upgradeTooltip__name">${u.name}</div>
+          <div class="upgradeTooltip__level">Niveau actuel : <b>${u.lvl}</b>${u.maxLvl ? ` / ${u.maxLvl}` : ""} · Scaling ×${mult.toFixed(2)}</div>
+        </div>
+      </div>
+
+      <div class="upgradeTooltip__desc">${u.desc}</div>
+
+      ${tagsHtml ? `<div class="upgradeTooltip__tags">${tagsHtml}</div>` : ""}
+
+      ${progressHtml}
+      ${prereqHtml}
+      ${levelsHtml}
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add("upgradeTooltip__overlay--in"));
+
+  const close = () => {
+    overlay.classList.remove("upgradeTooltip__overlay--in");
+    setTimeout(() => overlay.remove(), 180);
+  };
+  overlay.querySelector(".upgradeTooltip__backdrop").addEventListener("click", close);
+  overlay.querySelector(".upgradeTooltip__close").addEventListener("click", close);
 }
 
 // =====================
 // STOCK UI
 // =====================
 let _stockView = "stock"; // "stock" | "order" | "upgrades"
+let _upgradeFilter = { status: "all", effect: "all" }; // filtres actifs
+let _upgradeSort   = "default"; // "default" | "price_asc" | "price_desc"
+let _upgradeFilterVisible = false; // filtre masqué par défaut
 let _stockOrderPart = null; // partId en cours de commande
 
 function renderStockUI(){

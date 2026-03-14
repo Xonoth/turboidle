@@ -70,6 +70,7 @@ const HELP_SECTIONS = {
         <div class="helpBlock">
           <div class="helpBlock__title">🧑‍🔧 Automatisation de l'accueil</div>
           <p><b>Stagiaire Accueil</b> diagnostique automatiquement toutes les 12s (min 6s au niv. max). <b>Réceptionnaire</b> réduit encore ce délai jusqu'à 1s. Ces deux upgrades fonctionnent aussi en AFK.</p>
+          <p style="margin-top:6px">🤖 <b>IA Diagnostic</b> (Prestige 5, Réceptionnaire max) — abaisse le plancher à 0.5s (−0.1s/rang, max 5 rangs).</p>
         </div>
       </div>
     `
@@ -87,6 +88,8 @@ const HELP_SECTIONS = {
         <div class="helpBlock">
           <div class="helpBlock__title">🤖 Vendeur automatique</div>
           <p><b>Vendeur Junior</b> vend automatiquement la voiture la plus ancienne toutes les 15s (min 8s). <b>Vendeur Confirmé</b> descend jusqu'à 1s. ⚠️ Le vendeur ne fait pas de distinction de tier — vends manuellement tes voitures rares.</p>
+          <p style="margin-top:6px">🏆 <b>Vendeur Expert</b> (Prestige 5, Vendeur Confirmé max) — abaisse le plancher à 0.5s (−0.1s/rang, max 5 rangs).</p>
+          <p style="margin-top:6px">👑 <b>Chef d'Atelier</b> (Prestige 7) — +1 slot de réparation simultanée par rang (max +5). Chaque slot supplémentaire subit un malus fixe par position : slot 2 = −10%, slot 3 = −20%, slot 4 = −30%… (clic + auto). Le slot principal reste toujours à 100%.</p>
         </div>
 
         <div class="helpBlock">

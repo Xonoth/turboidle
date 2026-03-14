@@ -36,7 +36,7 @@ const HERITAGE_PERKS = [
 
   // ══ BRANCHE COMMERCE (vert/or) ════════════════════════
   { id:"com_start_1",    branch:"Commerce", icon:"💵", name:"Capital de Départ",
-    desc:"+2000€ à chaque nouveau prestige par rang",
+    desc:"-3% au coût de rachat des upgrades au prestige par rang (max -15%)",
     maxRank:5, costPerRank:1,
     requires:[] },
 
@@ -51,7 +51,7 @@ const HERITAGE_PERKS = [
     requires:[{id:"com_start_1", rank:2}] },
 
   { id:"com_diag_1",     branch:"Commerce", icon:"🔬", name:"Expertise Reconnue",
-    desc:"+10€ par diagnostic par rang",
+    desc:"×1.15 gain diagnostic par rang (multiplicatif)",
     maxRank:5, costPerRank:2,
     requires:[{id:"com_sale_1", rank:2}] },
 
@@ -126,6 +126,71 @@ const HERITAGE_PERKS = [
     desc:"×2 capacité entrepôt · −25% délai livraison supplémentaire (unique)",
     maxRank:1, costPerRank:8,
     requires:[{id:"log_parts_val_1", rank:2}, {id:"log_warehouse_1", rank:4}] },
+
+  // ══ PERKS INFINIS (post-ultimate, rendements décroissants) ════════════════
+  { id:"meca_infinite",  branch:"Mécanique",  icon:"∞", name:"Cadence Éternelle",
+    desc:"+1% vitesse de réparation par rang (sans limite)",
+    maxRank:null, costPerRank:3,
+    requires:[{id:"meca_ultimate", rank:1}] },
+
+  { id:"com_infinite",   branch:"Commerce",   icon:"∞", name:"Fortune Perpétuelle",
+    desc:"+0.5% à tous les revenus par rang (sans limite)",
+    maxRank:null, costPerRank:3,
+    requires:[{id:"com_ultimate", rank:1}] },
+
+  { id:"rep_infinite",   branch:"Réputation", icon:"∞", name:"Légende Immortelle",
+    desc:"+1% REP gagné par vente par rang (sans limite)",
+    maxRank:null, costPerRank:3,
+    requires:[{id:"rep_ultimate", rank:1}] },
+
+  { id:"log_infinite",   branch:"Logistique", icon:"∞", name:"Flux Perpétuel",
+    desc:"-1% délai livraison + +10 slots entrepôt par rang (sans limite)",
+    maxRank:null, costPerRank:3,
+    requires:[{id:"log_ultimate", rank:1}] },
+
+  // ══ NOUVEAUX PERKS COMMERCE ════════════════════════════════════════════════
+  { id:"com_upgrade_keep", branch:"Commerce", icon:"🔧", name:"Savoir Préservé",
+    desc:"Les upgrades Outils conservent 1 niveau au prestige par rang (max 5 niveaux conservés)",
+    maxRank:5, costPerRank:2,
+    requires:[{id:"com_start_1", rank:2}] },
+
+  // ══ NOUVEAUX PERKS RÉPUTATION ══════════════════════════════════════════════
+  { id:"rep_carry",      branch:"Réputation", icon:"🎖️", name:"Réputation Acquise",
+    desc:"Conserve 5% de la REP au prestige par rang (max 25%)",
+    maxRank:5, costPerRank:2,
+    requires:[{id:"rep_gain_1", rank:2}] },
+
+  // ══ NOUVEAUX PERKS LOGISTIQUE ══════════════════════════════════════════════
+  { id:"log_auto_order", branch:"Logistique", icon:"🤖", name:"Commande Intelligente",
+    desc:"-10% délai commandes automatiques + quantité ×1.2 par rang",
+    maxRank:5, costPerRank:2,
+    requires:[{id:"log_slots_1", rank:2}] },
+
+  // ══ BRANCHE EXPERTISE (5e branche — synergie upgrades prestige) ═══════════
+  { id:"exp_scanner",    branch:"Expertise",  icon:"🔬", name:"Scanner Augmenté",
+    desc:"Bonus Scanner Pro X ×1.5 (unique)",
+    maxRank:1, costPerRank:4,
+    requires:[] },
+
+  { id:"exp_turbo",      branch:"Expertise",  icon:"🚀", name:"Turbo Suralimenté",
+    desc:"+5% effet Turbocompresseur par rang",
+    maxRank:3, costPerRank:3,
+    requires:[{id:"exp_scanner", rank:1}] },
+
+  { id:"exp_chef",       branch:"Expertise",  icon:"👑", name:"Ergonomie Avancée",
+    desc:"Réduit le malus Chef d'Atelier de -2% par slot par rang",
+    maxRank:5, costPerRank:3,
+    requires:[{id:"exp_scanner", rank:1}] },
+
+  { id:"exp_infinite",   branch:"Expertise",  icon:"∞", name:"Expertise Croissante",
+    desc:"+0.5% à tous les effets des upgrades prestige par rang (sans limite)",
+    maxRank:null, costPerRank:3,
+    requires:[{id:"exp_turbo", rank:2}, {id:"exp_chef", rank:3}] },
+
+  { id:"exp_ultimate",   branch:"Expertise",  icon:"🏅", name:"Héritage Absolu",
+    desc:"Les upgrades prestige débloqués conservent leurs niveaux au prestige (unique)",
+    maxRank:1, costPerRank:12,
+    requires:[{id:"exp_turbo", rank:3}, {id:"exp_chef", rank:5}] },
 ];
 
 function getHeritagePerkRank(id){
@@ -197,6 +262,21 @@ const PRESTIGE_MILESTONES = [
   { count: 50, icon:"👑", label:"Légende",
     desc:"Titre Légende dans le leaderboard + bordure dorée sur le profil",
     apply: (state) => { state.heritageBonuses.isLegend = true; } },
+  { count: 15, icon:"🖼️", label:"Showroom Étendu",
+    desc:"Slot showroom +1 permanent",
+    apply: (state) => { state.heritageBonuses.showroomCap = (state.heritageBonuses.showroomCap ?? 0) + 1; } },
+  { count: 30, icon:"🔧", label:"Mémoire du Métier",
+    desc:"Les upgrades Équipe conservent 25% de leurs niveaux au prestige",
+    apply: (state) => { state.heritageBonuses.teamUpgradeKeep = 0.25; } },
+  { count: 40, icon:"⚡", label:"Double Expertise",
+    desc:"2e spécialisation active simultanément",
+    apply: (state) => { state.heritageBonuses.dualSpec = true; } },
+  { count: 75, icon:"🌌", label:"Transcendance",
+    desc:"Coût des perks Infinis réduit de 1pt (min 2pts/rang)",
+    apply: (state) => { state.heritageBonuses.infiniteCostDisc = 1; } },
+  { count: 100, icon:"🔮", label:"Mythique",
+    desc:"Points héritage gagnés ×1.5 permanent",
+    apply: (state) => { state.heritageBonuses.prestigeGainMult = (state.heritageBonuses.prestigeGainMult ?? 1) * 1.5; } },
 ];
 
 function getUnlockedMilestones(prestigeCount){
@@ -211,6 +291,11 @@ function applyMilestoneBonuses(b, prestigeCount){
   if(prestigeCount >= 25){ b.garageCap  = (b.garageCap  ?? 0) + 2;
                             b.showroomCap = (b.showroomCap ?? 0) + 2; }
   if(prestigeCount >= 50) b.isLegend    = true;
+  if(prestigeCount >= 15){ b.showroomCap = (b.showroomCap ?? 0) + 1; }
+  if(prestigeCount >= 30){ b.teamUpgradeKeep = Math.max(b.teamUpgradeKeep ?? 0, 0.25); }
+  if(prestigeCount >= 40){ b.dualSpec = true; }
+  if(prestigeCount >= 75){ b.infiniteCostDisc = 1; }
+  if(prestigeCount >= 100){ b.prestigeGainMult = (b.prestigeGainMult ?? 1) * 1.5; }
 }
 
 function applyHeritageBonuses(){
@@ -229,6 +314,21 @@ function applyHeritageBonuses(){
     garageCap:        0,    // bonus slots garage via milestones
     showroomCap:      0,    // bonus slots showroom via milestones
     isLegend:         false,
+    // Nouveaux
+    upgradeCostMult:  1.0,   // com_start_1 : réduction coût upgrades au prestige
+    diagMult:         1.0,   // com_diag_1 : multiplicateur gain diag
+    teamUpgradeKeep:  0,     // milestone P30 : % niveaux équipe conservés
+    dualSpec:         false, // milestone P40 : 2e spécialisation
+    infiniteCostDisc: 0,     // milestone P75 : réduction coût infinis
+    rep_carry:        0,     // rep_carry : % REP conservée au prestige
+    com_upgrade_keep: 0,     // com_upgrade_keep : niveaux outils conservés
+    autoOrderDisc:    0,     // log_auto_order : délai commandes auto
+    autoOrderQtyMult: 1.0,   // log_auto_order : quantité commandes auto
+    expScannerMult:   1.0,   // exp_scanner
+    expTurboBonus:    0,     // exp_turbo
+    expChefMalusRed:  0,     // exp_chef : réduction malus chef
+    expInfiniteBonus: 0,     // exp_infinite
+    keepPrestigeUpgrades: false, // exp_ultimate
     // Logistique
     extraDeliverySlots:  0,
     deliveryDisc:        0,
@@ -276,6 +376,36 @@ function applyHeritageBonuses(){
       b.warehouseUltimateMult = 2.0;
       b.deliveryDisc          += 0.25;
     }
+
+    // ── Perks infinis ────────────────────────────────────────────────────────
+    if(p.id === "meca_infinite")  b.repSpeed  *= Math.pow(1.01, rank);
+    if(p.id === "com_infinite")   b.moneyMult  = (b.moneyMult ?? 1) * Math.pow(1.005, rank);
+    if(p.id === "rep_infinite")   b.repGainMult *= Math.pow(1.01, rank);
+    if(p.id === "log_infinite") {
+      b.deliveryDisc   = Math.min(0.95, (b.deliveryDisc ?? 0) + rank * 0.01);
+      b.warehouseBonus += rank * 10;
+    }
+
+    // ── Commerce nouveaux ────────────────────────────────────────────────────
+    if(p.id === "com_start_1")    b.upgradeCostMult = Math.max(0.85, 1 - rank * 0.03);
+    if(p.id === "com_diag_1")     b.diagMult  *= Math.pow(1.15, rank);
+    if(p.id === "com_upgrade_keep") b.com_upgrade_keep = rank; // niveaux conservés
+
+    // ── Réputation nouveaux ──────────────────────────────────────────────────
+    if(p.id === "rep_carry")      b.rep_carry = rank * 0.05; // 5%/rang = max 25%
+
+    // ── Logistique nouveaux ──────────────────────────────────────────────────
+    if(p.id === "log_auto_order") {
+      b.autoOrderDisc    = Math.min(0.80, rank * 0.10);
+      b.autoOrderQtyMult = Math.pow(1.2, rank);
+    }
+
+    // ── Expertise ────────────────────────────────────────────────────────────
+    if(p.id === "exp_scanner")    b.expScannerMult  = 1.5;
+    if(p.id === "exp_turbo")      b.expTurboBonus   = rank * 0.05;
+    if(p.id === "exp_chef")       b.expChefMalusRed = rank * 0.02;
+    if(p.id === "exp_infinite")   b.expInfiniteBonus = rank * 0.005;
+    if(p.id === "exp_ultimate")   b.keepPrestigeUpgrades = true;
   }
 
   // +1% argent par prestige total (plafonné à +50%)
@@ -306,6 +436,44 @@ function doPrestige(){
   const persistCount      = state.prestigeCount + 1;
   const persistSpent      = state.heritageSpent;
   const persistGarageName = state.garageName;
+
+  // ── rep_carry : conserver une partie de la REP ──────────────────────────
+  const repCarryPct  = b.rep_carry ?? 0;
+  const persistedRep = Math.floor((state.rep ?? 0) * repCarryPct);
+
+  // ── com_upgrade_keep : conserver niveaux upgrades Outils ────────────────
+  const keepLvls = Math.floor(b.com_upgrade_keep ?? 0);
+  const toolsKeep = {};
+  if(keepLvls > 0){
+    state.upgrades.filter(u => u.tab === "tools").forEach(u => {
+      if(u.lvl > 0) toolsKeep[u.id] = Math.min(u.lvl, keepLvls);
+    });
+  }
+
+  // ── teamUpgradeKeep (P30) : conserver 25% niveaux équipe ────────────────
+  const teamKeepPct = b.teamUpgradeKeep ?? 0;
+  const teamKeep = {};
+  if(teamKeepPct > 0){
+    state.upgrades.filter(u => u.tab === "team").forEach(u => {
+      if(u.lvl > 0) teamKeep[u.id] = Math.floor(u.lvl * teamKeepPct);
+    });
+  }
+
+  // ── exp_ultimate : conserver les upgrades prestige débloqués ────────────
+  const PRESTIGE_UPGRADE_IDS = [
+    "scanner_pro","cle_dynamometrique","turbocompresseur",
+    "vendeur_expert","ia_diagnostic","chef_atelier",
+    "reseau_national","holding_auto","galerie_marchande","extension_atelier"
+  ];
+  const prestigeUpgradesKeep = {};
+  if(b.keepPrestigeUpgrades){
+    state.upgrades.filter(u => PRESTIGE_UPGRADE_IDS.includes(u.id)).forEach(u => {
+      if(u.lvl > 0) prestigeUpgradesKeep[u.id] = u.lvl;
+    });
+  }
+
+  // ── dualSpec (P40) : conserver la 2e spécialisation ────────────────────
+  const persistSpec2 = b.dualSpec ? (state.specialization2 ?? null) : null;
   const persistTotalMoney = state.totalMoneyEarned ?? 0;
   const persistTotalRep   = state.totalRepairs ?? 0;
   const persistTotalAna   = state.totalAnalyses ?? 0;
@@ -318,7 +486,20 @@ function doPrestige(){
 
   // Reset du state (même structure que state initial)
   const baseUpgrades = JSON.parse(JSON.stringify(
-    state.upgrades.map(u => ({ ...u, lvl:0, cost: getBaseUpgradeCost(u.id) }))
+    state.upgrades.map(u => {
+      const baseCost = getBaseUpgradeCost(u.id);
+      // Niveaux conservés selon les perks actifs
+      const keptTools   = toolsKeep[u.id]   ?? 0;
+      const keptTeam    = teamKeep[u.id]     ?? 0;
+      const keptPrestige = prestigeUpgradesKeep[u.id] ?? 0;
+      const keptLvl     = Math.max(keptTools, keptTeam, keptPrestige);
+      // Recalculer le coût en tenant compte des niveaux déjà achetés
+      let cost = baseCost;
+      for(let i = 0; i < keptLvl; i++) cost = Math.ceil(cost * (UPGRADE_MULT[u.id] ?? 1.25));
+      // Appliquer la réduction de coût (com_start_1)
+      cost = Math.round(cost * (b.upgradeCostMult ?? 1.0));
+      return { ...u, lvl: keptLvl, cost: Math.max(baseCost, cost) };
+    })
   ));
 
   // Les bonuses sont déjà appliqués en début de fonction
@@ -334,7 +515,7 @@ function doPrestige(){
     showroomCap:       3 + (b.showroomCap ?? 0),
     money:             Math.round((100 + b.startMoney) * (b.moneyMult ?? 1.0)),
     moneyPerSec:       b.passiveBonus,
-    rep:               0,
+    rep:               persistedRep,  // rep_carry : % REP conservée
     carsSold:          0,
     diagReward:        1 + b.diagBonus,
     repairClick:       0.5 + b.clickBonus,
@@ -367,6 +548,7 @@ function doPrestige(){
     totalActionClicks:   persistTotalClicks,
     challenges:          persistChallenges,
     specialization:      persistSpecialization,
+    specialization2:     persistSpec2,  // P40 : 2e spécialisation
     sessionStart:        Date.now(),
     // Run stats — remises à 0 au prestige
     runMoneyPassive:   0,
@@ -417,6 +599,10 @@ const UPGRADE_BASE_COSTS = {
   franchise:150000, showroom_slot:35000,
   magasinier:40000, logiciel_stock:80000, slots_livraison:20000,
   etageres:8000, rayonnage:35000, zone_logistique:150000, entrepot_auto:600000,
+  vendeur_expert:1200000, ia_diagnostic:1200000, chef_atelier:900000,
+  scanner_pro:800000, cle_dynamometrique:1000000, turbocompresseur:1200000,
+  reseau_national:500000, holding_auto:2000000,
+  galerie_marchande:300000, extension_atelier:400000,
 };
 function getBaseUpgradeCost(id){ return UPGRADE_BASE_COSTS[id] ?? 100; }
 
@@ -608,7 +794,10 @@ talentListEl.addEventListener("pointerdown", (e) => {
   }
 
   applyTalentEffects();
-  renderAll(true, true);
+  // Forcer le re-render immédiat du panel talents (pas via le tick, pour éviter le délai visuel)
+  renderTalentsUI();
+  _needsFullRender    = true;
+  _needsUpgradeRender = true;
 });
 
 function openTalents(){

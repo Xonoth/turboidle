@@ -15,7 +15,7 @@
 
 // Version courante du format de save.
 // À incrémenter à chaque changement de schéma (ajout/renommage de champ).
-const SAVE_VERSION = 7;
+const SAVE_VERSION = 9;
 
 // ─── buildSaveSnapshot ───────────────────────────────────────────────────────
 // Sérialise l'état courant du jeu en un objet JSON pur.
@@ -76,6 +76,7 @@ function buildSaveSnapshot() {
     // ── File d'attente & showroom ──────────────────────────────────────────
     queue:    state.queue    ?? [],
     active:   state.active   ?? null,
+    actives:  (state.actives ?? []).filter(Boolean), // slots Chef d'Atelier
     showroom: state.showroom ?? [],
 
     // ── Prestige & héritage ────────────────────────────────────────────────
@@ -96,6 +97,7 @@ function buildSaveSnapshot() {
     // ── Défis journaliers ──────────────────────────────────────────────────
     challenges:      state.challenges      ?? null,
     specialization:  state.specialization  ?? null,
+    specialization2: state.specialization2 ?? null,
 
     // ── Flags internes ─────────────────────────────────────────────────────
     _hasSaved: true,
@@ -165,6 +167,13 @@ function migrateSaveSnapshot(raw) {
     data.v = 7;
   }
 
+  // ── v8 → v9 : slots réparation simultanée + nouveaux perks héritage ────────
+  if(data.v < 9) {
+    data.actives        = data.actives        ?? [];
+    data.specialization2 = data.specialization2 ?? null;
+    data.v = 9;
+  }
+
   return data;
 }
 
@@ -231,6 +240,7 @@ function applySaveSnapshot(raw) {
   // 7. File d'attente, voiture active, showroom
   state.queue    = data.queue    ?? [];
   state.active   = data.active   ?? null;
+  state.actives  = data.actives  ?? [];  // slots Chef d'Atelier
   state.showroom = data.showroom ?? [];
 
   // 8. Prestige & héritage
@@ -248,7 +258,8 @@ function applySaveSnapshot(raw) {
   // 10. Succès
   state.achievements = data.achievements ?? {};
   state.challenges     = data.challenges     ?? null;
-  state.specialization = data.specialization ?? null;
+  state.specialization  = data.specialization  ?? null;
+  state.specialization2 = data.specialization2 ?? null;
 
   // 11. Flags internes
   state._hasSaved = data._hasSaved ?? false;

@@ -378,6 +378,29 @@ const ACHIEVEMENTS = [
   // ── SESSIONS LONGUES ─────────────────────────────────
   { id:"session_24h",     cat:"Divers",       icon:"🌙", name:"Nuit Blanche",              desc:"Jouer 24 heures sans interruption",                         cond:s=>Date.now()-(s.sessionStart??Date.now())>=86400000,   reward:{rep:0,  money:50000,   talent:1} },
   { id:"session_100h",    cat:"Divers",       icon:"🏆", name:"Vétéran",                   desc:"Jouer 100 heures sans interruption",                        cond:s=>Date.now()-(s.sessionStart??Date.now())>=360000000,  reward:{rep:0, money:500000,  talent:2} },
+
+  // ── Nouveaux upgrades Outils prestige ──────────────────────────────────────
+  { id:"up_scanner_pro",     cat:"Améliorations", icon:"🔬", name:"Scanner de Précision",    desc:"Acheter Scanner Pro X",                                    cond:s=>s.upgrades?.find(u=>u.id==="scanner_pro")?.lvl>=1,                                          reward:{rep:500,  money:100000, talent:1} },
+  { id:"up_scanner_max",     cat:"Améliorations", icon:"🔬", name:"Œil de l'Expert",         desc:"Scanner Pro X au niveau maximum (niv.3)",                  cond:s=>s.upgrades?.find(u=>u.id==="scanner_pro")?.lvl>=3,                                          reward:{rep:2000, money:500000, talent:2} },
+  { id:"up_cle_dyna",        cat:"Améliorations", icon:"🔩", name:"Poigne de Fer",            desc:"Acheter la Clé Dynamométrique",                            cond:s=>s.upgrades?.find(u=>u.id==="cle_dynamometrique")?.lvl>=1,                                   reward:{rep:500,  money:150000, talent:1} },
+  { id:"up_turbo",           cat:"Améliorations", icon:"🚀", name:"Boost Turbo",              desc:"Acheter le Turbocompresseur",                              cond:s=>s.upgrades?.find(u=>u.id==="turbocompresseur")?.lvl>=1,                                     reward:{rep:500,  money:150000, talent:1} },
+  { id:"up_turbo_5",         cat:"Améliorations", icon:"🚀", name:"Mécanicien Supersonique",  desc:"Turbocompresseur niveau 5",                                cond:s=>s.upgrades?.find(u=>u.id==="turbocompresseur")?.lvl>=5,                                     reward:{rep:3000, money:800000, talent:3} },
+
+  // ── Nouveaux upgrades Équipe prestige ───────────────────────────────────────
+  { id:"up_vendeur_expert",  cat:"Améliorations", icon:"🏆", name:"Force de Vente",           desc:"Acheter le Vendeur Expert",                                cond:s=>s.upgrades?.find(u=>u.id==="vendeur_expert")?.lvl>=1,                                       reward:{rep:800,  money:200000, talent:1} },
+  { id:"up_ia_diag",         cat:"Améliorations", icon:"🤖", name:"Intelligence Artificielle",desc:"Acheter l'IA Diagnostic",                                  cond:s=>s.upgrades?.find(u=>u.id==="ia_diagnostic")?.lvl>=1,                                        reward:{rep:800,  money:200000, talent:1} },
+  { id:"up_chef_atelier",    cat:"Améliorations", icon:"👑", name:"Chef des Chefs",           desc:"Acheter le Chef d'Atelier",                                cond:s=>s.upgrades?.find(u=>u.id==="chef_atelier")?.lvl>=1,                                         reward:{rep:1000, money:300000, talent:1} },
+  { id:"up_chef_max",        cat:"Améliorations", icon:"👑", name:"Usine à Réparer",          desc:"Chef d'Atelier au niveau maximum (niv.5)",                 cond:s=>s.upgrades?.find(u=>u.id==="chef_atelier")?.lvl>=5,                                         reward:{rep:5000, money:1500000,talent:3} },
+
+  // ── Nouveaux upgrades Affaires prestige ─────────────────────────────────────
+  { id:"up_reseau_nat",      cat:"Améliorations", icon:"💼", name:"Expansion Nationale",      desc:"Acheter le Réseau National",                               cond:s=>s.upgrades?.find(u=>u.id==="reseau_national")?.lvl>=1,                                      reward:{rep:600,  money:200000, talent:1} },
+  { id:"up_holding",         cat:"Améliorations", icon:"🏦", name:"Magnat de l'Auto",         desc:"Acheter la Holding Automobile",                            cond:s=>s.upgrades?.find(u=>u.id==="holding_auto")?.lvl>=1,                                         reward:{rep:1500, money:500000, talent:2} },
+  { id:"up_galerie_max",     cat:"Améliorations", icon:"🏬", name:"Empire du Showroom",       desc:"Galerie Marchande au niveau maximum (niv.4)",              cond:s=>s.upgrades?.find(u=>u.id==="galerie_marchande")?.lvl>=4,                                    reward:{rep:2000, money:600000, talent:2} },
+  { id:"up_ext_atelier_max", cat:"Améliorations", icon:"🔧", name:"Maître des Lieux",         desc:"Extension Atelier au niveau maximum (niv.4)",              cond:s=>s.upgrades?.find(u=>u.id==="extension_atelier")?.lvl>=4,                                    reward:{rep:2000, money:600000, talent:2} },
+
+  // ── Succès combinés ──────────────────────────────────────────────────────────
+  { id:"combo_arsenal",      cat:"Défis",         icon:"🎯", name:"Arsenal Complet",          desc:"Posséder Scanner Pro X + Clé Dynamométrique + Turbocompresseur",cond:s=>s.upgrades?.find(u=>u.id==="scanner_pro")?.lvl>=1&&s.upgrades?.find(u=>u.id==="cle_dynamometrique")?.lvl>=1&&s.upgrades?.find(u=>u.id==="turbocompresseur")?.lvl>=1, reward:{rep:3000, money:1000000,talent:3} },
+  { id:"combo_pdg",          cat:"Défis",         icon:"👑", name:"PDG",                      desc:"Posséder Réseau National + Holding + Galerie Marchande + Extension Atelier", cond:s=>["reseau_national","holding_auto","galerie_marchande","extension_atelier"].every(id=>s.upgrades?.find(u=>u.id===id)?.lvl>=1),                              reward:{rep:5000, money:2000000,talent:4} },
 ];
 
 // State des succès (débloqués)

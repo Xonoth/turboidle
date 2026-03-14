@@ -86,27 +86,37 @@ const state = {
     { id:"toolbox", tab:"tools", icon:"🧰", name:"Caisse à Outils",      lvl:0, desc:"+0.05 Puissance Répa. Clic", cost:268 },
     { id:"obd",     tab:"tools", icon:"🔎", name:"Scanner OBD Basique",   lvl:0, desc:"+10€ par diag", cost:337 },
     { id:"impact",  tab:"tools", icon:"⚡", name:"Perceuse Pneumatique",  lvl:0, desc:"+0.08 Puissance Répa. Clic", cost:800 },
-    { id:"nego",    tab:"deals", icon:"🧾", name:"Formation Négociation", lvl:0, desc:"+5% valeur de vente", cost:1000 },
     { id:"comp",    tab:"tools", icon:"🌀", name:"Compresseur Pro",       lvl:0, desc:"+10% Vitesse Réparation", cost:3500 },
-    { id:"lift",    tab:"deals", icon:"🅿️", name:"Agrandissement Garage", lvl:0, desc:"+1 Emplacement de garage", cost:5000, maxLvl:5 },
     { id:"impact2", tab:"tools", icon:"🔧", name:"Pistolet à Choc",       lvl:0, desc:"+0.12 Puissance Répa. Clic", cost:7500 },
-    { id:"diagpro", tab:"tools", icon:"🧠", name:"Station Diag Pro",      lvl:0, desc:"+40€ par diag", cost:12000 },
+    { id:"diagpro",         tab:"tools", icon:"🧠", name:"Station Diag Pro",         lvl:0, desc:"+40€ par diag",                                                                                               cost:12000   },
+    { id:"scanner_pro",      tab:"tools", icon:"🔬", name:"Scanner Pro X",          lvl:0, desc:"Bonus diag selon le tier de la voiture · F=+15€ · S=+800€ · SSS+=+6000€ (×rang) · 🔒 Prestige 3",              cost:800000,  maxLvl:3 },
+    { id:"cle_dynamometrique",tab:"tools", icon:"🔩", name:"Clé Dynamométrique",     lvl:0, desc:"+0.5s retirées par clic par rang · 🔒 Prestige 4",                                                              cost:1000000         },
+    { id:"turbocompresseur", tab:"tools", icon:"🚀", name:"Turbocompresseur",        lvl:0, desc:"+15% vitesse de réparation par rang (clic + auto) · 🔒 Prestige 5",                                             cost:1200000         },
 
     // ÉQUIPE
     { id:"stagiaire",        tab:"team", icon:"🧑‍🔧", name:"Stagiaire Accueil",    lvl:0, desc:"Diagnostique auto toutes les 12s (min 6s au niv.max)",                    cost:15000,  maxLvl:10 },
     { id:"receptionnaire",   tab:"team", icon:"📋",    name:"Réceptionnaire",        lvl:0, desc:"Accélère le diagnostic auto jusqu'à 1s (prérequis : Stagiaire niv.10)", cost:120000, maxLvl:10 },
     { id:"vendeur",          tab:"team", icon:"👔",    name:"Vendeur Junior",         lvl:0, desc:"Vend auto toutes les 15s (min 8s au niv.max)",                          cost:25000,  maxLvl:10 },
     { id:"vendeur_confirme", tab:"team", icon:"🤵",    name:"Vendeur Confirmé",       lvl:0, desc:"Accélère la vente auto jusqu'à 1s (prérequis : Vendeur Junior niv.10)", cost:502687, maxLvl:10 },
+    { id:"vendeur_expert",   tab:"team", icon:"🏆",    name:"Vendeur Expert",         lvl:0, desc:"−0.1s au plancher de vente auto par rang (min 0.5s) · 🔒 Prestige 5 · Vendeur Confirmé max", cost:1200000, maxLvl:5 },
+    { id:"ia_diagnostic",    tab:"team", icon:"🤖",    name:"IA Diagnostic",          lvl:0, desc:"−0.1s au plancher de diagnostic auto par rang (min 0.5s) · 🔒 Prestige 5 · Réceptionnaire max", cost:1200000, maxLvl:5 },
+    { id:"chef_atelier",     tab:"team", icon:"👑",    name:"Chef d'Atelier",         lvl:0, desc:"+1 slot de réparation simultanée par rang (max 5) · Chaque slot supplémentaire subit −10% de vitesse par position · 🔒 Prestige 7", cost:900000, maxLvl:5 },
     { id:"apprenti",         tab:"team", icon:"🔩",    name:"Apprenti Mécanicien",   lvl:0, desc:"+0.15s/s de réparation auto par rang",                                  cost:12000 },
     { id:"mecanicien",       tab:"team", icon:"🛠️",   name:"Mécanicien",             lvl:0, desc:"+0.5s/s de réparation auto par rang",                                   cost:80000 },
 
     // AFFAIRES — revenus passifs
-    { id:"loc_outils",   tab:"deals", icon:"🔑",  name:"Location d'Outils",      lvl:0, desc:"+2 €/s de revenu passif",   cost:6000 },
-    { id:"contrat_taxi", tab:"deals", icon:"🚕",  name:"Contrat Taxi Local",      lvl:0, desc:"+5 €/s de revenu passif",   cost:8000 },
+    { id:"loc_outils",        tab:"deals", icon:"🔑",  name:"Location d'Outils",      lvl:0, desc:"+2 €/s de revenu passif",                                                  cost:6000 },
+    { id:"contrat_taxi",      tab:"deals", icon:"🚕",  name:"Contrat Taxi Local",      lvl:0, desc:"+5 €/s de revenu passif",                                                  cost:8000 },
     { id:"assurance",    tab:"deals", icon:"📋",  name:"Partenariat Assurance",   lvl:0, desc:"+10 €/s de revenu passif",  cost:20000 },
     { id:"atelier_nuit", tab:"deals", icon:"🌙",  name:"Atelier de Nuit",         lvl:0, desc:"+20 €/s de revenu passif",  cost:50000 },
-    { id:"franchise",    tab:"deals", icon:"🏢",  name:"Franchise Régionale",     lvl:0, desc:"+50 €/s de revenu passif",  cost:150000 },
-    { id:"showroom_slot",tab:"deals", icon:"🖼️", name:"Extension Showroom",      lvl:0, desc:"+2 emplacements showroom (max 4 achats → 11 max)", cost:35000, maxLvl:4 },
+    { id:"franchise",         tab:"deals", icon:"🏢",  name:"Franchise Régionale",     lvl:0, desc:"+50 €/s de revenu passif",                                                  cost:150000 },
+    { id:"reseau_national",   tab:"deals", icon:"💼",  name:"Réseau National",          lvl:0, desc:"+100 €/s de revenu passif · 🔒 Prestige 2",                                  cost:500000 },
+    { id:"holding_auto",      tab:"deals", icon:"🏦",  name:"Holding Automobile",       lvl:0, desc:"+250 €/s de revenu passif · 🔒 Prestige 4",                                  cost:2000000 },
+    { id:"showroom_slot",     tab:"deals", icon:"🖼️", name:"Extension Showroom",       lvl:0, desc:"+2 emplacements showroom (max 4 achats → 11 max)",                           cost:35000,  maxLvl:4 },
+    { id:"galerie_marchande", tab:"deals", icon:"🏬",  name:"Galerie Marchande",        lvl:0, desc:"+2 emplacements showroom par rang · 🔒 Prestige 2 · Extension Showroom max", cost:300000, maxLvl:4 },
+    { id:"nego",              tab:"deals", icon:"🧾",  name:"Formation Négociation",    lvl:0, desc:"+5% valeur de vente",                                                        cost:1000 },
+    { id:"lift",              tab:"deals", icon:"🅿️", name:"Agrandissement Garage",    lvl:0, desc:"+1 Emplacement de garage",                                                   cost:5000,   maxLvl:5 },
+    { id:"extension_atelier", tab:"deals", icon:"🔧",  name:"Extension Atelier",        lvl:0, desc:"+1 emplacement garage par rang · 🔒 Prestige 3 · Agrandissement Garage max", cost:400000, maxLvl:4 },
 
     // PIÈCES DÉTACHÉES
     { id:"magasinier",      tab:"stock", icon:"📦", name:"Magasinier",      lvl:0, desc:"-20% délai livraison par rang",                                               cost:40000, maxLvl:3 },
@@ -373,7 +383,7 @@ function computeTalentEffects(){
 }
 
 function calcDealsPassive(){
-  const rates = { loc_outils:2, contrat_taxi:5, assurance:10, atelier_nuit:20, franchise:50 };
+  const rates = { loc_outils:2, contrat_taxi:5, assurance:10, atelier_nuit:20, franchise:50, reseau_national:100, holding_auto:250 };
   let total = 0;
   for(const [id, rate] of Object.entries(rates)){
     const u = getUpgrade(id);
@@ -436,6 +446,8 @@ if(!state.manualOrders)      state.manualOrders      = 0;  // commandes manuelle
 if(!state.challenges)        state.challenges        = null;
 if(!state.sessionStart)      state.sessionStart      = Date.now();
 if(!state.specialization)    state.specialization    = null;
+if(state.specialization2 === undefined) state.specialization2 = null;
+if(state._isAutoOrder === undefined)    state._isAutoOrder    = false;
 // Effets de spécialisation (recalculés à chaque applySpecializationEffects)
 if(!state.specSpeedMult)         state.specSpeedMult         = 1.0;
 if(!state.specAutoMult)          state.specAutoMult          = 1.0;
@@ -565,12 +577,40 @@ statsBackdrop.addEventListener("click", closeStats);
 // =====================
 // GAMEPLAY HELPERS
 // =====================
+
+// Nombre de slots de réparation simultanée (Chef d'Atelier)
+function getActiveRepairSlots(){
+  const chefLvl = getUpgrade("chef_atelier")?.lvl || 0;
+  return 1 + chefLvl; // 1 slot de base + 1 par rang
+}
+
+// Malus de vitesse pour un slot donné (0-indexé : slot 0 = pas de malus)
+function getSlotSpeedMalus(slotIndex){
+  const baseRed = state.heritageBonuses?.expChefMalusRed ?? 0; // exp_chef : -2%/rang
+  const malus = Math.max(0, slotIndex * 0.10 - baseRed * slotIndex);
+  return Math.max(0.1, 1 - malus); // plancher 10% pour éviter malus 0 ou négatif
+}
+
 function tryStartNextRepair(){
-  if(state.active) return;
-  const next = state.queue.shift();
-  if(!next) return;
-  state.active = next;
-  _activeJustStarted = true; // V1 — animation d'entrée dans le slot actif
+  const slots = getActiveRepairSlots();
+  // Remplir state.active (slot 0)
+  if(!state.active){
+    const next = state.queue.shift();
+    if(next){
+      state.active = next;
+      _activeJustStarted = true;
+    }
+  }
+  // Remplir state.actives[] (slots 1…N-1)
+  if(!state.actives) state.actives = [];
+  for(let i = 0; i < slots - 1; i++){
+    if(!state.actives[i]){
+      const next = state.queue.shift();
+      if(next) state.actives[i] = next;
+    }
+  }
+  // Nettoyer les slots désactivés si le niveau a baissé (prestige etc.)
+  state.actives = state.actives.slice(0, slots - 1);
 }
 
 // Temps de réparation estimé en tenant compte de tous les multiplicateurs actifs
@@ -585,6 +625,10 @@ function calcEstimatedRepairTime(car){
 
 function calcSaleValue(car){
   const bonus = 1 + state.saleBonusPct + (state.talentSaleBonus ?? 0);
+  // Boost REP temporaire du Marché Héritage
+  if(state._heritageRepBoost && Date.now() > state._heritageRepBoost.until){
+    state._heritageRepBoost = null; // expiré
+  }
   // Spécialisation : multiplicateur global de vente
   const specSale = state.specSaleMult ?? 1.0;
   // Spécialisation Logistique : bonus pièces amplifié
@@ -604,24 +648,24 @@ function calcSaleValue(car){
   return Math.round(car.baseValue * bonus * specSale * partsMult * rareMult * saleMult * warehouseBonus);
 }
 
-function finishRepair(){
-  state._lastRepairedTier = state.active.tier;
+function finishRepair(slotIndex = 0){
+  const car = slotIndex === 0 ? state.active : state.actives?.[slotIndex - 1];
+  if(!car) return;
+
+  state._lastRepairedTier = car.tier;
   const cap = getShowroomCap();
   if(state.showroom.length >= cap){
     return;
   }
 
-  // Consommer les pièces et enregistrer la qualité sur la voiture
-  const car = state.active;
+  // Consommer les pièces
   if(car.failure?.parts?.length){
     const avgQuality = consumeParts(car.failure.parts, car);
     if(avgQuality !== null){
       car.partsQuality = avgQuality;
-      // Récupère le fournisseur de la première pièce utilisée
       const firstPart = car.failure.parts[0];
       car.partsSupplier = state.parts?.[firstPart]?.supplier ?? null;
     } else {
-      // Pièce manquante → qualité pénalisée
       car.partsQuality = 2.5;
       car.partsSupplier = null;
     }
@@ -629,10 +673,14 @@ function finishRepair(){
 
   state.showroom.unshift(car);
   _showroomJustAdded = true;
-  state.active = null;
+
+  // Libérer le slot
+  if(slotIndex === 0) state.active = null;
+  else state.actives[slotIndex - 1] = null;
+
   state.totalRepairs = (state.totalRepairs ?? 0) + 1;
 
-  // repair_bonus_1 : bonus fixe par réparation, amplifié par repair_mult_1
+  // Bonus réparation (talent repair_bonus_1)
   const rb = (state.talentRepairBonus ?? 0);
   if(rb > 0){
     const gain = Math.round(rb * (state.talentRepairMult ?? 1.0));
@@ -642,16 +690,15 @@ function finishRepair(){
   }
 
   tryStartNextRepair();
-  // Ne pas renderAll pendant le catchup offline (sera fait une seule fois après)
   if(!_isOfflineCatchup) _needsFullRender = true;
 }
 
-function applyRepairTime(seconds){
-  if(!state.active) return;
-
-  state.active.timeRemaining -= seconds;
-  if(state.active.timeRemaining <= 0){
-    finishRepair();
+function applyRepairTime(seconds, slotIndex = 0){
+  const car = slotIndex === 0 ? state.active : state.actives?.[slotIndex - 1];
+  if(!car) return;
+  car.timeRemaining -= seconds;
+  if(car.timeRemaining <= 0){
+    finishRepair(slotIndex);
   }
 }
 
@@ -673,7 +720,8 @@ btnAnalyze.addEventListener("click", () => {
   if(now - _lastAnalyzeClick < CONFIG.CLICK_COOLDOWN_MS) return; // trop rapide = ignoré
   _lastAnalyzeClick = now;
 
-  const occupied = (state.active ? 1 : 0) + state.queue.length;
+  const activeCount = (state.active ? 1 : 0) + (state.actives?.filter(Boolean).length ?? 0);
+  const occupied = activeCount + state.queue.length;
   if (occupied >= state.garageCap) return;
 
   const diagGain = Math.round((state.diagReward + (state.talentDiagBonus ?? 0)) * (state.talentDiagMult ?? 1));
@@ -682,6 +730,17 @@ btnAnalyze.addEventListener("click", () => {
     state.totalMoneyEarned = (state.totalMoneyEarned ?? 0) + diagGain;
     state.runMoneyDiag     = (state.runMoneyDiag     ?? 0) + diagGain;
     spawnFloatText("+" + formatMoney(diagGain), "diag", document.getElementById("btnAnalyze"));
+  }
+  // Scanner Pro X : bonus selon le tier de la voiture qui vient d'être diagnostiquée
+  const newCar = state.queue[state.queue.length]; // pas encore push
+  // On crée la voiture d'abord pour connaître son tier
+  const diagCar = makeCar();
+  const scanBonus = calcScannerProBonus(diagCar);
+  if(scanBonus > 0){
+    state.money += scanBonus;
+    state.totalMoneyEarned = (state.totalMoneyEarned ?? 0) + scanBonus;
+    state.runMoneyDiag     = (state.runMoneyDiag     ?? 0) + scanBonus;
+    spawnFloatText("+" + formatMoney(scanBonus) + " 🔬", "diag", document.getElementById("btnAnalyze"));
   }
   state.totalAnalyses = (state.totalAnalyses ?? 0) + 1;
   // diag_rep_1 : +2 REP par diag manuel par rang
@@ -694,7 +753,7 @@ btnAnalyze.addEventListener("click", () => {
   }
   // Défi actions : compter le diag (place était disponible, sinon on aurait return plus haut)
   state.totalActionClicks = (state.totalActionClicks ?? 0) + 1;
-  state.queue.push(makeCar());
+  state.queue.push(diagCar);
   tryStartNextRepair();
   _needsFullRender = true;
 });
@@ -704,18 +763,30 @@ btnRepairClick.addEventListener("click", () => {
   if(now - _lastRepairClick < CONFIG.CLICK_COOLDOWN_MS) return;
   _lastRepairClick = now;
 
-  const mult = (state.speedMult ?? 1) * (state.talentSpeedMult ?? 1);
-  const clickAmt = (state.repairClick + (state.talentClickBonus ?? 0)) * mult;
-  applyRepairTime(clickAmt);
-  state.totalClickRepairs = (state.totalClickRepairs ?? 0) + 1;
-  // Défi actions : compter si la réparation est effective (atelier occupé)
+  const baseClick = (state.repairClick + (state.talentClickBonus ?? 0));
+  const baseMult  = (state.speedMult ?? 1) * (state.talentSpeedMult ?? 1);
+
+  // Slot 0 — principal, pas de malus
   if(state.active){
+    applyRepairTime(baseClick * baseMult, 0);
+    state.totalClickRepairs = (state.totalClickRepairs ?? 0) + 1;
     state.totalActionClicks = (state.totalActionClicks ?? 0) + 1;
+  }
+
+  // Slots supplémentaires — avec malus de position
+  if(state.actives){
+    for(let i = 0; i < state.actives.length; i++){
+      if(state.actives[i]){
+        const malus = getSlotSpeedMalus(i + 1);
+        applyRepairTime(baseClick * baseMult * malus, i + 1);
+        state.totalClickRepairs = (state.totalClickRepairs ?? 0) + 1;
+      }
+    }
   }
 
   // Animation ripple + shake
   btnRepairClick.classList.remove("clicked");
-  void btnRepairClick.offsetWidth; // reflow pour relancer
+  void btnRepairClick.offsetWidth;
   btnRepairClick.classList.add("clicked");
   setTimeout(() => btnRepairClick.classList.remove("clicked"), 350);
 
@@ -753,7 +824,8 @@ showroomListEl.addEventListener("click", (e) => {
     spawnFloatText("+" + formatMoney(saleValue), "money", btnPos);
   }
   const tierData = TIERS[car.tier] || TIERS["F"];
-  const repMult = state.heritageBonuses?.repGainMult ?? 1.0;
+  const repMult = (state.heritageBonuses?.repGainMult ?? 1.0)
+    * (state._heritageRepBoost && Date.now() < state._heritageRepBoost.until ? state._heritageRepBoost.mult : 1.0);
   const repGain = Math.round(tierData.repGain * repMult * (state.specRepMult ?? 1.0) * (1 + (state.talentRepGainBonus ?? 0)));
   if(isFinite(repGain)) {
     state.rep += repGain;
@@ -776,12 +848,68 @@ showroomListEl.addEventListener("click", (e) => {
 const UPGRADE_MULT = {
   manual:1.25, toolbox:1.25, obd:1.25, impact:1.25, comp:1.25, impact2:1.25, diagpro:1.25,
   nego:1.25, lift:1.25,
+  scanner_pro:1.80, cle_dynamometrique:1.60, turbocompresseur:1.70,
   loc_outils:1.28, contrat_taxi:1.28, assurance:1.28, atelier_nuit:1.30, franchise:1.32,
+  reseau_national:1.35, holding_auto:1.40,
   showroom_slot:1.30,
+  galerie_marchande:2.00, extension_atelier:2.00,
   stagiaire:1.35, receptionnaire:1.40, vendeur:1.35, vendeur_confirme:1.40,
+  vendeur_expert:2.00, ia_diagnostic:2.00, chef_atelier:2.00,
   apprenti:1.30, mecanicien:1.35,
   magasinier:4.00, logiciel_stock:4.00, slots_livraison:2.00,
   etageres:2.00, rayonnage:3.00, zone_logistique:4.00, entrepot_auto:5.00,
+};
+
+
+// =====================
+// UPGRADE TAGS — pour le système de filtre
+// =====================
+const UPGRADE_TAGS = {
+  // Outils
+  manual:       ["diagnostic"],
+  toolbox:      ["vitesse"],
+  obd:          ["diagnostic"],
+  impact:       ["vitesse"],
+  nego:         ["vente"],
+  comp:         ["vitesse"],
+  lift:         ["vitesse"],
+  impact2:      ["vitesse"],
+  diagpro:      ["diagnostic"],
+  showroom_slot:["vente"],
+  scanner_pro:        ["diagnostic"],
+  cle_dynamometrique: ["vitesse"],
+  turbocompresseur:   ["vitesse"],
+  // Équipe
+  stagiaire:        ["diagnostic"],
+  receptionnaire:   ["diagnostic"],
+  vendeur:          ["vente"],
+  vendeur_confirme: ["vente"],
+  vendeur_expert:   ["vente"],
+  ia_diagnostic:    ["diagnostic"],
+  chef_atelier:     ["vitesse"],
+  apprenti:         ["vitesse"],
+  mecanicien:       ["vitesse"],
+  // Contrats
+  loc_outils:   ["argent"],
+  contrat_taxi: ["argent"],
+  assurance:    ["argent"],
+  atelier_nuit: ["argent"],
+  franchise:    ["argent"],
+  reseau_national: ["argent"],
+  holding_auto:    ["argent"],
+  nego:            ["vente"],
+  showroom_slot:   ["vente"],
+  galerie_marchande: ["vente"],
+  lift:              ["vitesse"],
+  extension_atelier: ["vitesse"],
+  // Stock
+  magasinier:       ["stock"],
+  logiciel_stock:   ["stock"],
+  slots_livraison:  ["stock"],
+  etageres:         ["stock"],
+  rayonnage:        ["stock"],
+  zone_logistique:  ["stock"],
+  entrepot_auto:    ["stock","vente"],
 };
 
 // L1 — Achat upgrade : après achat, rebuildUpgradeMap() est appelé AVANT applyTalentEffects()
@@ -815,9 +943,14 @@ if(id === "impact2") state.repairClick += 0.12;   // était 0.25 — +0.12/lvl
 // ✅ vente / vitesse / capacité
 if(id === "nego")    state.saleBonusPct += 0.05;
 if(id === "comp")    state.speedMult *= 1.10;
-if(id === "lift")    state.garageCap += 1;
+if(id === "lift")              state.garageCap  += 1;
+if(id === "chef_atelier")      state.garageCap  += 1;
+if(id === "cle_dynamometrique") state.repairClick += 0.5;
+if(id === "turbocompresseur")   state.speedMult  *= 1.15;
 if(id === "diagpro") state.diagReward += 40;
-if(id === "showroom_slot") state.showroomCap = (state.showroomCap ?? 3) + 2;
+if(id === "showroom_slot")    state.showroomCap = (state.showroomCap ?? 3) + 2;
+if(id === "galerie_marchande") state.showroomCap = (state.showroomCap ?? 3) + 2;
+if(id === "extension_atelier") state.garageCap  += 1;
 
 // Équipe auto-repair : on recalcule repairAuto depuis les niveaux
 if(id === "apprenti" || id === "mecanicien") recalcRepairAuto();
@@ -835,7 +968,18 @@ if(id === "apprenti" || id === "mecanicien") recalcRepairAuto();
   _needsFullRender = true;
 });
 
-// ─── recalcUpgradeEffects ─────────────────────────────────────────────────────
+// Bonus Scanner Pro X selon le tier de la voiture diagnostiquée
+const SCANNER_PRO_TIER_BONUS = {
+  "F":15, "E":30, "D":60, "C":120, "B":250, "A":400, "S":800, "SS":1500, "SSS":3000, "SSS+":6000
+};
+// Valeurs × rang (max 3) → niv.3 : F=45, E=90, S=2400, SSS+=18000
+function calcScannerProBonus(car){
+  const lvl = getUpgrade("scanner_pro")?.lvl || 0;
+  if(lvl === 0 || !car) return 0;
+  const base = SCANNER_PRO_TIER_BONUS[car.tier] ?? 0;
+  const scannerMult = state.heritageBonuses?.expScannerMult ?? 1.0;
+  return Math.round(base * lvl * (state.talentDiagMult ?? 1) * scannerMult);
+}
 // Recalcule TOUS les effets dérivés des upgrades depuis leurs niveaux sauvegardés.
 // Appelé après applySaveSnapshot() et après doPrestige().
 // Règle : repart des valeurs de base héritage, puis rejoue chaque upgrade lvl fois.
@@ -843,7 +987,7 @@ function recalcUpgradeEffects(){
   const b = state.heritageBonuses ?? {};
 
   // Repartir des valeurs de base (héritage inclus)
-  state.diagReward   = 1 + (b.diagBonus    ?? 0);
+  state.diagReward   = (1 + (b.diagBonus ?? 0)) * (b.diagMult ?? 1.0);
   state.repairClick  = 0.5 + (b.clickBonus ?? 0);
   state.speedMult    = b.repSpeed           ?? 1.0;
   state.saleBonusPct = b.saleBonus          ?? 0;
@@ -863,7 +1007,12 @@ function recalcUpgradeEffects(){
       case "impact2":      state.repairClick  += 0.12 * lvl; break;
       case "nego":         state.saleBonusPct += 0.05 * lvl; break;
       case "lift":         state.garageCap    += lvl;        break;
-      case "showroom_slot":state.showroomCap  += 2    * lvl; break;
+      case "chef_atelier": state.garageCap    += lvl;        break;
+      case "cle_dynamometrique": state.repairClick += 0.5 * lvl; break;
+      case "turbocompresseur":   state.speedMult  *= Math.pow(1.15 * (1 + (state.heritageBonuses?.expTurboBonus ?? 0)), lvl); break;
+      case "showroom_slot":   state.showroomCap  += 2    * lvl; break;
+      case "galerie_marchande": state.showroomCap += 2    * lvl; break;
+      case "extension_atelier": state.garageCap   += lvl;        break;
       case "comp":
         // speedMult est multiplicatif : (1.10)^lvl
         state.speedMult *= Math.pow(1.10, lvl);
@@ -909,40 +1058,69 @@ function applyTickLogic(dt){
   processOrders(dt);
   processAutoOrders(dt);
 
+  // Réparation — slot principal + slots Chef d'Atelier
+  const slots = getActiveRepairSlots();
+  // Slot 0 : principal (pas de malus)
   if(state.active){
     const partsMult = getPartsSpeedMult(state.active);
     const mult = (state.speedMult ?? 1) * (state.talentSpeedMult ?? 1) * partsMult;
     const secPerSec = (state.repairAuto + (state.talentRepairAuto ?? 0)) * mult;
-    applyRepairTime(secPerSec * dt);
-  } else {
-    tryStartNextRepair();
+    applyRepairTime(secPerSec * dt, 0);
   }
+  // Slots supplémentaires (avec malus de position)
+  if(!state.actives) state.actives = [];
+  for(let i = 0; i < slots - 1; i++){
+    const car = state.actives[i];
+    if(car){
+      const partsMult  = getPartsSpeedMult(car);
+      const malus      = getSlotSpeedMalus(i + 1); // slot 1 = -10%, slot 2 = -20%…
+      const mult = (state.speedMult ?? 1) * (state.talentSpeedMult ?? 1) * partsMult * malus;
+      const secPerSec  = (state.repairAuto + (state.talentRepairAuto ?? 0)) * mult;
+      applyRepairTime(secPerSec * dt, i + 1);
+    }
+  }
+  // Si des slots sont vides, essayer de les remplir
+  tryStartNextRepair();
 
   // --- LOGIQUE D'AUTOMATISATION (sans DOM) ---
   const stagiaireLvl      = getUpgrade("stagiaire")?.lvl      || 0;
   const receptionnaireLvl = getUpgrade("receptionnaire")?.lvl || 0;
+  const iaDiagLvl         = getUpgrade("ia_diagnostic")?.lvl  || 0;
   if(stagiaireLvl > 0){
     autoAnalyzeTimer += dt;
     let delay = Math.max(6, 12 - (stagiaireLvl * 0.6));
     if(receptionnaireLvl > 0) delay = Math.max(1, delay - (receptionnaireLvl * 0.5));
+    // ia_diagnostic : −0.1s au plancher par rang (min 0.5s)
+    if(iaDiagLvl > 0) delay = Math.max(0.5, delay - (iaDiagLvl * 0.1));
     while(autoAnalyzeTimer >= delay){
       autoAnalyzeTimer -= delay;
-      const occupied = (state.active ? 1 : 0) + state.queue.length;
+      const activeCount = (state.active ? 1 : 0) + (state.actives?.filter(Boolean).length ?? 0);
+  const occupied = activeCount + state.queue.length;
       const MAX_QUEUE = state.garageCap * 10; // max 10 voitures en attente par slot
       if(occupied < state.garageCap && state.queue.length < MAX_QUEUE){
         // Logique pure : pas de .click() DOM
+        const autoCar = makeCar();
         const diagGain = Math.round((state.diagReward + (state.talentDiagBonus ?? 0)) * (state.talentDiagMult ?? 1));
         if(isFinite(diagGain) && diagGain > 0){
           state.money += diagGain;
           state.totalMoneyEarned = (state.totalMoneyEarned ?? 0) + diagGain;
           state.runMoneyDiag     = (state.runMoneyDiag     ?? 0) + diagGain;
         }
+        // Scanner Pro X — hors AFK uniquement
+        if(!_isOfflineCatchup){
+          const scanBonus = calcScannerProBonus(autoCar);
+          if(scanBonus > 0){
+            state.money += scanBonus;
+            state.totalMoneyEarned = (state.totalMoneyEarned ?? 0) + scanBonus;
+            state.runMoneyDiag     = (state.runMoneyDiag     ?? 0) + scanBonus;
+          }
+        }
         state.totalAnalyses = (state.totalAnalyses ?? 0) + 1;
         if(state.specialization === "diag" && state.totalAnalyses % 100 === 0){
           state.talentPoints = (state.talentPoints ?? 0) + 1;
           if(!_isOfflineCatchup) showToast("🔍 +1 point talent (100 diagnostics !)");
         }
-        state.queue.push(makeCar());
+        state.queue.push(autoCar);
         tryStartNextRepair();
         _needsFullRender = true;
       }
@@ -951,10 +1129,13 @@ function applyTickLogic(dt){
 
   const vendeurLvl         = getUpgrade("vendeur")?.lvl          || 0;
   const vendeurConfirmeLvl = getUpgrade("vendeur_confirme")?.lvl || 0;
+  const vendeurExpertLvl   = getUpgrade("vendeur_expert")?.lvl   || 0;
   if(vendeurLvl > 0 && state.showroom.length > 0){
     autoSellTimer += dt;
     let delay = Math.max(8, 15 - (vendeurLvl * 0.7));
     if(vendeurConfirmeLvl > 0) delay = Math.max(1, delay - (vendeurConfirmeLvl * 0.7));
+    // vendeur_expert : −0.1s au plancher par rang (min 0.5s)
+    if(vendeurExpertLvl > 0) delay = Math.max(0.5, delay - (vendeurExpertLvl * 0.1));
     while(autoSellTimer >= delay){
       autoSellTimer -= delay;
       if(state.showroom.length > 0){

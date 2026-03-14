@@ -696,6 +696,7 @@ body{
 .garageSlot__status--active{ background:rgba(49,214,255,.1); border:1px solid rgba(49,214,255,.18); color:var(--cyan); }
 .garageSlot__status--wait{   background:rgba(90,171,255,.08); border:1px solid rgba(90,171,255,.15); color:var(--blue); }
 .garageSlot__status--worker{ background:rgba(46,229,157,.08); border:1px solid rgba(46,229,157,.15); color:var(--green); }
+.garageSlot__malus{ font-size:10px; font-weight:800; padding:2px 7px; border-radius:5px; background:rgba(255,140,64,.12); border:1px solid rgba(255,140,64,.25); color:#ff8c40; white-space:nowrap; }
 
 /* ══ TIER BADGE ════════════════════════════════════════════ */
 .tierBadge{
@@ -2927,11 +2928,22 @@ body{
   color: rgba(255,140,64,.85);
   font-weight: 800;
 }
+.prestige__nextReq{
+  font-size: 11px;
+  color: rgba(255,255,255,.3);
+  font-weight: 600;
+  text-align: center;
+  padding: 6px 16px;
+  background: rgba(255,255,255,.02);
+  border: 1px solid rgba(255,255,255,.05);
+  border-radius: 8px;
+  margin: 4px 0;
+}
+.prestige__nextReq span{ color: rgba(49,214,255,.5); }
 
 #prestigeInfo{
   flex-shrink:0;
 }
-
 
 /* ── Onglets prestige ───────────────────────────── */
 .prestigeTabs{
@@ -5865,4 +5877,448 @@ body{
 /* Responsive — drawer plein écran sous 400px */
 @media (max-width: 400px){
   .sideMenu__drawer{ width: 100vw; border-left: none; }
+}
+
+/* ══════════════════════════════════════════════════════════
+   UPGRADE FILTER BAR
+══════════════════════════════════════════════════════════ */
+.upgradeFilterBar{
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-bottom: 1px solid rgba(255,255,255,.05);
+  background: rgba(255,255,255,.02);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  backdrop-filter: blur(8px);
+}
+.upgradeFilterBar__topRow{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+}
+.upgradeFilterBar__toggle{
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 8px;
+  color: rgba(255,255,255,.45);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.upgradeFilterBar__toggle:hover{
+  background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.75);
+}
+.upgradeFilterBar__toggle--open{
+  border-color: rgba(49,214,255,.25);
+  color: #31d6ff;
+  background: rgba(49,214,255,.06);
+}
+.upgradeFilterBar__toggle--active{
+  border-color: rgba(255,200,58,.3);
+  color: #ffc83a;
+}
+.upgradeFilterBar__toggle--open.upgradeFilterBar__toggle--active{
+  border-color: rgba(49,214,255,.3);
+  color: #31d6ff;
+}
+.upgradeFilterBar__dot{
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #ffc83a;
+  box-shadow: 0 0 5px rgba(255,200,58,.6);
+}
+.upgradeFilterBar__reset{
+  background: none;
+  border: 1px solid rgba(255,90,90,.2);
+  border-radius: 7px;
+  color: rgba(255,90,90,.6);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 9px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.upgradeFilterBar__reset:hover{
+  background: rgba(255,90,90,.08);
+  color: #ff5a5a;
+  border-color: rgba(255,90,90,.4);
+}
+.upgradeFilterBar__body{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 12px 10px;
+}
+.upgradeFilterBar__body--hidden{ display: none; }
+.upgradeFilterBar__group{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.upgradeFilterBar__group--right{
+  margin-left: auto;
+}
+.upgradeFilterBtn{
+  padding: 3px 10px;
+  border-radius: 7px;
+  border: 1px solid rgba(255,255,255,.08);
+  background: rgba(255,255,255,.04);
+  color: rgba(255,255,255,.45);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.upgradeFilterBtn:hover{
+  background: rgba(255,255,255,.08);
+  color: rgba(255,255,255,.75);
+  border-color: rgba(255,255,255,.15);
+}
+.upgradeFilterBtn--active{
+  background: rgba(49,214,255,.12);
+  border-color: rgba(49,214,255,.3);
+  color: #31d6ff;
+}
+.upgradeFilterBtn--sort{ min-width: 36px; text-align: center; }
+.upgradeFilter__empty{
+  text-align: center;
+  color: rgba(255,255,255,.3);
+  font-size: 13px;
+  padding: 32px 0;
+  font-style: italic;
+}
+
+/* Icône upgrade cliquable */
+.upgradeIconBtn{
+  cursor: pointer;
+  transition: transform .15s, filter .15s;
+  user-select: none;
+}
+.upgradeIconBtn:hover{
+  transform: scale(1.18);
+  filter: drop-shadow(0 0 6px rgba(49,214,255,.5));
+}
+
+/* ══════════════════════════════════════════════════════════
+   UPGRADE TOOLTIP
+══════════════════════════════════════════════════════════ */
+.upgradeTooltip__overlay{
+  position: fixed;
+  inset: 0;
+  z-index: 10200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity .18s;
+}
+.upgradeTooltip__overlay--in{ opacity: 1; }
+
+.upgradeTooltip__backdrop{
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  backdrop-filter: blur(4px);
+}
+.upgradeTooltip__card{
+  position: relative;
+  z-index: 1;
+  width: min(340px, 92vw);
+  background: linear-gradient(160deg, rgba(10,16,30,.99) 0%, rgba(5,9,18,.99) 100%);
+  border: 1px solid rgba(49,214,255,.18);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 24px 60px rgba(0,0,0,.65), 0 0 40px rgba(49,214,255,.06);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transform: scale(.93) translateY(10px);
+  transition: transform .18s cubic-bezier(.34,1.56,.64,1);
+}
+.upgradeTooltip__overlay--in .upgradeTooltip__card{
+  transform: scale(1) translateY(0);
+}
+.upgradeTooltip__close{
+  position: absolute;
+  top: 12px; right: 12px;
+  width: 26px; height: 26px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 7px;
+  color: rgba(255,255,255,.5);
+  cursor: pointer;
+  font-size: 11px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s;
+}
+.upgradeTooltip__close:hover{ background: rgba(255,255,255,.12); color: #fff; }
+
+.upgradeTooltip__header{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.upgradeTooltip__icon{
+  font-size: 28px;
+  width: 48px; height: 48px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+.upgradeTooltip__name{
+  font-family: var(--font-ui);
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: .5px;
+  color: #fff;
+  margin-bottom: 3px;
+}
+.upgradeTooltip__level{
+  font-size: 11px;
+  color: rgba(255,255,255,.4);
+  font-weight: 600;
+}
+
+.upgradeTooltip__desc{
+  font-size: 12px;
+  color: rgba(255,255,255,.65);
+  line-height: 1.55;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 9px;
+  padding: 10px 12px;
+}
+
+.upgradeTooltip__tags{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.upgradeTooltip__tag{
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 6px;
+  letter-spacing: .3px;
+}
+.upgradeTooltip__tag--vitesse   { background:rgba(49,214,255,.12);  border:1px solid rgba(49,214,255,.25);  color:#31d6ff; }
+.upgradeTooltip__tag--argent    { background:rgba(255,200,58,.10);  border:1px solid rgba(255,200,58,.25);  color:#ffc83a; }
+.upgradeTooltip__tag--vente     { background:rgba(46,229,157,.10);  border:1px solid rgba(46,229,157,.25);  color:#2ee59d; }
+.upgradeTooltip__tag--diagnostic{ background:rgba(167,139,250,.10); border:1px solid rgba(167,139,250,.25); color:#a78bfa; }
+.upgradeTooltip__tag--stock     { background:rgba(255,140,64,.10);  border:1px solid rgba(255,140,64,.25);  color:#ff8c40; }
+
+.upgradeTooltip__progressTrack{
+  height: 5px;
+  border-radius: 4px;
+  background: rgba(255,255,255,.07);
+  overflow: hidden;
+}
+.upgradeTooltip__progressFill{
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #31d6ff, #a78bfa);
+  transition: width .3s ease;
+}
+.upgradeTooltip__progressFill--maxed{ background: #2ee59d; }
+.upgradeTooltip__progressLabel{
+  font-size: 11px;
+  color: rgba(255,255,255,.4);
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.upgradeTooltip__stats{
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.upgradeTooltip__row{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  padding: 6px 10px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 8px;
+}
+.upgradeTooltip__row--maxed{
+  color: #2ee59d;
+  background: rgba(46,229,157,.06);
+  border-color: rgba(46,229,157,.2);
+  font-weight: 700;
+  justify-content: center;
+}
+.upgradeTooltip__rowLabel{ color: rgba(255,255,255,.4); font-weight: 600; }
+.upgradeTooltip__rowVal  { font-weight: 800; color: rgba(255,255,255,.85); }
+.upgradeTooltip__rowVal--ok  { color: #2ee59d; }
+.upgradeTooltip__rowVal--miss{ color: #ff5a5a; }
+.upgradeTooltip__prereq{
+  font-size: 11px;
+  font-weight: 700;
+  color: #ff8c40;
+  background: rgba(255,140,64,.07);
+  border: 1px solid rgba(255,140,64,.2);
+  border-radius: 7px;
+  padding: 5px 10px;
+}
+
+/* Tableau des prochains niveaux dans le tooltip upgrade */
+.upgradeTooltip__tableTitle{
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: rgba(49,214,255,.5);
+  margin-bottom: 6px;
+}
+.upgradeTooltip__tableWrap{
+  overflow-x: auto;
+  border-radius: 9px;
+  border: 1px solid rgba(255,255,255,.07);
+  background: rgba(255,255,255,.02);
+}
+.upgradeTooltip__table{
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+.upgradeTooltip__table thead tr{
+  border-bottom: 1px solid rgba(255,255,255,.07);
+}
+.upgradeTooltip__table th{
+  padding: 6px 10px;
+  text-align: left;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.3);
+}
+.upgradeTooltip__lvlRow{
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  transition: background .12s;
+}
+.upgradeTooltip__lvlRow:last-child{ border-bottom: none; }
+.upgradeTooltip__lvlRow:hover{ background: rgba(255,255,255,.04); }
+.upgradeTooltip__lvlRow--next{ background: rgba(49,214,255,.05); }
+.upgradeTooltip__lvlRow--next td{ color: #fff; }
+.upgradeTooltip__lvlNum{
+  padding: 6px 10px;
+  font-weight: 800;
+  color: rgba(255,255,255,.5);
+  white-space: nowrap;
+}
+.upgradeTooltip__lvlRow--next .upgradeTooltip__lvlNum{ color: #31d6ff; }
+.upgradeTooltip__lvlEffect{
+  padding: 6px 8px;
+  color: rgba(255,255,255,.65);
+  font-weight: 600;
+}
+.upgradeTooltip__lvlCost{
+  padding: 6px 10px;
+  font-weight: 800;
+  text-align: right;
+  white-space: nowrap;
+}
+.upgradeTooltip__lvlCost--ok  { color: #2ee59d; }
+.upgradeTooltip__lvlCost--miss{ color: rgba(255,255,255,.3); }
+
+/* ══════════════════════════════════════════════════════════
+   MARCHÉ HÉRITAGE
+══════════════════════════════════════════════════════════ */
+.hMarket{
+  margin: 20px 0 0;
+  padding: 0;
+  background: rgba(49,214,255,.03);
+  border: 1px solid rgba(49,214,255,.12);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.hMarket__toggle{
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #31d6ff;
+  font-size: 13px;
+  font-weight: 800;
+  transition: background .15s;
+}
+.hMarket__toggle:hover{ background: rgba(49,214,255,.06); }
+.hMarket__toggleSub{
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(49,214,255,.4);
+  letter-spacing: .5px;
+  text-transform: uppercase;
+}
+.hMarket__sub{
+  font-size: 11px;
+  color: rgba(255,255,255,.35);
+  padding: 0 16px 10px;
+}
+.hMarket__grid{
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 16px 14px;
+}
+.hMarketCard{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 10px;
+  transition: background .15s;
+}
+.hMarketCard:hover{ background: rgba(255,255,255,.06); }
+.hMarketCard__icon{ font-size: 22px; flex-shrink:0; }
+.hMarketCard__body{ flex: 1; min-width: 0; }
+.hMarketCard__name{ font-size: 13px; font-weight: 800; color: #fff; }
+.hMarketCard__desc{ font-size: 11px; color: rgba(255,255,255,.4); margin-top: 2px; }
+.hMarketCard__btn{
+  flex-shrink: 0;
+  padding: 5px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(49,214,255,.3);
+  background: rgba(49,214,255,.1);
+  color: #31d6ff;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all .15s;
+}
+.hMarketCard__btn:hover{ background: rgba(49,214,255,.2); }
+.hMarketCard__btn--locked{
+  border-color: rgba(255,255,255,.1);
+  background: rgba(255,255,255,.04);
+  color: rgba(255,255,255,.25);
+  cursor: not-allowed;
+}
+
+/* Perk infini dans l'arbre héritage */
+.heritageCard__infinite{
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: .5px;
+  padding: 3px 0;
 }

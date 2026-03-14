@@ -125,4 +125,32 @@ function applySpecializationEffects() {
   resetSpecEffects(state);
   const spec = getSpecialization(state.specialization ?? null);
   if(spec) spec.apply(state);
+  // P40 — dualSpec : appliquer la 2e spécialisation en plus (effets additifs)
+  if(state.heritageBonuses?.dualSpec && state.specialization2 && state.specialization2 !== state.specialization){
+    const spec2 = getSpecialization(state.specialization2);
+    if(spec2){
+      // Appliquer dans un état temporaire pour extraire les deltas
+      const tmp = {};
+      resetSpecEffects(tmp);
+      spec2.apply(tmp);
+      // Combiner multiplicativement les effets speed/auto/sale/passive/diag/rep
+      state.specSpeedMult        *= (tmp.specSpeedMult        ?? 1.0);
+      state.specAutoMult         *= (tmp.specAutoMult         ?? 1.0);
+      state.specSaleMult         *= (tmp.specSaleMult         ?? 1.0);
+      state.specPassiveMult      *= (tmp.specPassiveMult      ?? 1.0);
+      state.specDiagMult         *= (tmp.specDiagMult         ?? 1.0);
+      state.specRepMult          *= (tmp.specRepMult          ?? 1.0);
+      state.specRepReqMult       *= (tmp.specRepReqMult       ?? 1.0);
+      state.specRareMult         *= (tmp.specRareMult         ?? 1.0);
+      state.specDeliverySlotsMult *= (tmp.specDeliverySlotsMult ?? 1.0);
+      state.specDeliveryDisc     += (tmp.specDeliveryDisc     ?? 0);
+      state.specPartsValueBonus  += (tmp.specPartsValueBonus  ?? 0);
+      // showroomCap : prendre le plus restrictif des deux
+      if(tmp.specShowroomCap !== null && tmp.specShowroomCap !== undefined){
+        state.specShowroomCap = state.specShowroomCap !== null
+          ? Math.min(state.specShowroomCap, tmp.specShowroomCap)
+          : tmp.specShowroomCap;
+      }
+    }
+  }
 }
