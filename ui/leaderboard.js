@@ -17,7 +17,11 @@ async function pushLeaderboard(){
       avatar:             p.avatar  || "🔧",
       country:            p.country || "FR",
       banner:             p.banner  || "#1a2a4a",
-      prestige_count:     state.prestigeCount  ?? 0,
+      title:              p.title              || null,
+      best_tier:          state.bestTier        || null,
+      rep_max:            state.repMax          ?? 0,
+      total_repairs:      state.totalRepairs    ?? 0,
+      prestige_count:     state.prestigeCount   ?? 0,
       garage_level:       state.garageLevel    ?? 1,
       cars_sold:          state.totalCarsSold  ?? 0,
       total_money:        Math.floor(state.totalMoneyEarned ?? 0),
@@ -40,7 +44,7 @@ async function fetchLeaderboard(tab){
 
   const { data, error } = await _supa
     .from("leaderboard")
-    .select("user_id,pseudo,garage_name,avatar,country,banner,prestige_count,garage_level,cars_sold,total_money,achievements_count,updated_at")
+    .select("user_id,pseudo,garage_name,avatar,country,banner,title,best_tier,rep_max,total_repairs,prestige_count,garage_level,cars_sold,total_money,achievements_count,updated_at")
     .order(col, { ascending: false })
     .limit(50);
 
@@ -103,6 +107,13 @@ function renderLeaderboardRows(rows, fmt, col){
             <div class="lbCard__names">
               <div class="lbCard__garage">${r.garage_name || "Garage Turbo"}</div>
               <div class="lbCard__pseudo">${flagHtml} ${r.pseudo || "Mécanicien"} <span class="lbCard__lastseen">· ${lastSeen}</span></div>
+              ${(()=>{
+                const ct = r.title && typeof getTitleById==="function" ? getTitleById(r.title) : null;
+                if(!ct) return "";
+                const isG = ct.color==="linear"||(ct.color||"").includes("gradient");
+                const s   = isG ? `background:linear-gradient(90deg,#ff6b35,#ffc83a,#2ee59d,#31d6ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;` : `color:${ct.color}`;
+                return `<div class="lbCard__title" style="${s};font-size:10px;font-weight:800">${ct.label}</div>`;
+              })()}
             </div>
             <div class="lbCard__score">${fmt(value)}</div>
           </div>
@@ -148,6 +159,21 @@ function showLbProfile(uid, rows){
   const lastSeen = r.updated_at ? new Date(r.updated_at).toLocaleDateString("fr-FR") : "—";
   const isMe     = currentUser && r.user_id === currentUser.id;
 
+  // Cadre avatar selon prestige
+  const p        = r.prestige_count ?? 0;
+  const frame    = typeof getAvatarFrame === "function" ? getAvatarFrame(p) : { border:"3px solid rgba(255,255,255,.15)", glow:"none", animated:false, background:null };
+  const customTitleObj = r.title && typeof getTitleById==="function" ? getTitleById(r.title) : null;
+  const autoTitleObj   = typeof getPrestigeTitle==="function" ? getPrestigeTitle(p) : null;
+  const titleObj       = customTitleObj || autoTitleObj;
+  const titleHtml = titleObj ? (() => {
+    const isGrad = titleObj.color==="linear" || (titleObj.color||"").includes("gradient");
+    const style  = isGrad
+      ? `background:linear-gradient(90deg,#ff6b35,#ffc83a,#2ee59d,#31d6ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:800;font-size:12px`
+      : `color:${titleObj.color};font-weight:800;font-size:12px`;
+    return `<div class="lbProfile__title" style="${style}">${titleObj.label}</div>`;
+  })() : "";
+  const isBannerAnimated = p >= 50;
+
   const popup = document.createElement("div");
   popup.id = "lbProfilePopup";
   popup.className = "lbProfile";
@@ -155,17 +181,24 @@ function showLbProfile(uid, rows){
     <div class="lbProfile__backdrop"></div>
     <div class="lbProfile__card">
       <button class="lbProfile__close">✕</button>
-      <div class="lbProfile__banner" style="background:${banner}">
-        ${isMe ? '<div class="lbProfile__meBadge">C\'est moi</div>' : ""}
-        <div class="lbProfile__avatar">${r.avatar || "🔧"}</div>
+      <div class="lbProfile__banner">
+        <div class="lbProfile__bannerBg ${isBannerAnimated ? 'profileCard__banner--animated' : ''}" style="background:${banner}">
+          <div class="lbProfile__banner__overlay"></div>
+          ${isMe ? '<div class="lbProfile__meBadge">C\'est moi</div>' : ""}
+        </div>
+        <div class="lbProfile__avatar ${frame.animated ? 'profileCard__avatar--animated' : ''}"
+             style="border:${frame.border};box-shadow:${frame.glow !== 'none' ? frame.glow : 'none'};${frame.background ? 'background:'+frame.background : ''}">
+          ${r.avatar || "🔧"}
+        </div>
       </div>
       <div class="lbProfile__body">
         <div class="lbProfile__pseudo">${r.pseudo || "Mécanicien"}</div>
+        ${titleHtml}
         <div class="lbProfile__garage">${r.garage_name || "Garage Turbo"}</div>
         <div class="lbProfile__country">${flagHtml} ${country !== "OTHER" ? country : "Monde"}</div>
         <div class="lbProfile__grid">
           <div class="lbProfile__stat">
-            <div class="lbProfile__statVal" style="color:#ff8c40">🔥 ${r.prestige_count ?? 0}</div>
+            <div class="lbProfile__statVal" style="color:#ff8c40">🔥 ${p}</div>
             <div class="lbProfile__statLabel">Prestiges</div>
           </div>
           <div class="lbProfile__stat">
@@ -184,6 +217,14 @@ function showLbProfile(uid, rows){
             <div class="lbProfile__statVal" style="color:#a78bfa">🏅 ${r.achievements_count ?? 0}</div>
             <div class="lbProfile__statLabel">Succès</div>
           </div>
+          ${r.best_tier ? `<div class="lbProfile__stat">
+            <div class="lbProfile__statVal" style="color:#ff4d70">💎 ${r.best_tier}</div>
+            <div class="lbProfile__statLabel">Meilleur tier</div>
+          </div>` : ""}
+          ${r.total_repairs ? `<div class="lbProfile__stat">
+            <div class="lbProfile__statVal" style="color:rgba(255,255,255,.7)">🔧 ${(r.total_repairs||0).toLocaleString("fr-FR")}</div>
+            <div class="lbProfile__statLabel">Réparations</div>
+          </div>` : ""}
           <div class="lbProfile__stat">
             <div class="lbProfile__statVal" style="color:rgba(255,255,255,.4)">📅 ${lastSeen}</div>
             <div class="lbProfile__statLabel">Activité</div>

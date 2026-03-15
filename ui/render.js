@@ -2,10 +2,13 @@
 // RENDER
 // =====================
 function formatMoney(n){
-  if(n >= 1_000_000_000_000) return (n / 1_000_000_000_000).toFixed(2) + " B€";
-  if(n >= 1_000_000_000)     return (n / 1_000_000_000).toFixed(2)     + " G€";
+  if(n >= 1_000_000_000_000) return (n / 1_000_000_000_000).toFixed(2) + " Bn€";
+  if(n >= 999_500_000_000)   return (n / 1_000_000_000_000).toFixed(2) + " Bn€";
+  if(n >= 1_000_000_000)     return (n / 1_000_000_000).toFixed(2)     + " Md€";
+  if(n >= 999_500_000)       return (n / 1_000_000_000).toFixed(2)     + " Md€";
   if(n >= 1_000_000)         return (n / 1_000_000).toFixed(2)         + " M€";
-  if(n >= 10_000)            return (n / 1_000).toFixed(1)             + " k€";
+  if(n >= 999_500)           return (n / 1_000_000).toFixed(2)         + " M€";
+  if(n >= 1_000)             return (n / 1_000).toFixed(1)             + " k€";
   return Math.floor(n).toLocaleString("fr-FR")                         + " €";
 }
 
@@ -635,9 +638,9 @@ function showUpgradeTooltip(u, { isMaxed, prereqMet, prereqReasons, canBuy, tags
       case "showroom_slot": return `+${2*lvl} slot(s) showroom`;
       case "apprenti":      return `+${(0.15*lvl).toFixed(2)}s/s auto`;
       case "mecanicien":    return `+${(0.5*lvl).toFixed(1)}s/s auto`;
-      case "stagiaire":     return `Diag toutes ${Math.max(6, 12-(lvl*0.6)).toFixed(1)}s`;
+      case "stagiaire":     return `Diag toutes ${Math.max(6, 15-(lvl-1)).toFixed(1)}s`;
       case "receptionnaire":return `Min ${Math.max(1, 6-(lvl*0.5)).toFixed(1)}s diag`;
-      case "vendeur":       return `Vente toutes ${Math.max(8, 15-(lvl*0.7)).toFixed(1)}s`;
+      case "vendeur":       return `Vente toutes ${Math.max(6, 15-(lvl-1)).toFixed(1)}s`;
       case "vendeur_confirme":return `Min ${Math.max(1, 8-(lvl*0.7)).toFixed(1)}s vente`;
       case "vendeur_expert":  return `Min ${Math.max(0.5, 1-(lvl*0.1)).toFixed(1)}s vente`;
       case "ia_diagnostic":   return `Min ${Math.max(0.5, 1-(lvl*0.1)).toFixed(1)}s diag`;
@@ -1192,6 +1195,7 @@ function renderAll(rebuildUpgrades = false, rebuildTalents = false){
   if(typeof updateChallengesNotifDot === 'function') updateChallengesNotifDot();
   // Badge showroom mobile
   _updateMobileShowroomBadge();
+  if(typeof window._updateMobileBureauAlert === 'function') window._updateMobileBureauAlert();
   // Badge alerte stock (logiciel stock niv 1+)
   const stockTab = document.querySelector(".tab[data-tab='stock']");
   if(stockTab){

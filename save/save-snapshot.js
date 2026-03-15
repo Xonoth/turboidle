@@ -15,7 +15,7 @@
 
 // Version courante du format de save.
 // À incrémenter à chaque changement de schéma (ajout/renommage de champ).
-const SAVE_VERSION = 9;
+const SAVE_VERSION = 10;
 
 // ─── buildSaveSnapshot ───────────────────────────────────────────────────────
 // Sérialise l'état courant du jeu en un objet JSON pur.
@@ -95,9 +95,12 @@ function buildSaveSnapshot() {
     achievements: state.achievements ?? {},
 
     // ── Défis journaliers ──────────────────────────────────────────────────
-    challenges:      state.challenges      ?? null,
+    challenges:       state.challenges       ?? null,
+    challengeStreak:  state.challengeStreak  ?? null,
     specialization:  state.specialization  ?? null,
     specialization2: state.specialization2 ?? null,
+    bestTier:        state.bestTier        ?? null,
+    repMax:          state.repMax          ?? 0,
 
     // ── Flags internes ─────────────────────────────────────────────────────
     _hasSaved: true,
@@ -168,10 +171,31 @@ function migrateSaveSnapshot(raw) {
   }
 
   // ── v8 → v9 : slots réparation simultanée + nouveaux perks héritage ────────
+  // ── v7 → v8 : bestTier + repMax (profil enrichi) ──────────────────────────
+  if(data.v < 8) {
+    data.bestTier = data.bestTier ?? null;
+    data.repMax   = data.repMax   ?? 0;
+    data.v = 8;
+  }
+
   if(data.v < 9) {
-    data.actives        = data.actives        ?? [];
+    data.actives         = data.actives        ?? [];
     data.specialization2 = data.specialization2 ?? null;
     data.v = 9;
+  }
+
+  // ── v9 → v10 : système de paliers bronze/argent/or sur les défis ───────────
+  if(data.v < 10) {
+    // Si les défis existent mais n'ont pas la structure tiers → les invalider
+    // pour forcer une régénération propre au prochain initChallenges()
+    if(data.challenges?.list?.length > 0){
+      const hasTiers = data.challenges.list.every(d => Array.isArray(d.tiers));
+      if(!hasTiers){
+        data.challenges = null; // initChallenges() régénérera au chargement
+      }
+    }
+    data.challengeStreak = data.challengeStreak ?? { count:0, lastCompleted:null };
+    data.v = 10;
   }
 
   return data;
@@ -211,7 +235,7 @@ function applySaveSnapshot(raw) {
   state.runMoneySales     = data.runMoneySales     ?? 0;
   state.runMoneyDiag      = data.runMoneyDiag      ?? 0;
   state.runMoneyParts     = data.runMoneyParts     ?? 0;
-  state.sessionStart      = data.sessionStart      ?? Date.now();
+  state.sessionStart      = Date.now();  // remis à now() à chaque chargement
 
   // 4. Niveau garage
   state.garageLevel = data.garageLevel ?? state.garageLevel;
@@ -260,6 +284,8 @@ function applySaveSnapshot(raw) {
   state.challenges     = data.challenges     ?? null;
   state.specialization  = data.specialization  ?? null;
   state.specialization2 = data.specialization2 ?? null;
+  state.bestTier        = data.bestTier        ?? null;
+  state.repMax          = data.repMax          ?? 0;
 
   // 11. Flags internes
   state._hasSaved = data._hasSaved ?? false;

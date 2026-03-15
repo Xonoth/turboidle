@@ -30,10 +30,13 @@
         <button class="helpTab helpTab--active" data-htab="intro">🏁 Début</button>
         <button class="helpTab" data-htab="repair">🔧 Atelier</button>
         <button class="helpTab" data-htab="showroom">🚗 Showroom</button>
+        <button class="helpTab" data-htab="challenges">📅 Défis</button>
         <button class="helpTab" data-htab="rep">⭐ Réputation</button>
         <button class="helpTab" data-htab="stock">📦 Stock</button>
         <button class="helpTab" data-htab="talents">🌟 Talents</button>
         <button class="helpTab" data-htab="prestige">🔥 Prestige</button>
+        <button class="helpTab" data-htab="upgrades">⚙️ Upgrades</button>
+        <button class="helpTab" data-htab="profile">👤 Profil</button>
         <button class="helpTab" data-htab="tips">💡 Astuces</button>
       </div>
       <div class="helpModal__body" id="helpBody"></div>
@@ -350,9 +353,12 @@
           <div class="profileCard__avatar" id="previewAvatar">🔧</div>
           <div class="profileCard__info">
             <div class="profileCard__pseudo" id="previewPseudo">Mécanicien</div>
+            <div id="previewTitle"></div>
             <div class="profileCard__country" id="previewCountry"></div>
           </div>
         </div>
+        <div id="previewSpec"></div>
+        <div id="previewStats"></div>
       </div>
       <div class="profileForm">
         <div class="profileField">
@@ -370,6 +376,10 @@
         <div class="profileField">
           <label class="profileField__label">Couleur de bannière</label>
           <div class="bannerPicker" id="bannerPicker"></div>
+        </div>
+        <div class="profileField">
+          <label class="profileField__label">Titre affiché</label>
+          <div class="titlePicker" id="titlePicker"></div>
         </div>
       </div>
       <div class="modal__foot">
@@ -604,6 +614,7 @@
       <button class="mobileMore__btn" id="mobileChallenges">📅 Défis<span class="notifDot notifDot--cyan mobileMore__notif" id="mobileChallengesNotif" style="display:none"></span></button>
       <button class="mobileMore__btn" id="mobileTalents">⭐ Talents<span class="notifDot mobileMore__notif" id="mobileTalentsNotif" style="display:none"></span></button>
       <button class="mobileMore__btn" id="mobileAchievements">🎖️ Succès</button>
+      <button class="mobileMore__btn" id="mobileStock">📦 Stock</button>
       <button class="mobileMore__btn" id="mobileHelp">❓ Aide</button>
       <button class="mobileMore__btn" id="mobileLeaderboard">🌍 Classement</button>
       <button class="mobileMore__btn" id="mobileStats">📊 Statistiques</button>

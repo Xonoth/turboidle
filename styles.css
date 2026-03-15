@@ -40,6 +40,8 @@ body{
 }
 
 /* ══ TOPBAR ════════════════════════════════════════════════ */
+button, a, input, select, [role='button'] { -webkit-tap-highlight-color: transparent; }
+
 .topbar{
   height: 62px;
   display:flex;
@@ -212,7 +214,7 @@ body{
   display:grid;
   gap:16px;
   grid-template-columns: 460px 1fr 500px;
-  height: calc(100vh - 62px);
+  height: calc(100dvh - 62px);
 }
 
 .col{display:flex; flex-direction:column; gap:16px; min-height:0; overflow:hidden; position:relative; border-radius:12px;}
@@ -894,7 +896,7 @@ body{
   left: 50%;
   transform: translate(-50%, -50%);
   width: min(980px, calc(100vw - 32px));
-  height: min(720px, calc(100vh - 120px));
+  height: min(720px, calc(100dvh - 120px));
   border-radius: 18px;
   border: 1px solid rgba(255,255,255,.08);
   background: linear-gradient(180deg, rgba(11,19,34,.98), rgba(9,14,26,.98));
@@ -979,6 +981,8 @@ body{
   padding: 8px 12px 16px;
   scrollbar-width:thin;
   scrollbar-color: rgba(167,139,250,.2) transparent;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
 }
 .talentScroll::-webkit-scrollbar{ width:5px; }
 .talentScroll::-webkit-scrollbar-track{ background:rgba(0,0,0,.15); border-radius:3px; }
@@ -1168,6 +1172,9 @@ body{
   letter-spacing:.4px;
   transition:background .15s, border-color .15s, color .15s;
   text-align:center;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 36px;
 }
 .talentBtn:not(:disabled):hover{
   background:rgba(167,139,250,.18);
@@ -1516,28 +1523,35 @@ body{
 /* Carte aperçu */
 .profileCard{
   border-radius:16px;
-  overflow:visible; /* permet à l'avatar de déborder sur la bannière */
+  overflow:hidden;
   border:1px solid rgba(255,255,255,.08);
   position:relative;
   margin-top:4px;
+  background: rgba(7,13,26,.95);
 }
 .profileCard__banner{
-  height:80px;
+  height:90px;
   width:100%;
   background: linear-gradient(135deg, #1a2a4a, #0d1829);
-  transition:background .3s;
+  transition:background .4s;
   display:block;
-  border-radius:16px 16px 0 0;
+  position:relative;
+}
+.profileCard__banner::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:linear-gradient(180deg, transparent 30%, rgba(7,13,26,.85) 100%);
+  pointer-events:none;
 }
 .profileCard__body{
   display:flex;
   align-items:center;
   gap:14px;
-  padding:10px 16px 14px 16px;
-  background:rgba(8,12,22,.6);
-  margin-top:0;
-  border-radius:0 0 16px 16px;
-  border-top:1px solid rgba(255,255,255,.06);
+  padding:0 16px 12px;
+  margin-top:-26px;
+  position:relative;
+  z-index:1;
 }
 .profileCard__avatar{
   font-size:36px;
@@ -1547,16 +1561,15 @@ body{
   display:flex;
   align-items:center;
   justify-content:center;
-  background:rgba(15,22,40,1);
+  background:rgba(7,13,26,.98);
   border-radius:50%;
-  border:3px solid rgba(255,255,255,.15);
+  border:3px solid rgba(255,255,255,.2);
   flex-shrink:0;
-  margin-top:-28px; /* chevauche la bannière */
-  position:relative;
-  z-index:1;
+  box-shadow:0 4px 16px rgba(0,0,0,.5);
 }
-.profileCard__pseudo{ font-size:16px; font-weight:800; }
-.profileCard__country{ font-size:13px; color:var(--muted); margin-top:3px; }
+.profileCard__info{ min-width:0; flex:1; }
+.profileCard__pseudo{ font-size:16px; font-weight:800; line-height:1.2; }
+.profileCard__country{ font-size:12px; color:var(--muted); margin-top:2px; display:flex; align-items:center; gap:4px; }
 
 /* Formulaire */
 .profileForm{ display:flex; flex-direction:column; gap:16px; }
@@ -1608,19 +1621,30 @@ body{
 
 /* Bannière picker */
 .bannerPicker{
-  display:flex;
-  flex-wrap:wrap;
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(72px, 1fr));
   gap:8px;
 }
 .bannerOption{
-  width:36px; height:24px;
-  border-radius:8px;
+  height:44px;
+  border-radius:10px;
   cursor:pointer;
   border:2px solid transparent;
-  transition:border-color .15s, transform .1s;
+  transition:border-color .15s, transform .1s, box-shadow .15s;
+  position:relative;
+  overflow:hidden;
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
 }
-.bannerOption:hover{ transform:scale(1.1); }
-.bannerOption--selected{ border-color:white; }
+.bannerOption:hover{
+  transform:scale(1.04);
+  box-shadow:0 4px 14px rgba(0,0,0,.4);
+}
+.bannerOption--selected{
+  border-color:rgba(255,255,255,.8);
+  box-shadow:0 0 0 1px rgba(255,255,255,.3);
+}
 
 /* Bouton primary */
 .btn--primary{
@@ -4371,32 +4395,39 @@ body{
 
 /* Bandeau bannière */
 .lbProfile__banner{
-  height:72px;
+  height:100px;
   position:relative;
   display:flex;
-  align-items:center;
+  align-items:flex-end;
   justify-content:center;
   overflow:visible;
+  padding-bottom:0;
 }
-.lbProfile__banner::after{
+.lbProfile__bannerBg{
+  position:absolute;
+  inset:0;
+  overflow:hidden;
+  border-radius:18px 18px 0 0;
+}
+.lbProfile__bannerBg::after{
   content:'';
   position:absolute;
   inset:0;
-  background:linear-gradient(180deg, transparent 40%, rgba(7,13,26,.95) 100%);
+  background:linear-gradient(180deg, transparent 20%, rgba(7,13,26,.75) 100%);
   pointer-events:none;
 }
 .lbProfile__avatar{
   position:absolute;
-  bottom:-26px;
-  font-size:32px;
+  bottom:-28px;
+  font-size:34px;
   line-height:1;
-  width:52px; height:52px;
+  width:60px; height:60px;
   background:rgba(7,13,26,.98);
-  border:2px solid rgba(49,214,255,.25);
-  border-radius:13px;
+  border:3px solid rgba(255,255,255,.2);
+  border-radius:50%;
   display:flex; align-items:center; justify-content:center;
   z-index:2;
-  box-shadow:0 4px 20px rgba(0,0,0,.6), 0 0 14px rgba(49,214,255,.1);
+  box-shadow:0 6px 24px rgba(0,0,0,.7);
 }
 .lbProfile__meBadge{
   position:absolute;
@@ -4414,8 +4445,14 @@ body{
 }
 
 .lbProfile__body{
-  padding:36px 22px 20px;
+  padding:40px 22px 20px;
   text-align:center;
+}
+.lbProfile__title{
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .5px;
+  margin: 2px 0 4px;
 }
 .lbProfile__pseudo{
   font-family:var(--font-ui);
@@ -5013,8 +5050,8 @@ body{
   .layout {
     display: block;
     padding: 0;
-    /* 50px topbar + 54px mobileNav */
-    height: calc(100dvh - 50px - 54px);
+    /* 50px topbar + 54px mobileNav + safe-area */
+    height: calc(100dvh - 50px - 54px - env(safe-area-inset-bottom));
     overflow: hidden;
     position: relative;
   }
@@ -5156,7 +5193,8 @@ body{
     padding: 9px 13px;
     font-size: 10px;
     white-space: nowrap;
-    min-height: 38px;
+    min-height: 40px;
+    touch-action: manipulation;
   }
   .list { max-height: none; height: auto; overflow: visible; }
   .item {
@@ -5197,7 +5235,8 @@ body{
     bottom: 0;
     left: 0;
     right: 0;
-    height: 54px;
+    height: calc(54px + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom);
     background: rgba(5,9,18,.97);
     border-top: 1px solid rgba(49,214,255,.1);
     backdrop-filter: blur(14px);
@@ -5220,6 +5259,7 @@ body{
     transition: color .12s;
     -webkit-tap-highlight-color: transparent;
     padding: 5px 2px;
+    min-height: 44px;
     touch-action: manipulation;
   }
   .mobileNav__btn--active { color: #31d6ff; }
@@ -5274,7 +5314,7 @@ body{
   }
   /* Status badge : très compact, ne wrap jamais */
   .garageSlot__status {
-    font-size: 8px;
+    font-size: 10px;
     padding: 2px 4px;
     white-space: nowrap;
     flex-shrink: 0;
@@ -5421,7 +5461,7 @@ body{
   .talentCard__name { font-size: 12px; }
   .talentCard__desc { font-size: 11px; }
   .talentBtn {
-    min-height: 34px;
+    min-height: 44px;
     font-size: 11px;
     padding: 6px 10px;
     touch-action: manipulation;
@@ -5444,7 +5484,7 @@ body{
     flex-shrink: 0;
     padding: 7px 12px;
     font-size: 11px;
-    min-height: 34px;
+    min-height: 40px;
     touch-action: manipulation;
   }
 
@@ -5492,7 +5532,7 @@ body{
 
   /* Boutons rang héritage */
   .heritageRankBtn {
-    min-height: 34px;
+    min-height: 44px;
     padding: 5px 10px;
     font-size: 11px;
     touch-action: manipulation;
@@ -5616,6 +5656,7 @@ body{
     padding: 14px 16px;
     font-size: 15px;
     min-height: 50px;
+    touch-action: manipulation;
   }
 
   /* ── Scroll indicators (fade au bord des listes) ─────────── */
@@ -5634,7 +5675,7 @@ body{
 
   /* ── Toast : remonter au-dessus de la nav ────────────────── */
   #partsToast {
-    bottom: calc(54px + 12px) !important;
+    bottom: calc(54px + 12px + env(safe-area-inset-bottom)) !important;
   }
 
   /* ── Bouton bigAction : largeur pleine ───────────────────── */
@@ -5646,6 +5687,25 @@ body{
   .diagForm    { gap: 6px; }
   .diagRow     { flex-wrap: wrap; gap: 4px; }
   .diagRow label { font-size: 11px; }
+
+  /* ── Help tabs — touch targets & scroll horizontal ─────────── */
+  .helpTab {
+    flex-shrink: 0;
+    padding: 8px 12px;
+    font-size: 10px;
+    min-height: 40px;
+    touch-action: manipulation;
+    white-space: nowrap;
+  }
+  .helpModal__tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 4px;
+    padding-bottom: 2px;
+  }
+  .helpModal__tabs::-webkit-scrollbar { display: none; }
 
   /* ── Confirm modal ───────────────────────────────────────── */
   .modal__panel--confirm {
@@ -5668,7 +5728,7 @@ body{
 @media (max-width: 380px) {
   .brand__title   { display: none; }
   .money__amount  { font-size: 13px; }
-  .mobileNav__label { font-size: 8px; }
+  .mobileNav__label { font-size: 9px; }
   .mobileNav__icon  { font-size: 16px; }
   .heritageGrid   { grid-template-columns: 1fr !important; }
   .stockSupplRow__mid { gap: 6px; }
@@ -6321,4 +6381,589 @@ body{
   font-weight: 800;
   letter-spacing: .5px;
   padding: 3px 0;
+}
+
+/* ══════════════════════════════════════════════════════════
+   PROFIL ENRICHI — stats, badges, cadres, bannières
+══════════════════════════════════════════════════════════ */
+
+/* Bannière animée arc-en-ciel (P50 Légende) */
+@keyframes legendBanner{
+  0%  { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100%{ background-position: 0% 50%; }
+}
+.profileCard__banner--animated{
+  background-size: 200% 200% !important;
+  animation: legendBanner 4s ease infinite;
+}
+
+/* Avatar animé (P50) */
+@keyframes legendFrame{
+  0%,100%{ box-shadow: 0 0 12px rgba(255,200,58,.6); }
+  50%    { box-shadow: 0 0 24px rgba(49,214,255,.6); }
+}
+.profileCard__avatar--animated{
+  animation: legendFrame 2s ease-in-out infinite;
+}
+
+/* Titre prestige */
+#previewTitle{
+  margin: 2px 0 0;
+  min-height: 16px;
+}
+
+/* Badge spécialisation */
+.profileCard__specs{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 14px 4px;
+}
+.profileCard__specBadge{
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 6px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+/* Stats clés */
+.profileCard__stats{
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: rgba(255,255,255,.05);
+  border-top: 1px solid rgba(255,255,255,.06);
+  margin-top: 8px;
+  overflow: hidden;
+}
+.profileCard__stat{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 6px;
+  background: rgba(8,12,22,.7);
+  gap: 3px;
+  transition: background .15s;
+}
+.profileCard__stat:hover{ background: rgba(255,255,255,.04); }
+.profileCard__statVal{
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+}
+.profileCard__statLabel{
+  font-size: 9px;
+  font-weight: 700;
+  color: rgba(255,255,255,.3);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  text-align: center;
+}
+
+.bannerOption__label{
+  position: absolute;
+  bottom: 2px;
+  left: 0; right: 0;
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255,255,255,.6);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 2px;
+}
+.bannerOption--animated{
+  background-size: 200% 200% !important;
+  animation: legendBanner 3s ease infinite;
+}
+
+/* ── Sélecteur de titres ─────────────────────────────────────────────────── */
+.titlePicker{
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,.1) transparent;
+}
+.titleOption{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.07);
+  background: rgba(255,255,255,.03);
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+  gap: 10px;
+}
+.titleOption:hover{ background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.15); }
+.titleOption--selected{
+  border-color: var(--tc, rgba(49,214,255,.4));
+  background: rgba(255,255,255,.06);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.08);
+}
+.titleOption__label{ font-size:13px; font-weight:800; }
+.titleOption__desc{ font-size:10px; color:rgba(255,255,255,.3); font-weight:600; text-align:right; flex-shrink:0; }
+.titleOption__empty{ font-size:12px; color:rgba(255,255,255,.25); font-style:italic; padding:8px 4px; }
+
+/* ── Bannière verrouillée ─────────────────────────────────────────────────── */
+.bannerOption--locked{
+  opacity: .35;
+  cursor: not-allowed;
+  filter: grayscale(.4);
+}
+.bannerOption--locked:hover{ transform: none; box-shadow: none; }
+
+/* ══════════════════════════════════════════════════════════
+   DÉFIS — PALIERS & STREAK
+══════════════════════════════════════════════════════════ */
+
+/* Streak */
+.challenges__streak{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  margin: 0 0 8px;
+  background: rgba(255,140,64,.07);
+  border: 1px solid rgba(255,140,64,.2);
+  border-radius: 10px;
+}
+.challenges__streakFire{ font-size: 18px; }
+.challenges__streakCount{ font-size: 13px; font-weight: 800; color: #ff8c40; }
+.challenges__streakMult{
+  margin-left: auto;
+  font-size: 11px; font-weight: 800;
+  padding: 2px 9px;
+  background: rgba(255,140,64,.15);
+  border: 1px solid rgba(255,140,64,.3);
+  border-radius: 6px;
+  color: #ff8c40;
+}
+
+/* Marqueurs sur la barre de progression */
+.challengeCard__bar{ position: relative; }
+.challengeCard__marker{
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 2px;
+  background: rgba(255,255,255,.2);
+  transform: translateX(-50%);
+  border-radius: 1px;
+  pointer-events: none;
+}
+.challengeCard__marker--reached{
+  background: rgba(255,255,255,.5);
+}
+
+/* Paliers */
+.challengeCard__tiers{
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 8px;
+}
+.challengeTier{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 12px;
+  border-radius: 9px;
+  border: 1px solid rgba(255,255,255,.06);
+  background: rgba(255,255,255,.02);
+  gap: 10px;
+  transition: background .15s;
+}
+.challengeTier--claimed{
+  background: rgba(46,229,157,.05);
+  border-color: rgba(46,229,157,.15);
+  opacity: .7;
+}
+.challengeTier--reached{
+  background: rgba(49,214,255,.06);
+  border-color: rgba(49,214,255,.2);
+}
+.challengeTier--locked{ opacity: .5; }
+
+.challengeTier__left{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.challengeTier__medal{ font-size: 16px; flex-shrink: 0; }
+.challengeTier__info{ display: flex; flex-direction: column; gap: 1px; }
+.challengeTier__tierLabel{ font-size: 11px; font-weight: 800; color: rgba(255,255,255,.7); }
+.challengeTier__target{ font-size: 10px; color: rgba(255,255,255,.35); font-weight: 600; }
+
+.challengeTier__right{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.challengeTier__rewards{ font-size: 10px; color: rgba(255,255,255,.5); font-weight: 600; white-space: nowrap; }
+.challengeTier--reached .challengeTier__rewards{ color: rgba(255,255,255,.75); }
+
+.challengeTier__btn{
+  padding: 4px 12px;
+  border-radius: 7px;
+  border: 1px solid rgba(49,214,255,.35);
+  background: rgba(49,214,255,.12);
+  color: #31d6ff;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s;
+}
+.challengeTier__btn:hover{ background: rgba(49,214,255,.22); }
+.challengeTier__done{ font-size: 14px; }
+.challengeTier__locked{ font-size: 10px; color: rgba(255,255,255,.25); font-weight: 600; white-space: nowrap; }
+
+/* ── Labels cible dans les défis ─────────────────────────────────────────── */
+.challengeCard__labelTarget{
+  font-size: 11px;
+  font-weight: 700;
+  color: #31d6ff;
+  background: rgba(49,214,255,.1);
+  border: 1px solid rgba(49,214,255,.2);
+  border-radius: 5px;
+  padding: 1px 7px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.challengeCard__labelDone{
+  font-size: 12px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+/* ══════════════════════════════════════════════════════════
+   MOBILE — Composants récents (paliers défis, profil enrichi,
+   streak, marché héritage, prestige enrichi)
+══════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* ── Défis : paliers bronze/argent/or ─────────────────── */
+  .challengeCard__tiers { gap: 4px; margin-top: 6px; }
+
+  .challengeTier {
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 6px 10px;
+  }
+  .challengeTier__left  { gap: 6px; min-width: 0; flex: 1 1 auto; }
+  .challengeTier__right {
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: flex-end;
+    min-width: 0;
+  }
+  .challengeTier__rewards {
+    font-size: 9px;
+    white-space: normal;
+    text-align: right;
+  }
+  .challengeTier__btn {
+    min-height: 40px;
+    padding: 4px 10px;
+    font-size: 10px;
+    touch-action: manipulation;
+  }
+  .challengeTier__locked { font-size: 9px; }
+  .challengeTier__medal  { font-size: 14px; }
+  .challengeTier__tierLabel { font-size: 10px; }
+  .challengeTier__target    { font-size: 9px; }
+
+  .challengeCard__marker { width: 1px; }
+  .challengeCard__labelTarget {
+    font-size: 9px;
+    padding: 1px 5px;
+  }
+
+  /* ── Streak ───────────────────────────────────────────── */
+  .challenges__streak {
+    padding: 6px 10px;
+    gap: 6px;
+  }
+  .challenges__streakFire  { font-size: 14px; }
+  .challenges__streakCount { font-size: 11px; }
+  .challenges__streakMult  { font-size: 9px; padding: 2px 6px; }
+
+  /* ── Profil enrichi — carte stats ────────────────────── */
+  .profileCard__stats {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .profileCard__stat   { padding: 8px 4px; gap: 2px; }
+  .profileCard__statVal   { font-size: 12px; }
+  .profileCard__statLabel { font-size: 10px; letter-spacing: .3px; }
+
+  .profileCard__specs { padding: 6px 10px 2px; gap: 4px; }
+  .profileCard__specBadge {
+    font-size: 9px;
+    padding: 2px 7px;
+  }
+
+  /* ── Picker bannières ─────────────────────────────────── */
+  .bannerPicker {
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 6px;
+    max-height: 160px;
+    overflow-y: auto;
+  }
+  .bannerOption {
+    height: 38px;
+    border-radius: 8px;
+  }
+  .bannerOption__label { font-size: 10px; }
+
+  /* ── Picker titres ────────────────────────────────────── */
+  .titlePicker  { max-height: 160px; gap: 4px; }
+  .titleOption  { padding: 7px 10px; gap: 6px; }
+  .titleOption__label { font-size: 11px; }
+  .titleOption__desc  { font-size: 9px; }
+
+  /* ── Marché héritage ──────────────────────────────────── */
+  .hMarket { margin: 12px 0 0; }
+  .hMarket__toggle {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+  .hMarket__sub  { font-size: 10px; padding: 0 12px 8px; }
+  .hMarket__grid { padding: 0 12px 10px; gap: 6px; }
+
+  .hMarketCard {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 12px;
+  }
+  .hMarketCard__icon   { font-size: 22px; }
+  .hMarketCard__name   { font-size: 12px; }
+  .hMarketCard__desc   { font-size: 10px; }
+  .hMarketCard__btn {
+    min-height: 40px;
+    padding: 5px 10px;
+    font-size: 11px;
+    touch-action: manipulation;
+  }
+
+  /* ── Prestige enrichi ─────────────────────────────────── */
+  .prestige__specSection { margin: 6px 12px 0; }
+  .prestige__specSection__bonuses {
+    grid-template-columns: 1fr;
+    gap: 4px;
+    padding: 8px 10px;
+  }
+  .prestige__specSection__bonus { padding: 6px 8px; }
+  .prestige__specSection__bonusVal { font-size: 11px; }
+
+  .prestige__nextReq { font-size: 9px; padding: 4px 12px; margin: 2px 0; }
+
+  .prestige__milestone {
+    margin: 6px 0;
+    padding: 8px 12px;
+    border-radius: 8px;
+  }
+  .prestige__milestoneLabel { font-size: 10px; }
+  .prestige__milestoneDesc  { font-size: 11px; }
+
+  /* ── Leaderboard titre ────────────────────────────────── */
+  .lbProfile__title { font-size: 10px; margin: 1px 0 3px; }
+
+  /* ── Profil modal — formulaire scrollable ─────────────── */
+  .modal__panel--profile {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+    top: 0 !important;
+    left: 0 !important;
+    transform: none !important;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 14px 12px 24px;
+  }
+  .profileCard__banner { height: 70px; }
+  .profileCard__avatar {
+    width: 46px; height: 46px;
+    font-size: 26px;
+  }
+  .profileCard__pseudo { font-size: 14px; }
+
+  /* ── Drawer latéral ───────────────────────────────────── */
+  .sideDrawer__panel {
+    width: min(88vw, 320px) !important;
+  }
+  .sideItem__label { font-size: 13px; }
+
+}
+
+/* ── Très petits écrans — ajouts récents ─────────────────── */
+@media (max-width: 380px) {
+  .profileCard__stats { grid-template-columns: repeat(2, 1fr); }
+  .profileCard__statVal { font-size: 11px; }
+  .challengeTier__rewards { display: none; } /* trop compact, info dans le tier */
+  .bannerPicker { grid-template-columns: repeat(3, 1fr); }
+  .prestige__specSection__bonuses { grid-template-columns: 1fr; }
+}
+
+/* ── Patch touch-action manquants + overflow prestige/profil ── */
+@media (max-width: 768px) {
+
+  /* touch-action manquants */
+  .challengeTier__btn,
+  .hMarketCard__btn,
+  .hMarket__toggle,
+  .bannerOption,
+  .titleOption,
+  .heritageRankBtn {
+    touch-action: manipulation;
+  }
+
+  /* ── Prestige infoRow — stack sur mobile ─────────────── */
+  .prestige__infoRow {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .prestige__infoBlock {
+    flex: 1 1 40%;
+    min-width: 0;
+  }
+
+  /* ── Prestige previewGrid — 2 colonnes ───────────────── */
+  .prestige__previewGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .prestige__previewItem {
+    font-size: 11px;
+    padding: 6px 8px;
+  }
+
+  /* ── Prestige runGrid — déjà 2col mais on consolide ─── */
+  /* Prestige modal — scroll interne sur petits écrans */
+  .modal__panel--prestige #prestigeInfo {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .prestige__runGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+  }
+  .prestige__runItem { padding: 6px 8px; }
+  .prestige__runLabel { font-size: 9px; }
+  .prestige__runVal   { font-size: 12px; }
+
+  /* ── profileCard body — compact ──────────────────────── */
+  .profileCard__body {
+    padding: 0 12px 10px;
+    gap: 10px;
+    margin-top: -22px;
+  }
+  .profileCard__avatar {
+    width: 46px;
+    height: 46px;
+    font-size: 26px;
+    flex-shrink: 0;
+  }
+  .profileCard__pseudo { font-size: 13px; }
+
+  /* ── Challenges header — wrap sur très petit écran ───── */
+  .challenges__header {
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: flex-start;
+  }
+  .challenges__timer {
+    font-size: 10px;
+    white-space: nowrap;
+  }
+  .challenges__title    { font-size: 13px; }
+  .challenges__subtitle { font-size: 10px; }
+
+  /* ── Prestige specSection bonuses — 1 colonne ────────── */
+  .prestige__specSection__bonuses {
+    grid-template-columns: 1fr;
+    padding: 8px 10px;
+    gap: 4px;
+  }
+
+  /* ── Prestige conditions ──────────────────────────────── */
+  .prestige__conditions { gap: 6px; }
+  .prestige__cond {
+    font-size: 11px;
+    padding: 7px 10px;
+    flex-wrap: wrap;
+    gap: 3px;
+  }
+  .prestige__cond span { font-size: 10px; }
+
+  /* ── Prestige missing + bouton ───────────────────────── */
+  .prestige__missing-line { font-size: 11px; }
+  .prestige__btn {
+    font-size: 13px;
+    padding: 12px;
+    min-height: 46px;
+    touch-action: manipulation;
+  }
+
+  /* ── Leaderboard cards ───────────────────────────────── */
+  .lbCard__title { font-size: 9px; }
+
+  /* ── ProfileCard stats 380px ──────────────────────────── */
+}
+
+@media (max-width: 380px) {
+  .prestige__infoBlock   { flex: 1 1 100%; }
+  .prestige__previewGrid { grid-template-columns: 1fr; }
+  .challenges__header    { flex-direction: column; gap: 3px; }
+  .profileCard__stats    { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ── Badge alerte sur bouton Bureau (stock bas) ────────────────────── */
+.mobileNav__btn--bureau-alert .mobileNav__icon::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  background: #ff4d70;
+  border-radius: 50%;
+  border: 1.5px solid rgba(5,9,18,.97);
+}
+.mobileNav__btn .mobileNav__icon {
+  position: relative;
+  display: inline-block;
+}
+
+/* ── Picker bannières — indicateur scroll ───────────────────────────── */
+@media (max-width: 768px) {
+  .bannerPicker {
+    position: relative;
+  }
+  .bannerPicker::after {
+    content: '';
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 20px;
+    background: linear-gradient(to bottom, transparent, var(--color-background-secondary));
+    pointer-events: none;
+    display: block;
+    margin-top: -20px;
+  }
 }

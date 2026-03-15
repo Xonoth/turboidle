@@ -8,9 +8,8 @@ const HELP_SECTIONS = {
     content: `
       <div class="helpSection">
         <p class="helpLead">Tu gères un garage automobile idle. L'objectif : réparer des voitures, les vendre, gagner de la réputation et devenir une légende de la mécanique.</p>
-
         <div class="helpBlock">
-          <div class="helpBlock__title">🔄 La boucle de jeu de base</div>
+          <div class="helpBlock__title">🔄 La boucle de jeu</div>
           <div class="helpBlock__steps">
             <div class="helpStep"><span class="helpStep__num">1</span><div><b>Diagnostique</b> une voiture via ANALYSER → elle entre en file et tu gagnes de l'argent immédiatement.</div></div>
             <div class="helpStep"><span class="helpStep__num">2</span><div><b>Répare</b> la voiture (clic manuel ou automatique) jusqu'à ce qu'elle soit prête.</div></div>
@@ -19,20 +18,17 @@ const HELP_SECTIONS = {
             <div class="helpStep"><span class="helpStep__num">5</span><div>Plus tu as de REP, plus tu débloques des tiers de voitures <b>rares et chères</b>.</div></div>
           </div>
         </div>
-
         <div class="helpBlock">
           <div class="helpBlock__title">📈 Comment progresser ?</div>
-          <p>Tes ventes font monter le <b>Niveau Garage</b> (LVL) — chaque niveau augmente ta capacité et tes revenus passifs. Investis dans les <b>Améliorations</b> (Bureau) et les <b>Talents</b> pour accélérer.</p>
+          <p>Tes ventes font monter le <b>Niveau Garage (LVL)</b> — chaque niveau augmente ta capacité et tes revenus passifs. Investis dans les <b>Améliorations</b> et les <b>Talents</b> pour accélérer. Complète les <b>Défis journaliers</b> pour des récompenses bonus chaque jour.</p>
         </div>
-
         <div class="helpBlock">
           <div class="helpBlock__title">⏱️ Progression hors-ligne (AFK)</div>
-          <p>Le jeu tourne même quand tu es absent. À ton retour, jusqu'à <b>4 heures</b> de progression sont rattrapées automatiquement : revenus passifs, livraisons, réparations auto, diagnostics et ventes automatiques continuent. Un message te résume le temps rattrapé.</p>
+          <p>Le jeu tourne même quand tu es absent. À ton retour, jusqu'à <b>4 heures</b> de progression sont rattrapées : revenus passifs, livraisons, réparations auto, diagnostics et ventes automatiques. Un message te résume le temps rattrapé.</p>
         </div>
-
         <div class="helpBlock">
           <div class="helpBlock__title">💾 Sauvegarde</div>
-          <p>La progression est <b>sauvegardée automatiquement</b> dans le cloud (compte requis) ou localement dans ton navigateur.</p>
+          <p>La progression est <b>sauvegardée automatiquement</b> dans le cloud (compte requis) ou localement. Tu peux aussi sauvegarder manuellement via le bouton 💾 dans le menu latéral (☰).</p>
         </div>
       </div>
     `
@@ -46,31 +42,29 @@ const HELP_SECTIONS = {
           <div class="helpBlock__title">🔍 Diagnostic (ANALYSER)</div>
           <p>Clique sur <b>ANALYSER</b> pour faire rentrer une nouvelle voiture. Chaque analyse te rapporte de l'argent instantanément. Tu ne peux analyser que si une place est libre à l'atelier.</p>
         </div>
-
         <div class="helpBlock">
           <div class="helpBlock__title">⚡ Réparation manuelle</div>
-          <p>Clique sur la <b>barre de progression</b> de la voiture active pour avancer la réparation. Chaque clic soustrait du temps — essentiel en début de partie avant d'avoir des mécaniciens automatiques.</p>
+          <p>Clique sur la <b>barre de progression</b> de la voiture active pour avancer la réparation. Chaque clic soustrait du temps. Essentiel en début de partie avant d'avoir des mécaniciens automatiques.</p>
         </div>
-
         <div class="helpBlock">
           <div class="helpBlock__title">🤖 Réparation automatique</div>
-          <p>En achetant <b>Apprenti Mécanicien</b> (+0.15s/s par rang) et <b>Mécanicien</b> (+0.5s/s par rang) dans l'onglet Équipe, ton garage répare tout seul. Les talents <b>Routine Atelier</b>, <b>Organisation Pro</b> et <b>Double Shift</b> amplifient ces valeurs.</p>
+          <p>En achetant <b>Apprenti Mécanicien</b> puis <b>Mécanicien</b> dans l'onglet Équipe, ton garage répare tout seul. Les talents <b>Routine Atelier</b>, <b>Organisation Pro</b> et <b>Double Shift</b> amplifient la vitesse.</p>
         </div>
-
         <div class="helpBlock">
-          <div class="helpBlock__title">🔩 Pannes et pièces détachées</div>
-          <p>Certaines voitures arrivent avec une <b>panne</b> (ex : "Moteur HS"). Si tu as les pièces nécessaires en stock, elles sont consommées automatiquement et <b>augmentent la valeur de revente</b>. La qualité du fournisseur influe aussi sur la vitesse de réparation. Sans pièces, la voiture est réparée mais moins valorisée.</p>
+          <div class="helpBlock__title">👑 Chef d'Atelier (P7)</div>
+          <p>L'upgrade prestige <b>Chef d'Atelier</b> ajoute des <b>slots de réparation simultanés</b> (+1 slot par rang, max 5). Chaque slot supplémentaire a un malus de vitesse −10% par position, réductible via le perk Héritage <b>Ergonomie Avancée</b>.</p>
         </div>
-
-        <div class="helpBlock">
-          <div class="helpBlock__title">🏎️ File d'attente</div>
-          <p>Plusieurs voitures peuvent attendre (jusqu'à 10× la capacité du garage). Une seule est en réparation active à la fois. Augmente les emplacements via <b>Agrandissement Garage</b> ou les perks Héritage.</p>
-        </div>
-
         <div class="helpBlock">
           <div class="helpBlock__title">🧑‍🔧 Automatisation de l'accueil</div>
-          <p><b>Stagiaire Accueil</b> diagnostique automatiquement toutes les 12s (min 6s au niv. max). <b>Réceptionnaire</b> réduit encore ce délai jusqu'à 1s. Ces deux upgrades fonctionnent aussi en AFK.</p>
-          <p style="margin-top:6px">🤖 <b>IA Diagnostic</b> (Prestige 5, Réceptionnaire max) — abaisse le plancher à 0.5s (−0.1s/rang, max 5 rangs).</p>
+          <p><b>Stagiaire Accueil</b> diagnostique automatiquement toutes les 15s au niv.1 (min 6s au niv.10). <b>Réceptionnaire</b> descend jusqu'à 1s. L'upgrade prestige <b>IA Diagnostic</b> (P5) atteint 0.5s.</p>
+        </div>
+        <div class="helpBlock">
+          <div class="helpBlock__title">🔬 Scanner Pro X (P3)</div>
+          <p>Ajoute un <b>bonus de scan</b> après chaque diagnostic selon le tier : +15€ (F) → +6 000€ (SSS+) par rang. Le perk Héritage <b>Scanner Augmenté</b> multiplie ces gains par 1.5.</p>
+        </div>
+        <div class="helpBlock">
+          <div class="helpBlock__title">🔩 Pannes et pièces</div>
+          <p>Certaines voitures arrivent avec une panne. Si tu as les pièces nécessaires, elles sont consommées automatiquement et <b>augmentent la valeur de revente</b>. Sans pièces, la voiture est réparée mais moins valorisée.</p>
         </div>
       </div>
     `
@@ -84,14 +78,10 @@ const HELP_SECTIONS = {
           <div class="helpBlock__title">💰 Vente manuelle</div>
           <p>Clique sur <b>VENDRE</b> sous une voiture pour l'encaisser immédiatement. Tu récupères l'argent et la REP associée au tier.</p>
         </div>
-
         <div class="helpBlock">
           <div class="helpBlock__title">🤖 Vendeur automatique</div>
-          <p><b>Vendeur Junior</b> vend automatiquement la voiture la plus ancienne toutes les 15s (min 8s). <b>Vendeur Confirmé</b> descend jusqu'à 1s. ⚠️ Le vendeur ne fait pas de distinction de tier — vends manuellement tes voitures rares.</p>
-          <p style="margin-top:6px">🏆 <b>Vendeur Expert</b> (Prestige 5, Vendeur Confirmé max) — abaisse le plancher à 0.5s (−0.1s/rang, max 5 rangs).</p>
-          <p style="margin-top:6px">👑 <b>Chef d'Atelier</b> (Prestige 7) — +1 slot de réparation simultanée par rang (max +5). Chaque slot supplémentaire subit un malus fixe par position : slot 2 = −10%, slot 3 = −20%, slot 4 = −30%… (clic + auto). Le slot principal reste toujours à 100%.</p>
+          <p><b>Vendeur Junior</b> vend automatiquement toutes les 15s au niv.1 (min 6s au niv.10). <b>Vendeur Confirmé</b> descend jusqu'à 1s. <b>Vendeur Expert</b> (P5) atteint 0.5s. ⚠️ Le vendeur auto ne fait pas de distinction de tier — vends manuellement tes voitures rares (S+).</p>
         </div>
-
         <div class="helpBlock">
           <div class="helpBlock__title">🏷️ Tiers de véhicules</div>
           <div class="helpTierList">
@@ -107,10 +97,54 @@ const HELP_SECTIONS = {
             <div class="helpTier" style="color:#ffffff">SSS+ — Mythique <span>450 000 REP · +350 REP/vente</span></div>
           </div>
         </div>
-
         <div class="helpBlock">
           <div class="helpBlock__title">📦 Slots showroom</div>
-          <p>Tu commences avec 3 emplacements. Augmente-les via <b>Extension Showroom</b> (Contrats, max 4 achats) ou le talent <b>Expansion Vitrine</b> (+1/rang, max +10). La spécialisation <b>Garage Prestige</b> limite le showroom à 5 slots.</p>
+          <p>Tu commences avec 3 emplacements. Augmente-les via <b>Extension Showroom</b> (Contrats), le talent <b>Expansion Vitrine</b> (+1/rang), ou l'upgrade prestige <b>Galerie Marchande</b> (P2, +2 slots/rang, max 4).</p>
+        </div>
+      </div>
+    `
+  },
+
+  challenges: {
+    title: "📅 Défis journaliers",
+    content: `
+      <div class="helpSection">
+        <p class="helpLead">Chaque jour, 3 défis sont générés selon ton niveau de garage. Chaque défi a 3 paliers — complète-les pour des récompenses progressives.</p>
+        <div class="helpBlock">
+          <div class="helpBlock__title">🥉🥈🥇 Système de paliers</div>
+          <ul class="helpList">
+            <li>🥉 <b>Bronze</b> — objectif de base, récompense argent uniquement (~15 min)</li>
+            <li>🥈 <b>Argent</b> — ×1.8 l'objectif, +1 point talent + REP (~30 min)</li>
+            <li>🥇 <b>Or</b> — ×3 l'objectif, +2 points talent + REP supplémentaire (~45-60 min)</li>
+          </ul>
+          <p style="margin-top:6px;font-size:12px;color:#7788aa">Tu peux réclamer chaque palier indépendamment. Réclamer un palier supérieur donne automatiquement les paliers inférieurs non réclamés.</p>
+        </div>
+        <div class="helpBlock">
+          <div class="helpBlock__title">🎯 Bonus complétion</div>
+          <p>Compléter les <b>3 défis Or</b> dans la même journée débloque un <b>bonus REP</b> supplémentaire. Les défis se réinitialisent à minuit.</p>
+        </div>
+        <div class="helpBlock">
+          <div class="helpBlock__title">🔥 Streak journalier</div>
+          <p>Compléter tous les défis Or plusieurs jours de suite active un multiplicateur de récompenses :</p>
+          <ul class="helpList">
+            <li>3 jours → ×1.25 sur toutes les récompenses</li>
+            <li>7 jours → ×1.5 récompenses 🔥</li>
+            <li>14 jours → ×2.0 récompenses</li>
+            <li>30 jours → ×3.0 récompenses</li>
+          </ul>
+          <p style="margin-top:6px;font-size:12px;color:#ff8c40">⚠️ Manquer un jour remet le streak à zéro.</p>
+        </div>
+        <div class="helpBlock">
+          <div class="helpBlock__title">📊 Types de défis</div>
+          <ul class="helpList">
+            <li>🚗 <b>Vendre des voitures tier X+</b> — tier adapté à ton niveau</li>
+            <li>⭐ <b>Gagner de la REP</b> — accumuler des points dans la journée</li>
+            <li>💰 <b>Gagner de l'argent</b> — encaisser un montant total (calibré à 15-60 min)</li>
+            <li>🖱️ <b>Actions manuelles</b> — clics de réparation, diagnostic, vente manuelle</li>
+            <li>📦 <b>Commander des pièces</b> — commandes manuelles ET automatiques comptent</li>
+            <li>🏷️ <b>Vendre des voitures</b> — tous tiers confondus</li>
+          </ul>
+          <p style="margin-top:6px;font-size:12px;color:#7788aa">🚗 Vendre tier X+ et 🏷️ Vendre tous tiers ne tombent jamais ensemble le même jour.</p>
         </div>
       </div>
     `
@@ -121,138 +155,65 @@ const HELP_SECTIONS = {
     content: `
       <div class="helpSection">
         <p class="helpLead">La REP est la ressource clé. Elle détermine quels tiers de voitures tu peux recevoir et permet d'atteindre le Prestige.</p>
-
         <div class="helpBlock">
           <div class="helpBlock__title">Comment gagner de la REP ?</div>
           <ul class="helpList">
-            <li>🚗 <b>Vendre des voitures</b> — chaque tier donne un gain REP différent (voir tableau ci-dessus)</li>
-            <li>📣 <b>Talent Bouche-à-Oreille</b> — +5% REP par vente par rang (T1 Diagnostic)</li>
-            <li>⭐ <b>Talent Expertise Reconnue</b> — +2 REP par diagnostic manuel par rang (T2 Diagnostic)</li>
-            <li>📅 <b>Défis journaliers</b> — bonus REP à la complétion, bonus supplémentaire si tu complètes les 3</li>
+            <li>🚗 <b>Vendre des voitures</b> — chaque tier donne un gain REP différent</li>
+            <li>📣 <b>Talent Bouche-à-Oreille</b> — +5% REP par vente par rang</li>
+            <li>⭐ <b>Talent Expertise Reconnue</b> — +2 REP par diagnostic manuel par rang</li>
+            <li>📅 <b>Défis journaliers</b> — bonus REP aux paliers Argent et Or</li>
             <li>🎖️ <b>Succès</b> — certains donnent de la REP directement</li>
+            <li>🔥 <b>Streak défis</b> — multiplie les récompenses REP des défis</li>
           </ul>
         </div>
-
         <div class="helpBlock">
           <div class="helpBlock__title">⚠️ La REP ne baisse jamais</div>
-          <p>Tu accumules la REP définitivement dans un run. Elle repart à 0 uniquement au <b>Prestige</b>.</p>
+          <p>Tu accumules la REP définitivement dans un run. Elle repart à 0 uniquement au <b>Prestige</b> — sauf si tu as le perk Héritage <b>Réputation Acquise</b> qui en conserve jusqu'à 25%.</p>
         </div>
-
         <div class="helpBlock">
-          <div class="helpBlock__title">📅 Défis journaliers</div>
-          <p>Chaque jour, 3 défis sont générés (ex : "Vendre 10 voitures tier B+"). Complète-les pour gagner de l'argent et des points talent. Compléter les 3 débloque un <b>bonus REP</b> supplémentaire. Ils se réinitialisent à minuit et s'adaptent à ton niveau de garage.</p>
+          <div class="helpBlock__title">📈 Conditions de prestige progressives</div>
+          <p>Le niveau garage requis et la REP requise <b>augmentent à chaque prestige</b>. Consulte le panel Prestige pour voir les conditions actuelles et celles du prochain prestige.</p>
         </div>
       </div>
     `
   },
 
   stock: {
-    title: "📦 Stock & Pièces détachées",
+    title: "📦 Stock & Pièces",
     content: `
       <div class="helpSection">
         <div class="helpBlock">
           <div class="helpBlock__title">🔩 À quoi servent les pièces ?</div>
-          <p>Quand une voiture a une panne, utiliser les bonnes pièces lors de la réparation <b>augmente sa valeur de revente</b> et peut accélérer ou ralentir la réparation selon la qualité. Sans pièces, la voiture est quand même réparée mais vaut moins.</p>
+          <p>Quand une voiture a une panne, utiliser les bonnes pièces lors de la réparation <b>augmente sa valeur de revente</b>. Sans pièces, la voiture est réparée mais moins valorisée.</p>
         </div>
-
         <div class="helpBlock">
           <div class="helpBlock__title">🏭 Fournisseurs</div>
-          <div class="helpSupplierGrid">
-            <div class="helpSupplierCard">
-              <div class="helpSupplierCard__head">
-                <div class="helpSupplierCard__dot" style="background:#48c78e;box-shadow:0 0 6px #48c78e66"></div>
-                <div class="helpSupplierCard__name" style="color:#48c78e">Euroline</div>
-                <div class="helpSupplierCard__stars">⭐⭐⭐</div>
-              </div>
-              <div class="helpSupplierCard__body">
-                <div class="helpSupplierCard__row"><span class="helpSupplierCard__label">Délai</span><span class="helpSupplierCard__val helpSupplierCard__val--neu">1 min 30s</span></div>
-                <div class="helpSupplierCard__row"><span class="helpSupplierCard__label">Prix</span><span class="helpSupplierCard__val helpSupplierCard__val--pos">Pas cher</span></div>
-                <div class="helpSupplierCard__row"><span class="helpSupplierCard__label">Gain net</span><span class="helpSupplierCard__val helpSupplierCard__val--pos">+2%</span></div>
-                <div class="helpSupplierCard__tag">Spécialiste mécanique (moteur, freins, transmission, joint)</div>
-              </div>
-            </div>
-            <div class="helpSupplierCard">
-              <div class="helpSupplierCard__head">
-                <div class="helpSupplierCard__dot" style="background:#ffd700;box-shadow:0 0 6px #ffd70066"></div>
-                <div class="helpSupplierCard__name" style="color:#ffd700">Valéo Plus</div>
-                <div class="helpSupplierCard__stars">⭐⭐⭐⭐</div>
-              </div>
-              <div class="helpSupplierCard__body">
-                <div class="helpSupplierCard__row"><span class="helpSupplierCard__label">Délai</span><span class="helpSupplierCard__val helpSupplierCard__val--neu">3 min</span></div>
-                <div class="helpSupplierCard__row"><span class="helpSupplierCard__label">Prix</span><span class="helpSupplierCard__val helpSupplierCard__val--neu">Moyen</span></div>
-                <div class="helpSupplierCard__row"><span class="helpSupplierCard__label">Temps répa</span><span class="helpSupplierCard__val helpSupplierCard__val--pos">−15%</span></div>
-                <div class="helpSupplierCard__row"><span class="helpSupplierCard__label">Gain net</span><span class="helpSupplierCard__val helpSupplierCard__val--pos">+6%</span></div>
-                <div class="helpSupplierCard__tag">Généraliste équilibré</div>
-              </div>
-            </div>
-            <div class="helpSupplierCard">
-              <div class="helpSupplierCard__head">
-                <div class="helpSupplierCard__dot" style="background:#ff8c00;box-shadow:0 0 6px #ff8c0066"></div>
-                <div class="helpSupplierCard__name" style="color:#ff8c00">NGX Parts</div>
-                <div class="helpSupplierCard__stars">⭐⭐⭐⭐</div>
-              </div>
-              <div class="helpSupplierCard__body">
-                <div class="helpSupplierCard__row"><span class="helpSupplierCard__label">Délai</span><span class="helpSupplierCard__val helpSupplierCard__val--neu">2 min 30s</span></div>
-                <div class="helpSupplierCard__row"><span class="helpSupplierCard__label">Prix</span><span class="helpSupplierCard__val helpSupplierCard__val--pos">Moyen-bas</span></div>
-                <div class="helpSupplierCard__row"><span class="helpSupplierCard__label">Temps répa</span><span class="helpSupplierCard__val helpSupplierCard__val--pos">−15%</span></div>
-                <div class="helpSupplierCard__row"><span class="helpSupplierCard__label">Gain net</span><span class="helpSupplierCard__val helpSupplierCard__val--pos">+4%</span></div>
-                <div class="helpSupplierCard__tag">Spécialiste électronique (+1 qualité pièces élec)</div>
-              </div>
-            </div>
-            <div class="helpSupplierCard">
-              <div class="helpSupplierCard__head">
-                <div class="helpSupplierCard__dot" style="background:#4a9eff;box-shadow:0 0 6px #4a9eff66"></div>
-                <div class="helpSupplierCard__name" style="color:#4a9eff">Bochmann</div>
-                <div class="helpSupplierCard__stars">⭐⭐⭐⭐⭐</div>
-              </div>
-              <div class="helpSupplierCard__body">
-                <div class="helpSupplierCard__row"><span class="helpSupplierCard__label">Délai</span><span class="helpSupplierCard__val helpSupplierCard__val--neg">5 min</span></div>
-                <div class="helpSupplierCard__row"><span class="helpSupplierCard__label">Prix</span><span class="helpSupplierCard__val helpSupplierCard__val--neg">Élevé</span></div>
-                <div class="helpSupplierCard__row"><span class="helpSupplierCard__label">Temps répa</span><span class="helpSupplierCard__val helpSupplierCard__val--pos">−30%</span></div>
-                <div class="helpSupplierCard__row"><span class="helpSupplierCard__label">Gain net</span><span class="helpSupplierCard__val helpSupplierCard__val--pos">+10%</span></div>
-                <div class="helpSupplierCard__tag">Meilleur rapport qualité/revente</div>
-              </div>
-            </div>
-            <div class="helpSupplierCard" style="grid-column:1/-1">
-              <div class="helpSupplierCard__head">
-                <div class="helpSupplierCard__dot" style="background:#ff4d70;box-shadow:0 0 6px #ff4d7066"></div>
-                <div class="helpSupplierCard__name" style="color:#ff4d70">TopDrive</div>
-                <div class="helpSupplierCard__stars">⭐⭐</div>
-              </div>
-              <div class="helpSupplierCard__body">
-                <div class="helpSupplierCard__row"><span class="helpSupplierCard__label">Délai</span><span class="helpSupplierCard__val helpSupplierCard__val--pos">5 secondes (urgence !)</span></div>
-                <div class="helpSupplierCard__row"><span class="helpSupplierCard__label">Prix</span><span class="helpSupplierCard__val helpSupplierCard__val--pos">Très pas cher</span></div>
-                <div class="helpSupplierCard__row"><span class="helpSupplierCard__label">Gain net</span><span class="helpSupplierCard__val helpSupplierCard__val--neg">−2%</span></div>
-                <div class="helpSupplierCard__tag">Livraison d'urgence — sans malus qualité. À utiliser quand le stock est vide et la voiture en attente.</div>
-              </div>
-            </div>
+          <div class="helpTierList">
+            <div class="helpTier" style="color:#48c78e">🟢 Euroline — ⭐⭐⭐ · 1min30s · Pas cher · Gain net <b>+2%</b> · Spécialiste mécanique</div>
+            <div class="helpTier" style="color:#ffd700">🟡 Valéo Plus — ⭐⭐⭐⭐ · 3min · Prix moyen · −15% temps répa · Gain net <b>+6%</b></div>
+            <div class="helpTier" style="color:#ff8c00">🟠 NGX Parts — ⭐⭐⭐⭐ · 2min30s · −15% temps répa · Gain net <b>+4%</b> · Spécialiste électronique</div>
+            <div class="helpTier" style="color:#4a9eff">🔵 Bochmann — ⭐⭐⭐⭐⭐ · 5min · Prix élevé · −30% temps répa · Gain net <b>+10%</b></div>
+            <div class="helpTier" style="color:#ff4d70">🔴 TopDrive — ⭐⭐ · 5 secondes · Très pas cher · Gain net <b>−2%</b> · Urgence uniquement</div>
           </div>
-          <p style="margin-top:8px;font-size:12px;color:#7788aa">Le gain net = bonus valeur revente − coût pièces (en % de la valeur du véhicule). Les délais indiqués sont sans upgrades.</p>
         </div>
-
         <div class="helpBlock">
           <div class="helpBlock__title">🏭 L'Entrepôt</div>
-          <p>Ton entrepôt démarre à <b>100 slots</b>. Chaque pièce commandée occupe 1 slot (les pièces F/E/D n'occupent que 0.5 slot avec le talent <b>Gestionnaire de Stock</b>). Si l'entrepôt est plein, les nouvelles commandes sont <b>bloquées</b>.</p>
+          <p>Ton entrepôt démarre à <b>100 slots</b>. Si plein, les nouvelles commandes sont bloquées.</p>
           <ul class="helpList" style="margin-top:6px">
             <li>📚 <b>Étagères Basiques</b> — +20 slots/rang · max 10 rangs</li>
             <li>🏗️ <b>Rayonnage Métallique</b> — +50 slots/rang · max 10 rangs</li>
-            <li>🏭 <b>Zone Logistique</b> — +100 slots/rang + −10% délai/rang · max 5 rangs</li>
-            <li>🤖 <b>Entrepôt Automatisé</b> — +200 slots/rang + +2% valeur revente (si pièces utilisées)/rang · max 5 rangs</li>
+            <li>🏭 <b>Zone Logistique</b> — +100 slots + −10% délai/rang · max 5 rangs</li>
+            <li>🤖 <b>Entrepôt Automatisé</b> — +200 slots + +2% valeur revente/rang · max 5 rangs</li>
           </ul>
         </div>
-
         <div class="helpBlock">
-          <div class="helpBlock__title">🚛 Livraisons simultanées</div>
-          <p>Tu commences avec 1 slot de livraison. Augmente-le via <b>Slots Livraison</b> (+1/rang, max 10). <b>Magasinier</b> réduit les délais −20%/rang (max 3). Le talent <b>Fournisseur Fidèle</b> ajoute +1 slot tous les 5 rangs.</p>
-        </div>
-
-        <div class="helpBlock">
-          <div class="helpBlock__title">🤖 Logiciel Stock & Commande automatique</div>
+          <div class="helpBlock__title">🤖 Logiciel Stock & Commande auto</div>
           <ul class="helpList">
             <li>Niv. 1 — Alertes rupture (badge rouge sur l'onglet Stock)</li>
             <li>Niv. 2 — Seuils configurables par pièce</li>
-            <li>Niv. 3 — <b>Commande auto</b> au fournisseur par défaut dès que le stock passe sous le seuil, dans la limite de <b>20% de ton argent</b> par cycle de 2s</li>
+            <li>Niv. 3 — <b>Commande auto</b> dès que le stock passe sous le seuil (limite 20% argent/cycle)</li>
           </ul>
+          <p style="margin-top:6px;font-size:12px;color:#7788aa">💡 Les commandes automatiques comptent pour le défi "Commander des pièces".</p>
         </div>
       </div>
     `
@@ -263,17 +224,16 @@ const HELP_SECTIONS = {
     content: `
       <div class="helpSection">
         <p class="helpLead">Les talents sont des améliorations passives permanentes qui <b>survivent au Prestige</b> et s'accumulent run après run.</p>
-
         <div class="helpBlock">
           <div class="helpBlock__title">🔓 Gagner des points talent</div>
           <ul class="helpList">
             <li>📈 Monter de niveau garage — 1 point par niveau</li>
             <li>🏅 Débloquer des succès — certains récompensent des points</li>
-            <li>📅 Défis journaliers — points à la complétion</li>
+            <li>📅 Défis journaliers — palier Argent (+1 pt) et Or (+2 pts) par défi</li>
             <li>🔍 Spécialisation Centre Diagnostic — +1 point tous les 100 diagnostics</li>
+            <li>🛒 Marché Héritage — Pack Talent : 50 pts héritage → +5 points talent</li>
           </ul>
         </div>
-
         <div class="helpBlock">
           <div class="helpBlock__title">🗂️ Business (T1–T3)</div>
           <ul class="helpList">
@@ -287,7 +247,6 @@ const HELP_SECTIONS = {
             <li>💎 Enchères Privées (T3) — +2% multiplicateur toutes ventes par rang</li>
           </ul>
         </div>
-
         <div class="helpBlock">
           <div class="helpBlock__title">🔧 Atelier (T1–T3)</div>
           <ul class="helpList">
@@ -296,28 +255,24 @@ const HELP_SECTIONS = {
             <li>🖱️ Main de Fer (T2) — +0.10s retirées par clic par rang</li>
             <li>🔧 Organisation Pro (T2) — +7% vitesse répa par rang</li>
             <li>🔩 Double Shift (T2) — +0.5s/s répa auto par rang</li>
-            <li>📦 Gestion des Stocks (T2) — −1.5% délai livraison par rang</li>
-            <li>📋 Gestionnaire de Stock (T2) — pièces F/E/D = 0.5 slot entrepôt</li>
             <li>🚛 Fournisseur Fidèle (T3) — +1 slot livraison tous les 5 rangs</li>
             <li>✨ Touche d'Or (T3) — +3% multiplicateur bonus répa par rang</li>
             <li>🏭 Logistique Avancée (T3) — +50 slots entrepôt par rang</li>
           </ul>
         </div>
-
         <div class="helpBlock">
           <div class="helpBlock__title">🔍 Diagnostic (T1–T3)</div>
           <ul class="helpList">
-            <li>🔍 Œil de Lynx (T1) — +6€ par analyse par rang</li>
+            <li>🔍 Œil de Lynx (T1) — +3€ par analyse par rang</li>
             <li>📣 Bouche-à-Oreille (T1) — +5% REP gagnée par vente par rang</li>
-            <li>🧠 Scan Avancé (T2) — +16€ par analyse par rang</li>
+            <li>🧠 Scan Avancé (T2) — +8€ par analyse par rang</li>
             <li>⭐ Expertise Reconnue (T2) — +2 REP par diagnostic manuel par rang</li>
             <li>🎓 Expert Certifié (T3) — +5% multiplicateur gain total diag par rang</li>
           </ul>
         </div>
-
         <div class="helpBlock">
           <div class="helpBlock__title">🔓 Déblocage des tiers</div>
-          <p>T2 se débloque avec <b>5 points investis</b> dans la catégorie. T3 nécessite <b>15 points</b>. Les talents T3 Atelier (Fournisseur Fidèle, Touche d'Or, Logistique Avancée) se débloquent en montant certains talents T2 à rang 5.</p>
+          <p>T2 se débloque avec <b>5 points investis</b> dans la catégorie. T3 nécessite <b>15 points</b>.</p>
         </div>
       </div>
     `
@@ -328,141 +283,165 @@ const HELP_SECTIONS = {
     content: `
       <div class="helpSection">
         <p class="helpLead">Le Prestige remet ton garage à zéro, mais tu gardes des bonus permanents qui rendent chaque run plus puissant.</p>
-
         <div class="helpBlock">
-          <div class="helpBlock__title">🔓 Conditions de prestige</div>
-          <ul class="helpList">
-            <li>Atteindre le <b>Niveau Garage 50</b></li>
-            <li>Avoir <b>40 000 REP</b> (réduit à 30 000 avec la spécialisation Réputation Légendaire)</li>
-          </ul>
+          <div class="helpBlock__title">🔓 Conditions (progressives)</div>
+          <p>Les seuils requis <b>augmentent à chaque prestige</b>. Consulte le panel Prestige pour voir les conditions actuelles et celles du prestige suivant.</p>
         </div>
-
         <div class="helpBlock">
           <div class="helpBlock__title">💎 Points Héritage gagnés</div>
           <ul class="helpList">
             <li>🔵 <b>Base</b> : 1 point garanti</li>
-            <li>📈 <b>Niveau garage</b> : +1 par tranche de 10 niveaux au-dessus de 50 <span style="color:#5566aa">(LVL 60 → +1, LVL 70 → +2…)</span></li>
+            <li>📈 <b>Niveau garage</b> : +1 par tranche de 10 niveaux au-dessus du minimum</li>
             <li>🚗 <b>Ventes</b> : +1 par tranche de 5 000 voitures vendues</li>
-            <li>⭐ <b>REP</b> : +1 par tranche de 25 000 REP au-dessus de 50 000 <span style="color:#5566aa">(75k → +1, 100k → +2…)</span></li>
-            <li>✨ <b>Perk Gain Prestige</b> : multiplie le total</li>
+            <li>⭐ <b>REP</b> : +1 par tranche de 25 000 REP au-dessus de 50 000</li>
+            <li>✨ <b>Perk Gain Prestige</b> : multiplie le total · P100 → ×1.5 permanent</li>
           </ul>
-          <p style="margin-top:8px;font-size:12px;color:#2ee59d">💡 Ex : LVL 80, 10 000 ventes, 100 000 REP → 1 + 3 + 2 + 2 = <b>8 points</b></p>
         </div>
-
         <div class="helpBlock">
-          <div class="helpBlock__title">🏭 Spécialisations de run</div>
-          <p>À chaque prestige, tu choisis une <b>spécialisation</b> qui modifie profondément les règles du run suivant. Tu ne peux pas choisir deux fois de suite la même — cela force la variété et la découverte de styles de jeu différents.</p>
-          <p style="margin-top:6px">La spécialisation est active <b>dès le début du run</b> jusqu'au prochain prestige. Elle est affichée en permanence dans l'onglet Prestige.</p>
-          <div class="helpSpecGrid" style="margin-top:10px">
-
-            <div class="helpSpecCard" style="--spec-clr:#4a9eff">
-              <div class="helpSpecCard__head">
-                <div class="helpSpecCard__icon">🔧</div>
-                <div class="helpSpecCard__titles">
-                  <div class="helpSpecCard__name">Atelier Turbo</div>
-                  <div class="helpSpecCard__tagline">La vitesse avant tout</div>
-                </div>
-              </div>
-              <div class="helpSpecCard__body">
-                <div class="helpSpecCard__bonus helpSpecCard__bonus--pos"><span class="helpSpecCard__bonusVal">+40%</span><span class="helpSpecCard__bonusLabel">vitesse réparation</span></div>
-                <div class="helpSpecCard__bonus helpSpecCard__bonus--pos"><span class="helpSpecCard__bonusVal">+40%</span><span class="helpSpecCard__bonusLabel">réparation auto</span></div>
-                <div class="helpSpecCard__bonus helpSpecCard__bonus--neg"><span class="helpSpecCard__bonusVal">−15%</span><span class="helpSpecCard__bonusLabel">valeur de vente</span></div>
-                <div class="helpSpecCard__bonus helpSpecCard__bonus--neg"><span class="helpSpecCard__bonusVal">−25%</span><span class="helpSpecCard__bonusLabel">revenus passifs</span></div>
-                <div class="helpSpecCard__tip">🖱️ Idéal en jeu actif. Contre-indiqué en AFK.</div>
-              </div>
-            </div>
-
-            <div class="helpSpecCard" style="--spec-clr:#ffc83a">
-              <div class="helpSpecCard__head">
-                <div class="helpSpecCard__icon">💰</div>
-                <div class="helpSpecCard__titles">
-                  <div class="helpSpecCard__name">Garage Prestige</div>
-                  <div class="helpSpecCard__tagline">Le luxe ça se mérite</div>
-                </div>
-              </div>
-              <div class="helpSpecCard__body">
-                <div class="helpSpecCard__bonus helpSpecCard__bonus--pos"><span class="helpSpecCard__bonusVal">+35%</span><span class="helpSpecCard__bonusLabel">valeur de vente</span></div>
-                <div class="helpSpecCard__bonus helpSpecCard__bonus--pos"><span class="helpSpecCard__bonusVal">×2</span><span class="helpSpecCard__bonusLabel">bonus tier S+</span></div>
-                <div class="helpSpecCard__bonus helpSpecCard__bonus--neg"><span class="helpSpecCard__bonusVal">−20%</span><span class="helpSpecCard__bonusLabel">vitesse réparation</span></div>
-                <div class="helpSpecCard__bonus helpSpecCard__bonus--neg"><span class="helpSpecCard__bonusVal">5 max</span><span class="helpSpecCard__bonusLabel">slots showroom</span></div>
-                <div class="helpSpecCard__tip">💎 Vends manuellement tes S+ pour maximiser.</div>
-              </div>
-            </div>
-
-            <div class="helpSpecCard" style="--spec-clr:#2ee59d">
-              <div class="helpSpecCard__head">
-                <div class="helpSpecCard__icon">🔍</div>
-                <div class="helpSpecCard__titles">
-                  <div class="helpSpecCard__name">Centre Diagnostic</div>
-                  <div class="helpSpecCard__tagline">Chaque analyse compte</div>
-                </div>
-              </div>
-              <div class="helpSpecCard__body">
-                <div class="helpSpecCard__bonus helpSpecCard__bonus--pos"><span class="helpSpecCard__bonusVal">×3</span><span class="helpSpecCard__bonusLabel">gain diagnostic</span></div>
-                <div class="helpSpecCard__bonus helpSpecCard__bonus--pos"><span class="helpSpecCard__bonusVal">+1</span><span class="helpSpecCard__bonusLabel">pt talent / 100 diags</span></div>
-                <div class="helpSpecCard__bonus helpSpecCard__bonus--neg"><span class="helpSpecCard__bonusVal">−10%</span><span class="helpSpecCard__bonusLabel">vitesse réparation</span></div>
-                <div class="helpSpecCard__bonus helpSpecCard__bonus--neg"><span class="helpSpecCard__bonusVal">−10%</span><span class="helpSpecCard__bonusLabel">valeur de vente</span></div>
-                <div class="helpSpecCard__tip">⭐ Accélère les talents. Bon en AFK avec Stagiaire.</div>
-              </div>
-            </div>
-
-            <div class="helpSpecCard" style="--spec-clr:#a78bfa">
-              <div class="helpSpecCard__head">
-                <div class="helpSpecCard__icon">📦</div>
-                <div class="helpSpecCard__titles">
-                  <div class="helpSpecCard__name">Logistique Pro</div>
-                  <div class="helpSpecCard__tagline">La pièce, toujours disponible</div>
-                </div>
-              </div>
-              <div class="helpSpecCard__body">
-                <div class="helpSpecCard__bonus helpSpecCard__bonus--pos"><span class="helpSpecCard__bonusVal">×2</span><span class="helpSpecCard__bonusLabel">slots livraison</span></div>
-                <div class="helpSpecCard__bonus helpSpecCard__bonus--pos"><span class="helpSpecCard__bonusVal">−50%</span><span class="helpSpecCard__bonusLabel">délai livraison</span></div>
-                <div class="helpSpecCard__bonus helpSpecCard__bonus--pos"><span class="helpSpecCard__bonusVal">+25%</span><span class="helpSpecCard__bonusLabel">bonus pièces sur vente</span></div>
-                <div class="helpSpecCard__bonus helpSpecCard__bonus--neg"><span class="helpSpecCard__bonusVal">−20%</span><span class="helpSpecCard__bonusLabel">gain REP</span></div>
-                <div class="helpSpecCard__tip">💤 Meilleur choix pour jouer AFK.</div>
-              </div>
-            </div>
-
-            <div class="helpSpecCard" style="--spec-clr:#ff8c40;grid-column:1/-1">
-              <div class="helpSpecCard__head">
-                <div class="helpSpecCard__icon">⭐</div>
-                <div class="helpSpecCard__titles">
-                  <div class="helpSpecCard__name">Réputation Légendaire</div>
-                  <div class="helpSpecCard__tagline">Ton nom vaut de l'or</div>
-                </div>
-              </div>
-              <div class="helpSpecCard__body" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px 8px">
-                <div class="helpSpecCard__bonus helpSpecCard__bonus--pos"><span class="helpSpecCard__bonusVal">×2</span><span class="helpSpecCard__bonusLabel">gain REP</span></div>
-                <div class="helpSpecCard__bonus helpSpecCard__bonus--pos"><span class="helpSpecCard__bonusVal">−25%</span><span class="helpSpecCard__bonusLabel">REP requise prestige</span></div>
-                <div class="helpSpecCard__bonus helpSpecCard__bonus--neg"><span class="helpSpecCard__bonusVal">−20%</span><span class="helpSpecCard__bonusLabel">tous les revenus</span></div>
-                <div class="helpSpecCard__tip" style="grid-column:1/-1">🚀 Prestige speedrun. Compense avec les talents Business.</div>
-              </div>
-            </div>
-
-          </div>
-          <div class="helpBlock__title" style="margin-top:14px">💡 Quel choix pour commencer ?</div>
+          <div class="helpBlock__title">🌳 Arbre Héritage — 5 branches</div>
           <ul class="helpList">
-            <li>🖱️ Tu joues <b>actif</b> → <b>Atelier Turbo</b> ou <b>Garage Prestige</b></li>
-            <li>💤 Tu joues <b>AFK</b> → <b>Logistique Pro</b> ou <b>Centre Diagnostic</b></li>
-            <li>🚀 Tu veux <b>prestige rapide</b> → <b>Réputation Légendaire</b></li>
+            <li>🔧 <b>Mécanique</b> — vitesse de réparation, perks infinis vitesse</li>
+            <li>💰 <b>Commerce</b> — revenus, coût upgrades, conservation niveaux au prestige</li>
+            <li>⭐ <b>Réputation</b> — gain REP, conservation jusqu'à 25% REP au prestige</li>
+            <li>📦 <b>Logistique</b> — délais livraison, commandes auto améliorées, entrepôt</li>
+            <li>🔵 <b>Expertise</b> — amplifie les upgrades prestige : Scanner, Turbocompresseur, Chef d'Atelier</li>
+          </ul>
+          <p style="margin-top:6px;font-size:12px;color:#7788aa">Chaque branche a un perk ultime unique et des perks infinis (sans maximum) débloqués après l'ultime.</p>
+        </div>
+        <div class="helpBlock">
+          <div class="helpBlock__title">🏆 Milestones de Prestige</div>
+          <div class="helpTierList">
+            <div class="helpTier">P1 → +1 000€ au démarrage</div>
+            <div class="helpTier">P5 → +1 slot garage permanent</div>
+            <div class="helpTier">P10 → +10% vitesse auto</div>
+            <div class="helpTier">P15 → +1 slot showroom permanent</div>
+            <div class="helpTier">P25 → +2 slots garage et showroom</div>
+            <div class="helpTier">P30 → Upgrades Équipe conservent 25% de leurs niveaux</div>
+            <div class="helpTier" style="color:#31d6ff">P40 → <b>Double Spécialisation</b> simultanée</div>
+            <div class="helpTier" style="color:#ffc83a">P50 → Titre 👑 LÉGENDE débloqué</div>
+            <div class="helpTier">P75 → Perks infinis −1pt/rang (min 2pts)</div>
+            <div class="helpTier" style="color:#a78bfa">P100 → Points Héritage ×1.5 permanent</div>
+          </div>
+        </div>
+        <div class="helpBlock">
+          <div class="helpBlock__title">🏭 Spécialisations</div>
+          <p>À partir du 1er prestige, tu choisis une spécialisation. Au P40, une <b>2e spécialisation</b> peut être activée simultanément — les effets se combinent multiplicativement.</p>
+          <div class="helpTierList">
+            <div class="helpTier" style="color:#4a9eff">🔧 Atelier Turbo — Vitesse répa +40%, répa auto +40% / Vente −15%, passifs −25%</div>
+            <div class="helpTier" style="color:#ffc83a">💰 Garage Prestige — Vente +35%, bonus S+ ×2 / Vitesse répa −20%, showroom max 5 slots</div>
+            <div class="helpTier" style="color:#2ee59d">🔍 Centre Diagnostic — Gain diag ×3, +1 talent/100 diags / Vitesse répa −10%, vente −10%</div>
+            <div class="helpTier" style="color:#a78bfa">📦 Logistique Pro — Livraisons ×2, délais −50%, pièces +25% / REP −20%</div>
+            <div class="helpTier" style="color:#ff8c40">⭐ Réputation Légendaire — REP ×2, seuil prestige −25% / Revenus −20%</div>
+          </div>
+        </div>
+        <div class="helpBlock">
+          <div class="helpBlock__title">🛒 Marché Héritage</div>
+          <p>Dans l'onglet Héritage (section dépliable), dépense des points pour des avantages immédiats :</p>
+          <ul class="helpList">
+            <li>💰 <b>Pack Capital</b> (100 pts) — +50 000€ au prochain prestige</li>
+            <li>⭐ <b>Pack Talent</b> (50 pts) — +5 points talent au démarrage</li>
+            <li>🔥 <b>Boost REP ×2</b> (75 pts) — REP doublée pendant 30 minutes</li>
           </ul>
         </div>
-
         <div class="helpBlock">
           <div class="helpBlock__title">✅ Ce qui survit au prestige</div>
           <ul class="helpList">
             <li>✅ Points talent et rangs de tous les talents</li>
             <li>✅ Points Héritage et perks achetés</li>
-            <li>✅ Succès débloqués</li>
-            <li>❌ Argent, REP, niveau garage, upgrades, pièces, commandes en cours</li>
+            <li>✅ Succès débloqués, meilleur tier réparé, REP max (stats profil)</li>
+            <li>⚡ Partiel — REP conservée si perk <b>Réputation Acquise</b> (max 25%)</li>
+            <li>⚡ Partiel — Niveaux upgrades selon perks Commerce et Expertise</li>
+            <li>❌ Argent, REP, niveau garage, upgrades (sans perks), pièces, commandes</li>
           </ul>
         </div>
       </div>
     `
   },
 
+  upgrades: {
+    title: "⚙️ Upgrades Prestige",
+    content: `
+      <div class="helpSection">
+        <p class="helpLead">Les upgrades prestige se débloquent à partir du 1er prestige. Elles sont <b>réinitialisées au prestige suivant</b> — sauf avec les perks Héritage appropriés.</p>
+        <div class="helpBlock">
+          <div class="helpBlock__title">🔧 Onglet Outils</div>
+          <ul class="helpList">
+            <li>🔬 <b>Scanner Pro X</b> (P3, max 3) — Bonus de scan par tier après diagnostic. +15€ (F) → +6 000€ (SSS+) par rang.</li>
+            <li>🔩 <b>Clé Dynamométrique</b> (P4) — +0.5s retirées par clic par rang. Illimité.</li>
+            <li>🚀 <b>Turbocompresseur</b> (P5) — +15% vitesse de réparation par rang (multiplicateur). Illimité.</li>
+          </ul>
+        </div>
+        <div class="helpBlock">
+          <div class="helpBlock__title">👥 Onglet Équipe</div>
+          <ul class="helpList">
+            <li>🏆 <b>Vendeur Expert</b> (P5, max 5) — −0.1s plancher vente auto par rang (min 0.5s). Prérequis : Vendeur Confirmé max.</li>
+            <li>🤖 <b>IA Diagnostic</b> (P5, max 5) — −0.1s plancher diagnostic auto par rang (min 0.5s). Prérequis : Réceptionnaire max.</li>
+            <li>👑 <b>Chef d'Atelier</b> (P7, max 5) — +1 slot de réparation simultané par rang, malus −10%/slot (réductible).</li>
+          </ul>
+        </div>
+        <div class="helpBlock">
+          <div class="helpBlock__title">💼 Onglet Affaires</div>
+          <ul class="helpList">
+            <li>💼 <b>Réseau National</b> (P2) — +100€/s passif par rang. Illimité.</li>
+            <li>🏦 <b>Holding Automobile</b> (P4) — +250€/s passif par rang. Illimité.</li>
+            <li>🏬 <b>Galerie Marchande</b> (P2, max 4) — +2 slots showroom par rang. Prérequis : Extension Showroom niv.4.</li>
+            <li>🔧 <b>Extension Atelier</b> (P3, max 4) — +1 slot garage par rang. Prérequis : Agrandissement Garage niv.5.</li>
+          </ul>
+        </div>
+        <div class="helpBlock">
+          <div class="helpBlock__title">💡 Filtres & Tooltips</div>
+          <p>Dans l'onglet Upgrades, utilise la <b>barre de filtre</b> (collapsible) pour filtrer par statut ou par type d'effet. Clique sur l'icône d'un upgrade pour afficher un <b>tableau des 10 prochains niveaux</b> avec effets et prix.</p>
+        </div>
+      </div>
+    `
+  },
+
+  profile: {
+    title: "👤 Profil & Classement",
+    content: `
+      <div class="helpSection">
+        <div class="helpBlock">
+          <div class="helpBlock__title">👤 Ton profil</div>
+          <p>Accède au profil via le menu latéral (☰). Tu peux personnaliser ton avatar, ta bannière, ton titre affiché et ton pays.</p>
+        </div>
+        <div class="helpBlock">
+          <div class="helpBlock__title">🎨 Bannières débloquables</div>
+          <ul class="helpList">
+            <li>🔁 <b>Prestige</b> — P1, P5, P10, P25, P50 (arc-en-ciel animé)</li>
+            <li>🔧 <b>Spécialisation</b> — une bannière par spécialisation active</li>
+            <li>💎 <b>SSS+ réparé</b>, 1M€ cumulés, Double Spécialisation (P40), 100 prestiges</li>
+          </ul>
+          <p style="margin-top:6px;font-size:12px;color:#7788aa">Les bannières verrouillées sont visibles dans le picker avec la condition de déverrouillage.</p>
+        </div>
+        <div class="helpBlock">
+          <div class="helpBlock__title">👑 Titres débloquables</div>
+          <p>Les titres s'affichent sous ton pseudo. Ils se débloquent via des conditions difficiles :</p>
+          <ul class="helpList">
+            <li>🔧 Vétéran (P5) · ⭐ Expert (P10) · 🏆 Maître (P25) · 👑 LÉGENDE (P50) · ♾️ Éternel (P100)</li>
+            <li>⚡ Turbo Mécano (vitesse ×10) · 💰 Magnat (100M€) · 🔍 Analyste Suprême (10k diags)</li>
+            <li>🚗 Vendeur de l'Année (5k ventes) · 💎 Chasseur d'Élite (SSS+ + 500 répa)</li>
+            <li>🏛️ Héritier Suprême (150 pts Héritage) · 🎖️ Collectionneur (80% succès)</li>
+            <li>⚡ Double Expert (dualSpec P40) · 👑 Chef des Chefs (Chef d'Atelier niv.5)</li>
+          </ul>
+        </div>
+        <div class="helpBlock">
+          <div class="helpBlock__title">🖼️ Cadre d'avatar par prestige</div>
+          <ul class="helpList">
+            <li>P0 — aucun · P1–4 — bordure grise · P5–9 — bordure cyan</li>
+            <li>P10–24 — bordure violette glow · P25–49 — bordure or pulsée</li>
+            <li>P50+ — arc-en-ciel animé ✨</li>
+          </ul>
+        </div>
+        <div class="helpBlock">
+          <div class="helpBlock__title">🌍 Classement mondial</div>
+          <p>Accessible depuis le menu latéral. Filtre par catégorie : argent total, voitures vendues, prestige, niveau garage, succès. Clique sur un joueur pour voir son profil complet avec ses stats, bannière, titre et cadre d'avatar.</p>
+        </div>
+      </div>
+    `
+  },
+
   tips: {
-    title: "💡 Astuces & Conseils",
+    title: "💡 Astuces",
     content: `
       <div class="helpSection">
         <div class="helpBlock">
@@ -474,42 +453,39 @@ const HELP_SECTIONS = {
             <li>Premiers talents : <b>Routine Atelier</b> et <b>Négociateur Né</b></li>
           </ul>
         </div>
-
         <div class="helpBlock">
           <div class="helpBlock__title">💰 Optimiser ses revenus</div>
           <ul class="helpList">
             <li>Vends manuellement les voitures <b>S, SS, SSS, SSS+</b> — le vendeur auto ne fait pas de tri</li>
-            <li><b>Bochmann</b> est le meilleur fournisseur (−30% temps répa, +50% valeur revente) mais livraison lente (5min) — utilise <b>TopDrive</b> pour les urgences (5s)</li>
-            <li>Talent <b>Clientèle Haut de Gamme</b> est très rentable en fin de run sur les tiers S+</li>
-            <li><b>Entrepôt Automatisé</b> : +2%/rang de valeur si pièces utilisées — combiné à Bochmann, effet cumulatif puissant</li>
+            <li><b>Bochmann</b> : meilleur fournisseur (−30% temps, +10% gain) mais lent · <b>TopDrive</b> pour les urgences (5s)</li>
+            <li>Talent <b>Clientèle Haut de Gamme</b> très rentable sur les tiers S+ en fin de run</li>
+            <li>Upgrades <b>Réseau National</b> et <b>Holding</b> génèrent du passif même en AFK</li>
           </ul>
         </div>
-
         <div class="helpBlock">
-          <div class="helpBlock__title">📦 Gérer son entrepôt</div>
+          <div class="helpBlock__title">📅 Maximiser les défis</div>
           <ul class="helpList">
-            <li>L'entrepôt plein <b>bloque toutes les commandes</b> — surveille la jauge dans l'onglet Stock</li>
-            <li>Talent <b>Gestionnaire de Stock</b> divise par 2 l'espace des petites pièces (F/E/D)</li>
-            <li>Priorité upgrades : Étagères → Rayonnage → Zone Logistique (pour réduire les délais aussi)</li>
+            <li>Les paliers Bronze sont rapides — réclame-les dès le début de session</li>
+            <li>Le défi Commander des pièces compte les commandes auto — active-les avant de jouer</li>
+            <li>Le streak ×1.5 (7 jours) change vraiment les gains en talent et REP</li>
           </ul>
         </div>
-
         <div class="helpBlock">
           <div class="helpBlock__title">🔥 Avant de prestige</div>
           <ul class="helpList">
             <li>Vide ton showroom et dépense tout ton argent en upgrades — tu ne gardes rien</li>
             <li>Dépense tous tes points Héritage disponibles avant de confirmer</li>
-            <li>Vise REP > 75 000 pour maximiser les points Héritage (+1 point dès 75k)</li>
-            <li>Choisis ta spécia selon ton style : Atelier Turbo si tu joues actif, Logistique Pro si tu joues AFK</li>
+            <li>Vise REP > 75 000 pour maximiser les points Héritage</li>
+            <li>Choisis ta spécia selon ton style : Atelier Turbo si actif, Logistique Pro si AFK</li>
+            <li>À P40 la 2e spécialisation se choisit juste après — prévoie ta combinaison</li>
           </ul>
         </div>
-
         <div class="helpBlock">
           <div class="helpBlock__title">⏱️ Optimiser l'AFK</div>
           <ul class="helpList">
-            <li>Le jeu rattrape au maximum <b>4 heures</b> hors-ligne — reviens toutes les 4h pour maximiser</li>
-            <li>Avant de fermer : commandes de pièces en attente, showroom non saturé, vendeur auto actif</li>
-            <li>Spécialisation <b>Logistique Pro</b> est la plus efficace en AFK (livraisons rapides, stock automatique)</li>
+            <li>Le jeu rattrape max <b>4 heures</b> hors-ligne — reviens toutes les 4h pour maximiser</li>
+            <li>Avant de fermer : commandes de pièces, showroom non saturé, vendeur auto actif</li>
+            <li>Spécialisation <b>Logistique Pro</b> est la plus efficace en AFK</li>
           </ul>
         </div>
       </div>
@@ -548,3 +524,4 @@ document.getElementById("helpTabs")?.addEventListener("click", e => {
 document.getElementById("btnHelp")?.addEventListener("click", openHelp);
 document.getElementById("btnHelpClose")?.addEventListener("click", closeHelp);
 document.getElementById("helpBackdrop")?.addEventListener("click", closeHelp);
+

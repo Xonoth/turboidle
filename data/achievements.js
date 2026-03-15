@@ -403,6 +403,62 @@ const ACHIEVEMENTS = [
   { id:"combo_pdg",          cat:"Défis",         icon:"👑", name:"PDG",                      desc:"Posséder Réseau National + Holding + Galerie Marchande + Extension Atelier", cond:s=>["reseau_national","holding_auto","galerie_marchande","extension_atelier"].every(id=>s.upgrades?.find(u=>u.id===id)?.lvl>=1),                              reward:{rep:5000, money:2000000,talent:4} },
 ];
 
+// =====================
+// TITRES DÉBLOQUABLES
+// =====================
+const UNLOCKABLE_TITLES = [
+  // ── Prestige ──────────────────────────────────────────────────────────────
+  { id:"title_p5",       label:"🔧 Vétéran",          color:"#31d6ff",
+    desc:"Effectuer 5 prestiges",
+    cond:s=>(s.prestigeCount??0)>=5 },
+  { id:"title_p10",      label:"⭐ Expert",             color:"#a78bfa",
+    desc:"Effectuer 10 prestiges",
+    cond:s=>(s.prestigeCount??0)>=10 },
+  { id:"title_p25",      label:"🏆 Maître Mécanicien",  color:"#ffc83a",
+    desc:"Effectuer 25 prestiges",
+    cond:s=>(s.prestigeCount??0)>=25 },
+  { id:"title_p50",      label:"👑 LÉGENDE",            color:"#ff8c40",
+    desc:"Effectuer 50 prestiges",
+    cond:s=>(s.prestigeCount??0)>=50 },
+  { id:"title_p100",     label:"♾️ Éternel",            color:"#ffc83a",
+    desc:"Effectuer 100 prestiges",
+    cond:s=>(s.prestigeCount??0)>=100 },
+  // ── Exploits ─────────────────────────────────────────────────────────────
+  { id:"title_speed",    label:"⚡ Turbo Mécano",        color:"#31d6ff",
+    desc:"Vitesse de réparation ≥ 10×",
+    cond:s=>((s.speedMult??1)*(s.talentSpeedMult??1))>=10 },
+  { id:"title_rich",     label:"💰 Magnat",              color:"#ffc83a",
+    desc:"100 000 000€ gagnés en cumulé",
+    cond:s=>(s.totalMoneyEarned??0)>=100000000 },
+  { id:"title_diag",     label:"🔍 Analyste Suprême",    color:"#2ee59d",
+    desc:"10 000 diagnostics effectués",
+    cond:s=>(s.totalAnalyses??0)>=10000 },
+  { id:"title_seller",   label:"🚗 Vendeur de l'Année",  color:"#ff8c40",
+    desc:"5 000 véhicules vendus en cumulé",
+    cond:s=>(s.totalCarsSold??0)>=5000 },
+  { id:"title_sss",      label:"💎 Chasseur d'Élite",    color:"#ff4d70",
+    desc:"Avoir réparé un SSS+ et 500 réparations au total",
+    cond:s=>s.bestTier==="SSS+"&&(s.totalRepairs??0)>=500 },
+  { id:"title_heritage", label:"🏛️ Héritier Suprême",   color:"#a78bfa",
+    desc:"Dépenser 150 points Héritage",
+    cond:s=>(s.heritageSpent??0)>=150 },
+  { id:"title_collector",label:"🎖️ Collectionneur",     color:"#a78bfa",
+    desc:"Débloquer 80% des succès",
+    cond:s=>{const tot=typeof ACHIEVEMENTS!=="undefined"?ACHIEVEMENTS.length:1;const have=Object.values(s.achievements??{}).filter(Boolean).length;return tot>0&&have/tot>=0.8;} },
+  { id:"title_dualspec", label:"⚡ Double Expert",        color:"#31d6ff",
+    desc:"Double Spécialisation active (P40)",
+    cond:s=>s.heritageBonuses?.dualSpec===true },
+  { id:"title_chef_max", label:"👑 Chef des Chefs",       color:"#ff8c40",
+    desc:"Chef d'Atelier niveau maximum (niv.5)",
+    cond:s=>s.upgrades?.find(u=>u.id==="chef_atelier")?.lvl>=5 },
+  { id:"title_arsenal",  label:"🎯 Arsehal Complet",      color:"#2ee59d",
+    desc:"Scanner Pro X + Clé Dyna + Turbocompresseur",
+    cond:s=>["scanner_pro","cle_dynamometrique","turbocompresseur"].every(id=>s.upgrades?.find(u=>u.id===id)?.lvl>=1) },
+];
+
+function getUnlockedTitles(){ return UNLOCKABLE_TITLES.filter(t=>t.cond(state)); }
+function getTitleById(id){ return UNLOCKABLE_TITLES.find(t=>t.id===id)??null; }
+
 // State des succès (débloqués)
 if(!state.achievements) state.achievements = {};
 if(!state._hasSaved)    state._hasSaved    = false;

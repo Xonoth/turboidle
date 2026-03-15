@@ -94,9 +94,9 @@ const state = {
     { id:"turbocompresseur", tab:"tools", icon:"🚀", name:"Turbocompresseur",        lvl:0, desc:"+15% vitesse de réparation par rang (clic + auto) · 🔒 Prestige 5",                                             cost:1200000         },
 
     // ÉQUIPE
-    { id:"stagiaire",        tab:"team", icon:"🧑‍🔧", name:"Stagiaire Accueil",    lvl:0, desc:"Diagnostique auto toutes les 12s (min 6s au niv.max)",                    cost:15000,  maxLvl:10 },
+    { id:"stagiaire",        tab:"team", icon:"🧑‍🔧", name:"Stagiaire Accueil",    lvl:0, desc:"Diagnostique auto toutes les 15s au niv.1 (min 6s au niv.max) · −1s par rang",                    cost:15000,  maxLvl:10 },
     { id:"receptionnaire",   tab:"team", icon:"📋",    name:"Réceptionnaire",        lvl:0, desc:"Accélère le diagnostic auto jusqu'à 1s (prérequis : Stagiaire niv.10)", cost:120000, maxLvl:10 },
-    { id:"vendeur",          tab:"team", icon:"👔",    name:"Vendeur Junior",         lvl:0, desc:"Vend auto toutes les 15s (min 8s au niv.max)",                          cost:25000,  maxLvl:10 },
+    { id:"vendeur",          tab:"team", icon:"👔",    name:"Vendeur Junior",         lvl:0, desc:"Vend auto toutes les 15s au niv.1 (min 6s au niv.max) · −1s par rang",                 cost:25000,  maxLvl:10 },
     { id:"vendeur_confirme", tab:"team", icon:"🤵",    name:"Vendeur Confirmé",       lvl:0, desc:"Accélère la vente auto jusqu'à 1s (prérequis : Vendeur Junior niv.10)", cost:502687, maxLvl:10 },
     { id:"vendeur_expert",   tab:"team", icon:"🏆",    name:"Vendeur Expert",         lvl:0, desc:"−0.1s au plancher de vente auto par rang (min 0.5s) · 🔒 Prestige 5 · Vendeur Confirmé max", cost:1200000, maxLvl:5 },
     { id:"ia_diagnostic",    tab:"team", icon:"🤖",    name:"IA Diagnostic",          lvl:0, desc:"−0.1s au plancher de diagnostic auto par rang (min 0.5s) · 🔒 Prestige 5 · Réceptionnaire max", cost:1200000, maxLvl:5 },
@@ -448,6 +448,8 @@ if(!state.sessionStart)      state.sessionStart      = Date.now();
 if(!state.specialization)    state.specialization    = null;
 if(state.specialization2 === undefined) state.specialization2 = null;
 if(state._isAutoOrder === undefined)    state._isAutoOrder    = false;
+if(!state.bestTier)          state.bestTier          = null;
+if(!state.repMax)            state.repMax             = 0;
 // Effets de spécialisation (recalculés à chaque applySpecializationEffects)
 if(!state.specSpeedMult)         state.specSpeedMult         = 1.0;
 if(!state.specAutoMult)          state.specAutoMult          = 1.0;
@@ -653,6 +655,12 @@ function finishRepair(slotIndex = 0){
   if(!car) return;
 
   state._lastRepairedTier = car.tier;
+  // Tracker le meilleur tier réparé (pour le profil)
+  const TIER_ORDER = ["F","E","D","C","B","A","S","SS","SSS","SSS+"];
+  const curBest = state.bestTier ?? "F";
+  if(TIER_ORDER.indexOf(car.tier) > TIER_ORDER.indexOf(curBest)){
+    state.bestTier = car.tier;
+  }
   const cap = getShowroomCap();
   if(state.showroom.length >= cap){
     return;
@@ -745,7 +753,7 @@ btnAnalyze.addEventListener("click", () => {
   state.totalAnalyses = (state.totalAnalyses ?? 0) + 1;
   // diag_rep_1 : +2 REP par diag manuel par rang
   const drb = state.talentDiagRepBonus ?? 0;
-  if(drb > 0) state.rep += drb;
+  if(drb > 0){ state.rep += drb; if(state.rep > (state.repMax??0)) state.repMax = state.rep; }
   // Spécialisation Centre Diagnostic : +1 pt talent toutes les 100 analyses
   if(state.specialization === "diag" && state.totalAnalyses % 100 === 0){
     state.talentPoints = (state.talentPoints ?? 0) + 1;
@@ -829,6 +837,7 @@ showroomListEl.addEventListener("click", (e) => {
   const repGain = Math.round(tierData.repGain * repMult * (state.specRepMult ?? 1.0) * (1 + (state.talentRepGainBonus ?? 0)));
   if(isFinite(repGain)) {
     state.rep += repGain;
+    if(state.rep > (state.repMax ?? 0)) state.repMax = state.rep;
     setTimeout(() => spawnFloatText("+" + repGain + " REP", "rep", btnPos), 120);
   }
 
@@ -1088,7 +1097,7 @@ function applyTickLogic(dt){
   const iaDiagLvl         = getUpgrade("ia_diagnostic")?.lvl  || 0;
   if(stagiaireLvl > 0){
     autoAnalyzeTimer += dt;
-    let delay = Math.max(6, 12 - (stagiaireLvl * 0.6));
+    let delay = Math.max(6, 15 - (stagiaireLvl - 1));
     if(receptionnaireLvl > 0) delay = Math.max(1, delay - (receptionnaireLvl * 0.5));
     // ia_diagnostic : −0.1s au plancher par rang (min 0.5s)
     if(iaDiagLvl > 0) delay = Math.max(0.5, delay - (iaDiagLvl * 0.1));
@@ -1132,7 +1141,7 @@ function applyTickLogic(dt){
   const vendeurExpertLvl   = getUpgrade("vendeur_expert")?.lvl   || 0;
   if(vendeurLvl > 0 && state.showroom.length > 0){
     autoSellTimer += dt;
-    let delay = Math.max(8, 15 - (vendeurLvl * 0.7));
+    let delay = Math.max(6, 15 - (vendeurLvl - 1));
     if(vendeurConfirmeLvl > 0) delay = Math.max(1, delay - (vendeurConfirmeLvl * 0.7));
     // vendeur_expert : −0.1s au plancher par rang (min 0.5s)
     if(vendeurExpertLvl > 0) delay = Math.max(0.5, delay - (vendeurExpertLvl * 0.1));

@@ -232,9 +232,11 @@ function getPrestigeLevelReq(){
 }
 
 function getPrestigeRepReq(){
-  // REP de base 40 000, +5 000 par prestige, sans cap
-  const base = 40000 + (state.prestigeCount ?? 0) * 5000;
-  return Math.round(base * (state.specRepReqMult ?? 1.0));
+  // Expo ×1.10 par prestige jusqu'à P30, puis +100k linéaire au-delà
+  const n    = state.prestigeCount ?? 0;
+  const expo = Math.round(40000 * Math.pow(1.10, Math.min(n, 30)) / 1000) * 1000;
+  const lin  = Math.max(0, n - 30) * 100000;
+  return Math.round((expo + lin) * (state.specRepReqMult ?? 1.0));
 }
 
 function canPrestige(){
@@ -427,6 +429,7 @@ function doPrestige(){
   // 4. applyTalentEffects() AVANT recalcRepairAuto()
   // 5. renderAll(true, true) EN DERNIER
   applyHeritageBonuses();
+  const b = state.heritageBonuses;  // déclaré ici — utilisé partout dans doPrestige
   const pts = calcHeritagePoints();
 
   // Sauvegarder ce qui persiste
@@ -481,8 +484,11 @@ function doPrestige(){
   const persistTotalSales   = state.totalCarsSold     ?? 0;
   const persistTotalOrders  = state.totalOrders        ?? 0;
   const persistTotalClicks  = state.totalActionClicks  ?? 0;
-  const persistChallenges      = state.challenges         ?? null;
-  const persistSpecialization  = state.specialization      ?? null;
+  const persistChallenges      = state.challenges          ?? null;
+  const persistSpecialization  = state.specialization       ?? null;
+  const persistBestTier        = state.bestTier             ?? null;
+  const persistRepMax          = state.repMax               ?? 0;
+  const persistChallengeStreak = state.challengeStreak      ?? { count:0, lastCompleted:null };
 
   // Reset du state (même structure que state initial)
   const baseUpgrades = JSON.parse(JSON.stringify(
@@ -501,9 +507,6 @@ function doPrestige(){
       return { ...u, lvl: keptLvl, cost: Math.max(baseCost, cost) };
     })
   ));
-
-  // Les bonuses sont déjà appliqués en début de fonction
-  const b = state.heritageBonuses;
 
   // Points talent bonus dès le départ
   const bonusTalent = Math.floor(b.talentBonus);
@@ -547,8 +550,11 @@ function doPrestige(){
     totalOrders:         persistTotalOrders,
     totalActionClicks:   persistTotalClicks,
     challenges:          persistChallenges,
+    challengeStreak:     persistChallengeStreak,
     specialization:      persistSpecialization,
     specialization2:     persistSpec2,  // P40 : 2e spécialisation
+    bestTier:            persistBestTier,
+    repMax:              persistRepMax,
     sessionStart:        Date.now(),
     // Run stats — remises à 0 au prestige
     runMoneyPassive:   0,
@@ -750,10 +756,10 @@ function renderTalentsUI(){
   }
 }
 
-talentListEl.addEventListener("pointerdown", (e) => {
+talentListEl.addEventListener("click", (e) => {
   const btn = e.target.closest("[data-talent-buy]");
-  if(!btn) return;
-  e.preventDefault();
+  if(!btn || btn.disabled) return;
+  // Pas de preventDefault — laisse le scroll fonctionner normalement sur mobile
 
   const id = btn.getAttribute("data-talent-buy");
   const t = TALENTS.find(x => x.id === id);
