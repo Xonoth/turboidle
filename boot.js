@@ -39,6 +39,7 @@ function save() {
   if(!currentUser) return;
   state._hasSaved = true;
   _saveService.save(currentUser.id);
+  window.gtEmit?.("save:done", { ts: Date.now() });
 }
 
 // ─── AUTH STATE MACHINE ──────────────────────────────────────────────────────
@@ -213,27 +214,50 @@ if(achievementsBackdrop) achievementsBackdrop.addEventListener("click", closeAch
 // init
 requestAnimationFrame(tick);
 // LocalSave interval supprimé — cloud only
-setInterval(() => { if(_authReady && currentUser) _saveService.save(currentUser.id); }, CONFIG.CLOUD_SAVE_INTERVAL);
+setInterval(() => { if(_authReady && currentUser) _saveService.save(currentUser.id); }, 60000); // 60s — réduit la charge réseau mobile (était CONFIG.CLOUD_SAVE_INTERVAL)
 setInterval(() => { if(currentUser) pushLeaderboard(); }, CONFIG.LB_PUSH_INTERVAL);
 
 // Sauvegarde d'urgence à la fermeture de page
 // Note : save() est async et peut être annulé par le navigateur avant complétion.
 // On écrit au moins le timestamp dans localStorage pour que le prochain
 // chargement ait un savedAt correct pour le catchup offline.
-window.addEventListener("beforeunload", () => {
+// ── Sauvegarde défensive — multi-événements cycle de vie ───────────────
+// Sur iOS Safari, beforeunload/unload sont ignorés. Seuls pagehide +
+// visibilitychange:hidden sont fiables. Sur Android Chrome, 'freeze' est
+// nécessaire pour intercepter le gel par le système.
+function _emergencySave() {
   try {
     const snap = buildSaveSnapshot();
-    // Backup localStorage synchrone — garanti même si Supabase est annulé
+    // Toujours écrire localStorage synchrone — garanti avant fermeture
     if(typeof _saveService !== "undefined") _saveService._lsWrite(snap);
   } catch(e) {}
+  // Tenter le cloud (peut être annulé sur mobile — le LS est le filet)
   save();
+}
+
+window.addEventListener("beforeunload", _emergencySave);
+
+// pagehide — fiable sur iOS Safari (beforeunload souvent ignoré)
+window.addEventListener("pagehide", (e) => {
+  // e.persisted = true → page mise en BFCache, on reviendra dessus
+  // e.persisted = false → vraie fermeture
+  _emergencySave();
 });
+
+// freeze — Android Chrome, page gelée par le système (mémoire basse)
+window.addEventListener("freeze", _emergencySave);
 
 // Évite le spike de dt quand l'onglet redevient visible après une longue absence
 document.addEventListener("visibilitychange", () => {
   if(document.visibilityState === "hidden"){
     // Enregistre l'heure de départ en arrière-plan
     last = performance.now();
+    // Sur mobile, écrire localStorage SYNCHRONEMENT d'abord (garanti)
+    // puis tenter le cloud (peut être annulé par iOS avant complétion)
+    try {
+      const snap = buildSaveSnapshot();
+      if(typeof _saveService !== "undefined") _saveService._lsWrite(snap);
+    } catch(e) {}
     save();
   } else {
     // Retour sur l'onglet : calculer le temps écoulé et l'appliquer
@@ -249,6 +273,7 @@ document.addEventListener("visibilitychange", () => {
 
       // Appliquer en plusieurs petits ticks pour ne pas saturer la logique
       const STEP = 30; // chunks de 30s
+      const _moneyBeforeCatchup = state?.totalMoneyEarned ?? 0;
       let remaining = catchup;
       _isOfflineCatchup = true;
       try {
@@ -261,10 +286,15 @@ document.addEventListener("visibilitychange", () => {
         _isOfflineCatchup = false;
       }
 
-      // Notif si gain significatif
-      if(catchup >= 60){
-        const mins = Math.floor(catchup / 60);
-        showToast(`⏱️ Progression hors-ligne : ${mins} min rattrapées`);
+      // Notif si gain significatif — enrichie avec Day.js si dispo
+      if(catchup >= 10){
+        const moneyGained = (state?.totalMoneyEarned ?? 0) - _moneyBeforeCatchup;
+        if(typeof window._gtEnrichAFKToast === "function"){
+          window._gtEnrichAFKToast(catchup, Math.max(0, moneyGained));
+        } else {
+          const mins = Math.floor(catchup / 60);
+          showToast(`⏱️ Progression hors-ligne : ${mins} min rattrapées`);
+        }
       }
 
       renderAll(true, true);

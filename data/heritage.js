@@ -206,8 +206,18 @@ function calcHeritagePoints(){
   const fromLevel = Math.max(0, Math.floor((state.garageLevel - 50) / 10));
   // +1 par tranche de 5000 voitures vendues
   const fromSales = Math.max(0, Math.floor((state.carsSold ?? 0) / 5000));
-  // +1 par tranche de 25 000 REP au-dessus de 50k
-  const fromRep   = Math.max(0, Math.floor(((state.rep ?? 0) - 50000) / 25000));
+  // Progression exponentielle ×2 — chaque point coûte 2× plus de REP que le précédent
+  // Seuil du point N = 50 000 × (2^N - 1)
+  // Point 1 : 50k REP · Point 2 : 150k · Point 3 : 350k · Point 4 : 750k · Point 5 : 1.55M…
+  const rep = Math.max(0, (state.rep ?? 0));
+  let fromRep = 0;
+  let threshold = 50000; // seuil du prochain point
+  let cumul = 0;
+  while(rep >= cumul + threshold){
+    cumul += threshold;
+    fromRep++;
+    threshold *= 2; // doubler la tranche à chaque point
+  }
   const base = 1 + fromLevel + fromSales + fromRep;
   const mult = state.heritageBonuses?.prestigeGainMult ?? 1.0;
   return Math.max(1, Math.floor(base * mult));

@@ -10,6 +10,13 @@ async function pushLeaderboard(){
   try {
     const p = state.profile || {};
     const achCount = Object.keys(state.achievements ?? {}).length;
+    const _totalCars = typeof CAR_CATALOG !== "undefined" ? CAR_CATALOG.length : 324;
+    const _seenCars  = Object.values(state.carBook ?? {}).filter(e => e.seen).length;
+    const _mastCars  = Object.values(state.carBook ?? {}).filter(e =>
+      (typeof getCarBookMastery !== "undefined" ? getCarBookMastery(e) : 0) >= 3
+    ).length;
+    const encDiscoveredPct = Math.round((_seenCars / _totalCars) * 100);
+    const encMasteredPct   = Math.round((_mastCars / _totalCars) * 100);
     await _supa.from("leaderboard").upsert({
       user_id:            currentUser.id,
       pseudo:             (p.pseudo      || "Mécanicien").substring(0, 30),
@@ -25,8 +32,10 @@ async function pushLeaderboard(){
       garage_level:       state.garageLevel    ?? 1,
       cars_sold:          state.totalCarsSold  ?? 0,
       total_money:        Math.floor(state.totalMoneyEarned ?? 0),
-      achievements_count: achCount,
-      updated_at:         new Date().toISOString(),
+      achievements_count:  achCount,
+      enc_discovered_pct:  encDiscoveredPct,
+      enc_mastered_pct:    encMasteredPct,
+      updated_at:          new Date().toISOString(),
     }, { onConflict: "user_id" });
   } catch(e){ dbg("[leaderboard] push erreur:", e.message); }
 }
@@ -44,7 +53,7 @@ async function fetchLeaderboard(tab){
 
   const { data, error } = await _supa
     .from("leaderboard")
-    .select("user_id,pseudo,garage_name,avatar,country,banner,title,best_tier,rep_max,total_repairs,prestige_count,garage_level,cars_sold,total_money,achievements_count,updated_at")
+    .select("user_id,pseudo,garage_name,avatar,country,banner,title,best_tier,rep_max,total_repairs,prestige_count,garage_level,cars_sold,total_money,achievements_count,enc_discovered_pct,enc_mastered_pct,updated_at")
     .order(col, { ascending: false })
     .limit(50);
 
@@ -93,6 +102,7 @@ function renderLeaderboardRows(rows, fmt, col){
       col !== "garage_level"      ? `⚙️ Niv.${r.garage_level ?? 1}` : null,
       col !== "cars_sold"         ? `🚗 ${(r.cars_sold ?? 0).toLocaleString("fr-FR")}` : null,
       col !== "achievements_count"? `🏅 ${r.achievements_count ?? 0}` : null,
+      (r.enc_discovered_pct ?? 0) > 0 ? `📖 ${r.enc_discovered_pct ?? 0}%` : null,
     ].filter(Boolean).map(b => `<span class="lbCard__badge">${b}</span>`).join("");
 
     const cardHTML = `
@@ -217,6 +227,16 @@ function showLbProfile(uid, rows){
             <div class="lbProfile__statVal" style="color:#a78bfa">🏅 ${r.achievements_count ?? 0}</div>
             <div class="lbProfile__statLabel">Succès</div>
           </div>
+          ${(r.enc_discovered_pct ?? 0) > 0 ? `
+          <div class="lbProfile__stat">
+            <div class="lbProfile__statVal" style="color:#4a9eff">📖 ${r.enc_discovered_pct ?? 0}%</div>
+            <div class="lbProfile__statLabel">Enc. découverte</div>
+          </div>` : ""}
+          ${(r.enc_mastered_pct ?? 0) > 0 ? `
+          <div class="lbProfile__stat">
+            <div class="lbProfile__statVal" style="color:#ffc83a">🟡 ${r.enc_mastered_pct ?? 0}%</div>
+            <div class="lbProfile__statLabel">Enc. maîtrisée</div>
+          </div>` : ""}
           ${r.best_tier ? `<div class="lbProfile__stat">
             <div class="lbProfile__statVal" style="color:#ff4d70">💎 ${r.best_tier}</div>
             <div class="lbProfile__statLabel">Meilleur tier</div>

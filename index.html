@@ -37,6 +37,7 @@
         <button class="helpTab" data-htab="prestige">🔥 Prestige</button>
         <button class="helpTab" data-htab="upgrades">⚙️ Upgrades</button>
         <button class="helpTab" data-htab="profile">👤 Profil</button>
+        <button class="helpTab" data-htab="encyclopedie">📖 Encyclopédie</button>
         <button class="helpTab" data-htab="tips">💡 Astuces</button>
       </div>
       <div class="helpModal__body" id="helpBody"></div>
@@ -76,7 +77,19 @@
         </div>
         <button class="iconbtn" id="btnStatsClose" title="Fermer">✖️</button>
       </div>
-      <div class="statsGrid" id="statsGrid"></div>
+      <!-- Onglets Stats / Graphiques -->
+      <div class="statsTabs" id="statsTabs">
+        <button class="statsTab statsTab--active" data-stab="stats">📊 Statistiques</button>
+        <button class="statsTab" data-stab="charts">📈 Graphiques</button>
+      </div>
+      <!-- Panel Stats (existant) -->
+      <div id="statsPanel-stats" class="statsTabPanel">
+        <div class="statsGrid" id="statsGrid"></div>
+      </div>
+      <!-- Panel Graphiques -->
+      <div id="statsPanel-charts" class="statsTabPanel statsTabPanel--hidden">
+        <div class="chartsGrid" id="chartsGrid"></div>
+      </div>
     </div>
   </div>
 
@@ -187,7 +200,7 @@
         <div id="prestigeInfo"></div>
       </div>
       <!-- Panneau Héritage -->
-      <div class="prestigeTabPanel prestigeTabPanel--hidden" id="ptab-heritage">
+      <div class="prestigeTabPanel" id="ptab-heritage" style="display:none">
         <div class="heritageFilters" id="heritageFilters"></div>
         <div class="heritageGrid" id="heritageGrid"></div>
         <!-- Marché Héritage -->
@@ -311,7 +324,7 @@
           <div class="achModal__bar"><div class="achModal__barFill" id="achProgressBar" style="width:0%"></div></div>
           <div class="achModal__fraction" id="achFraction">0%</div>
           <button class="btn btn--sm btn--notif-toggle" id="btnToggleAchNotif" title="Activer/Désactiver les notifications de succès">🔔 Notifs</button>
-          <button class="iconbtn" id="btnAchievementsClose" title="Fermer">✖️</button>
+          <button class="iconbtn achModal__closeBtn" id="btnAchievementsClose" title="Fermer" aria-label="Fermer">✕</button>
         </div>
       </div>
       <div class="achievementFilters" id="achievementFilters"></div>
@@ -517,43 +530,57 @@
       <div class="panel panel--tall">
 
         <div class="panel__head">
-          <div class="panel__title">🛠️ Atelier Réparation</div>
-          <div class="panel__right">
+          <div class="panel__title" id="centerPanelTitle">🛠️ Atelier Réparation</div>
+          <div class="panel__right" id="centerPanelMeta">
             <div class="tinyStat">⚡ <span id="repairAuto">0.00</span>/s auto</div>
             <div class="tinyStat">🖱️ <span id="repairClick">0.50</span>/clic</div>
           </div>
         </div>
 
-        <div class="workzone" id="workzone">
-          <div class="workbox">
+        <!-- Onglets col-center -->
+        <div class="tabs tabs--center" id="tabsCenter">
+          <button class="tab tab--active" data-ctab="atelier">🛠️ ATELIER</button>
+          <button class="tab" data-ctab="collection">🏠 GARAGE</button>
+        </div>
 
-            <div class="workbox__center">
-              <div class="repairBtn__wrap">
-                <button id="btnRepairClick" class="btn btn--ghost btn--repair">
-                  🔧 Réparer (clic)
-                </button>
-                <small id="repairClickEff" class="repairBtn__eff">0.50s / clic</small>
+        <!-- Panel Atelier -->
+        <div id="ctab-atelier" class="centerTabPanel">
+          <div class="workzone" id="workzone">
+            <div class="workbox">
+
+              <div class="workbox__center">
+                <div class="repairBtn__wrap">
+                  <button id="btnRepairClick" class="btn btn--ghost btn--repair">
+                    🔧 Réparer (clic)
+                  </button>
+                  <small id="repairClickEff" class="repairBtn__eff">0.50s / clic</small>
+                </div>
               </div>
-            </div>
 
-            <div class="queue">
-              <div class="queue__head">
-                🅿️ Emplacements Garage
-                <span class="queue__counter">
-                  <span id="queueCount">0</span> / <span id="garageCap">1</span> occupés
-                </span>
+              <div class="queue">
+                <div class="queue__head">
+                  🅿️ Emplacements Garage
+                  <span class="queue__counter">
+                    <span id="queueCount">0</span> / <span id="garageCap">1</span> occupés
+                  </span>
+                </div>
+                <div class="garageSlots" id="garageSlots"></div>
               </div>
-              <div class="garageSlots" id="garageSlots"></div>
+
+              <!-- Éléments fantômes conservés : lus par le JS -->
+              <span id="activeCarTitle" class="is-hidden"></span>
+              <span id="activeCarValue" class="is-hidden"></span>
+              <span id="activeCarTime"  class="is-hidden"></span>
+              <span id="activeCarTier"  class="is-hidden"></span>
+              <div  id="repairBar"      class="is-hidden"></div>
+
             </div>
-
-            <!-- Éléments fantômes conservés : lus par le JS -->
-            <span id="activeCarTitle" class="is-hidden"></span>
-            <span id="activeCarValue" class="is-hidden"></span>
-            <span id="activeCarTime"  class="is-hidden"></span>
-            <span id="activeCarTier"  class="is-hidden"></span>
-            <div  id="repairBar"      class="is-hidden"></div>
-
           </div>
+        </div>
+
+        <!-- Panel Garage Personnel -->
+        <div id="ctab-collection" class="centerTabPanel centerTabPanel--hidden">
+          <div id="collectionPanel" style="height:100%;overflow-y:auto"></div>
         </div>
 
       </div>
@@ -585,6 +612,21 @@
     </section>
 
   </main>
+
+  <!-- MODAL POKÉDEX -->
+  <div class="modal" id="pokedexModal" style="display:none">
+    <div class="modal__backdrop" id="pokedexBackdrop"></div>
+    <div class="modal__panel modal__panel--pokedex">
+      <div class="achModal__head">
+        <div class="achModal__titleWrap">
+          <div class="achModal__title">📖 Encyclopédie</div>
+          <div class="achModal__titleSub">Toutes les voitures du jeu</div>
+        </div>
+        <button class="achModal__closeBtn" id="btnPokedexClose">✕</button>
+      </div>
+      <div id="pokedexPanel" style="flex:1;overflow:hidden;padding:0;display:flex;flex-direction:column"></div>
+    </div>
+  </div>
 
   <!-- NAV MOBILE -->
   <nav class="mobileNav" id="mobileNav">
@@ -667,6 +709,15 @@
       </button>
     </div>
 
+    <!-- Section Encyclopédie -->
+    <div class="sideMenu__section">
+      <div class="sideMenu__sectionLabel">Collection</div>
+      <button class="sideMenu__item" id="sideMenuPokedex">
+        <span class="sideMenu__itemIcon">📖</span>
+        <span class="sideMenu__itemLabel">Encyclopédie</span>
+      </button>
+    </div>
+
     <!-- Section Aide -->
     <div class="sideMenu__section">
       <div class="sideMenu__sectionLabel">Aide</div>
@@ -704,6 +755,31 @@
   <script src="save/save-service.js"></script>
   <script src="ui/help-ui.js"></script>
   <script src="ui/mobile-nav.js"></script>
+  <!-- LZ-String (compression save) -->
+  <script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
+  <!-- Day.js + plugins -->
+  <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/locale/fr.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/plugin/duration.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/plugin/relativeTime.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/plugin/customParseFormat.js"></script>
+  <!-- Toastify.js -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.js"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- Tippy.js tooltips -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tippy.js@6/dist/tippy.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tippy.js@6/dist/themes/translucent.css">
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2/dist/umd/popper.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tippy.js@6/dist/tippy-bundle.umd.min.js"></script>
+  <script src="ui/dayjs-init.js"></script>
+  <script src="ui/toasts.js"></script>
+  <script src="ui/mitt-bus.js"></script>
+  <script src="ui/chroma-colors.js"></script>
+  <script src="ui/animations.js"></script>
+  <script src="ui/tooltips.js"></script>
+  <script src="ui/charts.js"></script>
   <script src="boot.js"></script>
 
 </body>

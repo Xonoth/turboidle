@@ -87,27 +87,33 @@ class SupabaseSaveRepository extends SaveRepository {
   }
 
   async upsert(userId, snapshot) {
-    // ── Protection multi-onglets : ne sauvegarder que si notre save est la plus récente ──
-    // Lit le savedAt actuel en base et le compare au nôtre avant d'écraser.
-    // Évite le rollback quand deux onglets du même compte sauvegardent en parallèle.
+    // ── Protection anti-rollback multi-appareils / horloge dérivée ──────────
+    // Utilise la progression (prestige × level × argent) plutôt que savedAt
+    // car l'horloge mobile peut dériver ou être incorrecte.
     try {
       const { data: current } = await this._client
         .from("saves")
-        .select("save_data->savedAt")
+        .select("save_data->prestigeCount, save_data->garageLevel, save_data->totalMoneyEarned")
         .eq("user_id", userId)
         .maybeSingle();
 
-      const remoteSavedAt = current?.savedAt ?? 0;
-      const localSavedAt  = snapshot.savedAt  ?? 0;
+      if(current) {
+        const remoteScore = ((current.prestigeCount    ?? 0) * 1e9)
+                          + ((current.garageLevel       ?? 0) * 1e6)
+                          + Math.min(current.totalMoneyEarned ?? 0, 1e6);
+        const localScore  = ((snapshot.prestigeCount   ?? 0) * 1e9)
+                          + ((snapshot.garageLevel      ?? 0) * 1e6)
+                          + Math.min(snapshot.totalMoneyEarned ?? 0, 1e6);
 
-      if(remoteSavedAt > localSavedAt) {
-        // La save en base est plus récente — on n'écrase pas
-        dbg("[SaveRepo] upsert ignoré — save cloud plus récente", remoteSavedAt, ">", localSavedAt);
-        return;
+        // Save distante clairement plus avancée (tolérance 2 niveaux) → skip
+        if(remoteScore > localScore + 2e6) {
+          dbg("[SaveRepo] upsert ignoré — save cloud plus avancée", remoteScore, ">", localScore);
+          return;
+        }
       }
     } catch(e) {
-      // Si la lecture échoue, on continue quand même l'upsert (fail-safe)
-      dbg("[SaveRepo] lecture savedAt échouée, upsert forcé:", e.message);
+      // Lecture protection échouée → upsert quand même (fail-safe)
+      dbg("[SaveRepo] lecture protection échouée, upsert forcé:", e.message);
     }
 
     const { error } = await this._client

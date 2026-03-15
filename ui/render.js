@@ -31,6 +31,16 @@ function setIfChanged(el, val){
   el.textContent = s;
 }
 
+// Version avec formatage — évite les reflows si la représentation affichée n'a pas changé
+// Utilisé pour la REP qui change souvent mais dont l'affichage (formaté) change moins vite
+function setIfChangedFormatted(el, rawVal, formatter){
+  if(!el) return;
+  const formatted = formatter(rawVal);
+  if(el._lastVal === formatted) return;
+  el._lastVal = formatted;
+  el.textContent = formatted;
+}
+
 function renderTop(){
   // Money glow quand ça monte
   const prevMoney = moneyEl._lastMoney ?? 0;
@@ -46,8 +56,8 @@ function renderTop(){
   moneyEl._lastMoney = state.money;
 
   setIfChanged(moneyEl,       formatMoney(state.money));
-  setIfChanged(moneyPerSecEl, formatMoney(state.moneyPerSec) + "/s");
-  setIfChanged(repEl,         state.rep);
+  setIfChanged(moneyPerSecEl, formatMoney(Math.floor(state.moneyPerSec * 10) / 10) + "/s");
+  setIfChanged(repEl,         Math.floor(state.rep).toLocaleString("fr-FR"));
   setIfChanged(garageLevelEl, state.garageLevel);
   setIfChanged(carsSoldEl,    state.carsSold);
 
@@ -62,16 +72,26 @@ function renderTop(){
   const repBtnSub = document.getElementById("repairClickEff");
   if(repBtnSub) setIfChanged(repBtnSub, clickEff + "s / clic");
 
-  // Point de notification talents
+  // Point de notification talents — protégé par cache pour éviter reflows
   const dot = document.getElementById("talentNotifDot");
-  if(dot) dot.style.display = state.talentPoints > 0 ? "block" : "none";
+  if(dot){
+    const dotVal = state.talentPoints > 0 ? "block" : "none";
+    if(dot._lastDisplay !== dotVal){ dot._lastDisplay = dotVal; dot.style.display = dotVal; }
+  }
 
-  // U2 — Badge alerte stock mis à jour à chaque frame (pas seulement renderAll)
-  const stockTab = document.querySelector(".tab[data-tab='stock']");
+  // U2 — Badge alerte stock (cache la référence pour éviter querySelector à 60fps)
+  if(!renderTop._stockTab) renderTop._stockTab = document.querySelector(".tab[data-tab='stock']");
+  const stockTab = renderTop._stockTab;
   if(stockTab){
-    let sdot = stockTab.querySelector(".stockAlertDot");
-    if(!sdot){ sdot = document.createElement("span"); sdot.className = "stockAlertDot"; stockTab.appendChild(sdot); }
-    sdot.style.display = hasStockAlert() ? "inline-block" : "none";
+    let sdot = stockTab._alertDot;
+    if(!sdot){
+      sdot = document.createElement("span");
+      sdot.className = "stockAlertDot";
+      stockTab.appendChild(sdot);
+      stockTab._alertDot = sdot;
+    }
+    const alertVal = hasStockAlert() ? "inline-block" : "none";
+    if(sdot._lastDisplay !== alertVal){ sdot._lastDisplay = alertVal; sdot.style.display = alertVal; }
   }
 }
 
@@ -130,7 +150,10 @@ function renderQueue(){
         const partsMult = getPartsSpeedMult(car);
         const hasMissingParts = car.failure?.parts?.length && !checkPartsAvailability(car.failure.parts).ok;
         const barColor = hasMissingParts ? "#ff8c40" : "";
-        slot.className = "garageSlot garageSlot--active";
+        const _aRarity = car.rarity ?? "common";
+        const _aRData  = typeof RARITY_TABLE !== "undefined" ? RARITY_TABLE[_aRarity] : null;
+        const _aRBadge = _aRData ? `<span class="rarityBadge rarityBadge--${_aRarity}">${_aRData.icon} ${_aRData.label}</span>` : "";
+        slot.className = `garageSlot garageSlot--active garageSlot--rarity-${_aRarity}`;
         slot.style.setProperty("--tier-color", t.color);
         if(i === 0 && _activeJustStarted){
           _activeJustStarted = false;
@@ -142,12 +165,12 @@ function renderQueue(){
           <div class="garageSlot__num">🔧</div>
           <div class="garageSlot__body">
             <div class="garageSlot__row">
-              <div style="display:flex;align-items:center;gap:7px;min-width:0;flex-wrap:wrap">
+              <div style="display:flex;align-items:center;gap:7px;min-width:0;overflow:hidden">
                 <span class="tierBadge" style="background:${t.bg};border-color:${t.border};color:${t.color}">${t.label}</span>
                 ${fail ? `<span class="failBadge" style="color:${fail.color}">${fail.icon} ${car.failure.name}</span>` : ""}
                 <div class="garageSlot__name">${car.name}</div>
               </div>
-              <div style="display:flex;align-items:center;gap:6px">
+              <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
                 ${slotMalusLabel}
                 <span class="garageSlot__status garageSlot__status--active">${hasMissingParts ? "⚠️ PIÈCE MANQUANTE" : "EN RÉPARATION"}</span>
               </div>
@@ -157,6 +180,7 @@ function renderQueue(){
             </div>
             <div class="garageSlot__row">
               <div class="garageSlot__meta">
+                ${_aRBadge}
                 <span>💰 ${formatMoney(calcSaleValue(car))}</span>
                 <span style="color:${hasMissingParts?'#ff8c40':'var(--muted2)'}">⏱️ ${(()=>{const s=Math.round(car.timeRemaining??car.repairTime); return s>=60?`${Math.floor(s/60)}m${s%60>0?s%60+'s':''}`:s+'s';})()}</span>
                 <span style="color:#666">${pct.toFixed(0)}%</span>
@@ -188,22 +212,26 @@ function renderQueue(){
           : estSecs >= 3600 ? `${Math.floor(estSecs/3600)}h${Math.floor((estSecs%3600)/60)}m`
           : estSecs >= 60   ? `${Math.floor(estSecs/60)}m${estSecs%60 > 0 ? (estSecs%60)+"s" : ""}`
           : `${estSecs}s`;
-        slot.className = "garageSlot garageSlot--occupied";
+        const _qRarity = car.rarity ?? "common";
+        const _qRData  = typeof RARITY_TABLE !== "undefined" ? RARITY_TABLE[_qRarity] : null;
+        const _qRBadge = _qRData ? `<span class="rarityBadge rarityBadge--${_qRarity}">${_qRData.icon} ${_qRData.label}</span>` : "";
+        slot.className = `garageSlot garageSlot--occupied garageSlot--rarity-${_qRarity}`;
         slot.innerHTML = `
           <div class="garageSlot__num">${i + 1}</div>
           <div class="garageSlot__body">
             <div class="garageSlot__row">
-              <div style="display:flex;align-items:center;gap:7px;min-width:0;flex-wrap:wrap">
+              <div style="display:flex;align-items:center;gap:7px;min-width:0;overflow:hidden">
                 <span class="tierBadge" style="background:${t.bg};border-color:${t.border};color:${t.color}">${t.label}</span>
                 ${fail ? `<span class="failBadge" style="color:${fail.color}">${fail.icon} ${car.failure.name}</span>` : ""}
                 <div class="garageSlot__name">${car.name}</div>
               </div>
-              <span class="garageSlot__status ${ok?"garageSlot__status--wait":"garageSlot__status--warn"}">${ok?"EN ATTENTE":"⚠️ PIÈCE MANQUANTE"}</span>
+              <span class="garageSlot__status ${ok?"garageSlot__status--wait":"garageSlot__status--warn"}" style="flex-shrink:0">${ok?"EN ATTENTE":"⚠️ PIÈCE MANQUANTE"}</span>
             </div>
             <div class="garageSlot__bar garageSlot__bar--wait">
               <div class="garageSlot__barFill garageSlot__barFill--wait" style="width:100%"></div>
             </div>
             <div class="garageSlot__meta">
+              ${_qRBadge}
               <span>💰 ${formatMoney(saleVal)}</span>
               <span>⏱️ ${repStr}</span>
             </div>
@@ -254,10 +282,23 @@ function renderActive(){
     if(_activeBarFill){
       _activeBarFill.style.width = `${(pct * 100).toFixed(1)}%`;
       _activeBarFill.classList.toggle("garageSlot__barFill--almostDone", pct >= 0.85);
+      // Bounce quand la barre atteint 100%
+      if(pct >= 0.999 && !_activeBarFill._bouncePlayed){
+        _activeBarFill._bouncePlayed = true;
+        _activeBarFill.classList.add("garageSlot__barFill--bounce");
+        setTimeout(() => { _activeBarFill?.classList.remove("garageSlot__barFill--bounce"); _activeBarFill._bouncePlayed = false; }, 400);
+      } else if(pct < 0.999){
+        _activeBarFill._bouncePlayed = false;
+      }
     }
     const t = TIERS[car.tier] || TIERS["F"];
     const timeLeft = Math.max(0, car.timeRemaining ?? 0);
-    if(_activeMetaEl) _activeMetaEl.textContent = `${t.desc} · ${formatMoney(car.baseValue)} · ⏱️ ${formatTime(timeLeft)} · ${(pct*100).toFixed(0)}%`;
+    if(_activeMetaEl){
+      const _rKey = car.rarity ?? "common";
+      const _rD   = typeof RARITY_TABLE !== "undefined" ? RARITY_TABLE[_rKey] : null;
+      const _rB   = _rD ? `<span class="rarityBadge rarityBadge--${_rKey}">${_rD.icon} ${_rD.label}</span>` : "";
+      _activeMetaEl.innerHTML = `${_rB}<span>💰 ${formatMoney(calcSaleValue(car))}</span><span style="color:var(--muted2)">⏱️ ${formatTime(timeLeft)}</span><span style="color:#666">${(pct*100).toFixed(0)}%</span>`;
+    }
   }
 
   // ── Mise à jour temps réel des slots Chef d'Atelier (actives[]) ──────────
@@ -287,7 +328,10 @@ function renderActive(){
     const t = TIERS[activeCar.tier] || TIERS["F"];
     const timeLeft = Math.max(0, activeCar.timeRemaining ?? 0);
     if(metaEl){
-      metaEl.textContent = `${t.desc} · ${formatMoney(activeCar.baseValue)} · ⏱️ ${formatTime(timeLeft)} · ${pct.toFixed(0)}%`;
+      const _rKey = activeCar.rarity ?? "common";
+      const _rD   = typeof RARITY_TABLE !== "undefined" ? RARITY_TABLE[_rKey] : null;
+      const _rB   = _rD ? `<span class="rarityBadge rarityBadge--${_rKey}">${_rD.icon} ${_rD.label}</span>` : "";
+      metaEl.innerHTML = `${_rB}<span>💰 ${formatMoney(calcSaleValue(activeCar))}</span><span style="color:var(--muted2)">⏱️ ${formatTime(timeLeft)}</span><span style="color:#666">${pct.toFixed(0)}%</span>`;
     }
     // Mettre à jour le temps restant dans la status bar aussi
     const statusEl = slotEl.querySelector(".garageSlot__status--active");
@@ -301,9 +345,19 @@ function renderActive(){
   });
 }
 
+const TIER_ORDER_SORT = ["F","E","D","C","B","A","S","SS","SSS","SSS+"];
+
+// ── Onglet showroom actif : "forsale" ou "protected"
+let _showroomTab = "forsale";
+// Sync bidirectionnelle avec app.js via window
+Object.defineProperty(window, "_showroomTab", {
+  get(){ return _showroomTab; },
+  set(v){ _showroomTab = v; },
+});
+
 function renderShowroom(){
   showroomListEl.innerHTML = "";
-  const cap = getShowroomCap();
+  const cap   = getShowroomCap();
   const count = state.showroom.length;
 
   // G2 — Flash sur le titre showroom quand vente auto
@@ -317,50 +371,119 @@ function renderShowroom(){
       setTimeout(() => showroomHead.classList.remove("panel__head--sold"), 800);
     }
   }
-  const isFull = count >= cap;
 
-  // Indicateur cap dans le titre showroom
   const capEl = document.getElementById("showroomCapDisplay");
   if(capEl) capEl.textContent = `${count} / ${cap}`;
-
-  // Badge "PLEIN" si complet
   const fullBadgeEl = document.getElementById("showroomFullBadge");
-  if(fullBadgeEl) fullBadgeEl.style.display = isFull ? "inline-block" : "none";
+  if(fullBadgeEl) fullBadgeEl.style.display = count >= cap ? "inline-block" : "none";
 
+  // ── Barre règles — TOUJOURS affichée même showroom vide ──────────────────
+  const rules        = state.autoSellRules ?? {};
+  const ruleCount    = (rules.blockedRarities?.length??0) + (rules.blockedTiers?.length??0) + (rules.blockedCombos?.length??0);
+  const blockedCars  = state.showroom.filter(c => typeof isCarBlockedByRules !== "undefined" && isCarBlockedByRules(c));
+  const blockedCount = blockedCars.length;
+  const forSaleCount = count - blockedCount;
+
+  const rulesBar = document.createElement("div");
+  rulesBar.className = "showroomAutoBar";
+  rulesBar.innerHTML = `
+    <span class="showroomAutoBar__txt">
+      🤵 Vente auto
+      ${ruleCount > 0
+        ? `· <span style="color:#ffc83a">🔒 ${blockedCount} protégée${blockedCount>1?"s":""}</span>`
+        : `<span style="color:var(--muted2)">· aucune règle</span>`}
+    </span>
+    <button class="showroomAutoBar__btn" id="btnAutoSellSettings">⚙️ Règles</button>
+  `;
+  showroomListEl.appendChild(rulesBar);
+  rulesBar.querySelector("#btnAutoSellSettings")?.addEventListener("click", openAutoSellModal);
+
+  // ── 2 onglets : En vente / Protégées ─────────────────────────────────────
+  const tabsEl = document.createElement("div");
+  tabsEl.className = "showroomTabs";
+  tabsEl.innerHTML = `
+    <button class="showroomTab${_showroomTab==="forsale"?" showroomTab--active":""}" data-stab="forsale">
+      🔓 En vente <span class="showroomTab__count">${forSaleCount}</span>
+    </button>
+    <button class="showroomTab${_showroomTab==="protected"?" showroomTab--active":""}" data-stab="protected">
+      🔒 Protégées
+      ${blockedCount > 0 ? `<span class="showroomTab__count showroomTab__count--gold">${blockedCount}</span>` : `<span class="showroomTab__count">0</span>`}
+    </button>
+  `;
+  showroomListEl.appendChild(tabsEl);
+  // Délégation sur showroomListEl plutôt que listener direct sur les boutons
+  // (survit aux re-renders — le listener global ci-dessous gère le clic)
+
+  // ── Showroom vide ─────────────────────────────────────────────────────────
   if(count === 0){
     showroomEmptyEl.style.display = "grid";
-    showroomListEl.style.display = "none";
+    return;
+  }
+  showroomEmptyEl.style.display = "none";
+
+  // ── Sélection des voitures à afficher ────────────────────────────────────
+  const carsToShow = _showroomTab === "protected"
+    ? blockedCars
+    : state.showroom.filter(c => !(typeof isCarBlockedByRules !== "undefined" && isCarBlockedByRules(c)));
+
+  // Message onglet vide
+  if(carsToShow.length === 0){
+    const empty = document.createElement("div");
+    empty.className = "showroomTabEmpty";
+    if(_showroomTab === "protected"){
+      empty.innerHTML = ruleCount === 0
+        ? `Aucune règle configurée.<br><span>Cliquez sur <b>⚙️ Règles</b> pour protéger des voitures.</span>`
+        : `Aucune voiture protégée dans le showroom.`;
+    } else {
+      empty.textContent = "Toutes les voitures sont protégées.";
+    }
+    showroomListEl.appendChild(empty);
     return;
   }
 
-  showroomEmptyEl.style.display = "none";
-  showroomListEl.style.display = "block";
-
-  for(let i = 0; i < state.showroom.length; i++){
-    const car = state.showroom[i];
+  // ── Rendu des cartes ──────────────────────────────────────────────────────
+  let isFirst = true;
+  for(const car of carsToShow){
     const saleValue = calcSaleValue(car);
-    const t = TIERS[car.tier] || TIERS["F"];
+    const t    = TIERS[car.tier] || TIERS["F"];
     const fail = car.failure ? FAILURE_CATEGORIES[car.failure.category] : null;
-    const qfx = car.partsQuality ? getQualityEffects(Math.round(car.partsQuality)) : null;
+    const qfx  = car.partsQuality ? getQualityEffects(Math.round(car.partsQuality)) : null;
     const supp = car.partsSupplier ? SUPPLIERS[car.partsSupplier] : null;
+    const _sRarity = car.rarity ?? "common";
+    const _sRData  = typeof RARITY_TABLE !== "undefined" ? RARITY_TABLE[_sRarity] : null;
+    const _sRBadge = _sRData ? `<span class="rarityBadge rarityBadge--${_sRarity}">${_sRData.icon} ${_sRData.label}</span>` : "";
+    const canExpose = (state.collection?.length ?? 0) < (typeof getCollectionCap !== "undefined" ? getCollectionCap() : 1);
+    const isBlocked = typeof isCarBlockedByRules !== "undefined" && isCarBlockedByRules(car);
+
     const div = document.createElement("div");
-    div.className = "sItem" + (i === 0 && _showroomJustAdded ? " sItem--new" : "");
+    div.className = "sItem"
+      + (isFirst && _showroomJustAdded && _showroomTab === "forsale" ? " sItem--new" : "")
+      + ` sItem--rarity-${_sRarity}`
+      + (isBlocked ? " sItem--locked" : "");
+    isFirst = false;
+
     div.innerHTML = `
       <div style="min-width:0;flex:1">
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:8px;overflow:hidden">
           <span class="tierBadge" style="background:${t.bg};border-color:${t.border};color:${t.color}">${t.label}</span>
+          ${isBlocked ? `<span class="sItem__lockBadge" title="Protégée par règle vente auto">🔒</span>` : ""}
           ${fail ? `<span class="failBadge" style="color:${fail.color}">${fail.icon} ${fail.name}</span>` : ""}
           <div class="sItem__name">${car.name}</div>
         </div>
-        <div class="sItem__meta" style="margin-top:4px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <div class="sItem__meta" style="margin-top:4px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          ${_sRBadge}
           <span>${t.desc} — ${formatMoney(saleValue)}</span>
           ${qfx ? `<span style="color:${qfx.color};font-size:11px">⭐ ${qfx.label}${supp?` · <span style="color:${supp.color}">${supp.icon} ${supp.name}</span>`:""}</span>` : ""}
         </div>
       </div>
-      <button class="sell" data-sell="${car.id}">Vendre</button>
+      <div class="sItem__actions">
+        <button class="sell" data-sell="${car.id}">Vendre</button>
+        <button class="exposeBtn${canExpose?"":" exposeBtn--full"}" data-expose="${car.id}" title="${canExpose?"Exposer":"Garage plein"}">🏠</button>
+      </div>
     `;
     showroomListEl.appendChild(div);
   }
+
   _showroomJustAdded = false;
 }
 
@@ -469,6 +592,7 @@ function renderUpgrades(){
     "holding_auto":       { upgrades:[], prestige:4 },
     "galerie_marchande":  { upgrades:[{ id:"showroom_slot", lvl:4 }], prestige:2 },
     "extension_atelier":  { upgrades:[{ id:"lift",          lvl:5 }], prestige:3 },
+    "expo_premium":       { upgrades:[], prestige:1 },
   };
 
   // Helper — vérifie tous les prérequis d'un upgrade
@@ -492,7 +616,7 @@ function renderUpgrades(){
   // Upgrades prestige verrouillés toujours en dernier (par onglet)
   const PRESTIGE_BY_TAB = {
     team:  ["vendeur_expert", "ia_diagnostic", "chef_atelier"],
-    deals: ["reseau_national", "holding_auto", "galerie_marchande", "extension_atelier"],
+    deals: ["reseau_national", "holding_auto", "galerie_marchande", "extension_atelier", "expo_premium"],
     tools: ["scanner_pro", "cle_dynamometrique", "turbocompresseur"],
   };
   const prestigeList = PRESTIGE_BY_TAB[state.activeTab] ?? [];
@@ -1165,29 +1289,61 @@ function renderStockUpgradesView(el){
 }
 
 // AJOUTE CE CODE dans la section "ACTIONS" (vers la ligne de l'écouteur btnAnalyze) :
-document.querySelector(".tabs").addEventListener("click", (e) => {
+// ── Onglets col-right (Bureau/Gestion) ──────────────────────────────────────
+// Cibler explicitement les onglets col-right (pas .tabs--center qui est en premier dans le DOM)
+document.querySelector(".tabs:not(.tabs--center)").addEventListener("click", (e) => {
   if(!e.target.classList.contains("tab")) return;
-  
-  // Met à jour l'UI des onglets
-  document.querySelectorAll(".tab").forEach(t => t.classList.remove("tab--active"));
+  document.querySelectorAll(".tabs:not(.tabs--center) .tab").forEach(t => t.classList.remove("tab--active"));
   e.target.classList.add("tab--active");
-  
-  // Met à jour le state et re-render
   state.activeTab = e.target.getAttribute("data-tab");
   renderUpgrades();
+});
+
+// ── Onglets col-center (Atelier / Garage Personnel) ──────────────────────────
+let _centerTab = "atelier";
+document.getElementById("tabsCenter")?.addEventListener("click", (e) => {
+  if(!e.target.classList.contains("tab")) return;
+  _centerTab = e.target.getAttribute("data-ctab");
+  // Sync boutons
+  document.querySelectorAll(".tabs--center .tab").forEach(t => {
+    t.classList.toggle("tab--active", t.getAttribute("data-ctab") === _centerTab);
+  });
+  // Afficher/masquer panels
+  document.getElementById("ctab-atelier")?.classList.toggle("centerTabPanel--hidden", _centerTab !== "atelier");
+  document.getElementById("ctab-collection")?.classList.toggle("centerTabPanel--hidden", _centerTab !== "collection");
+  // Header dynamique
+  const titleEl = document.getElementById("centerPanelTitle");
+  const metaEl  = document.getElementById("centerPanelMeta");
+  if(_centerTab === "collection"){
+    if(titleEl) titleEl.textContent = "🏠 Garage Personnel";
+    if(metaEl)  metaEl.style.display = "none";
+    renderCollection();
+  } else {
+    if(titleEl) titleEl.textContent = "🛠️ Atelier Réparation";
+    if(metaEl)  metaEl.style.display = "";
+  }
 });
 
 function renderAll(rebuildUpgrades = false, rebuildTalents = false){
   // applyTalentEffects() est appelé UNIQUEMENT quand les talents changent (achat, prestige, load)
   // PAS ici — sinon c'est recalculé à chaque render
-  // Sync visuel de l'onglet actif
-  document.querySelectorAll(".tab").forEach(t => {
+  // Sync visuel de l'onglet actif (col-right uniquement — pas les onglets col-center)
+  document.querySelectorAll(".tabs:not(.tabs--center) .tab").forEach(t => {
     t.classList.toggle("tab--active", t.getAttribute("data-tab") === state.activeTab);
   });
   renderTop();
   renderQueue();
   renderActive();
   renderShowroom();
+  renderCollection();
+  // Mise à jour affichage revenus collection dans le header
+  const _collIncEl = document.getElementById("collectionIncomeDisplay");
+  if(_collIncEl && typeof calcCollectionTotalIncome !== "undefined"){
+    const _ci = calcCollectionTotalIncome();
+    _collIncEl.textContent = _ci.moneyPerSec > 0 || _ci.repPerSec > 0
+      ? `+${formatMoney(_ci.moneyPerSec)}/s · +${_ci.repPerSec.toFixed(2)} REP/s`
+      : "";
+  }
   if(rebuildUpgrades) renderUpgrades();
   renderGarageProgress();
   if(rebuildTalents) renderTalentsUI();
@@ -1205,3 +1361,379 @@ function renderAll(rebuildUpgrades = false, rebuildTalents = false){
   }
 }
 
+
+// =====================================================================
+// GARAGE PERSONNEL — render
+// =====================================================================
+function renderCollection(){
+  const el = document.getElementById("collectionPanel");
+  if(!el) return;
+
+  const cap        = typeof getCollectionCap !== "undefined" ? getCollectionCap() : 1;
+  const collection = state.collection ?? [];
+  const income     = typeof calcCollectionTotalIncome !== "undefined" ? calcCollectionTotalIncome() : {moneyPerSec:0,repPerSec:0};
+
+  let html = `
+    <div class="collHeader">
+      <div class="collHeader__title">🏠 Garage Personnel</div>
+      <div class="collHeader__meta">${collection.length} / ${cap} slots</div>
+    </div>
+    <div class="collIncome">
+      <span class="collIncome__val collIncome__val--money">+${formatMoney(income.moneyPerSec)}/s</span>
+      <span class="collIncome__sep">·</span>
+      <span class="collIncome__val collIncome__val--rep">+${income.repPerSec.toFixed(2)} REP/s</span>
+    </div>`;
+
+  if(collection.length === 0){
+    html += `<div class="collEmpty">Aucune voiture exposée.<br><span style="color:var(--muted2);font-size:11px">Cliquez sur "Exposer" depuis le showroom.</span></div>`;
+  } else {
+    html += `<div class="collList">`;
+    for(const car of collection){
+      const t     = TIERS[car.tier] || TIERS["F"];
+      const rKey  = car.rarity ?? "common";
+      const rData = typeof RARITY_TABLE !== "undefined" ? RARITY_TABLE[rKey] : null;
+      const rBadge= rData ? `<span class="rarityBadge rarityBadge--${rKey}">${rData.icon} ${rData.label}</span>` : "";
+      const inc   = typeof calcCollectionIncome !== "undefined" ? calcCollectionIncome(car) : {moneyPerSec:0,repPerSec:0};
+      html += `
+        <div class="collCard collCard--rarity-${rKey}">
+          <div class="collCard__body">
+            <div class="collCard__top">
+              <span class="tierBadge" style="background:${t.bg};border-color:${t.border};color:${t.color}">${t.label}</span>
+              ${rBadge}
+              <span class="collCard__name">${car.name}</span>
+            </div>
+            <div class="collCard__income">
+              <span style="color:#2ee59d">+${formatMoney(inc.moneyPerSec)}/s</span>
+              <span style="color:#a78bfa">+${inc.repPerSec.toFixed(2)} REP/s</span>
+            </div>
+          </div>
+          <button class="collCard__remove" data-remove-collection="${car.id}" title="Retirer de l'exposition">↩</button>
+        </div>`;
+    }
+    html += `</div>`;
+  }
+
+  // Slots vides
+  const empty = cap - collection.length;
+  if(empty > 0){
+    html += `<div class="collSlots">`;
+    for(let i = 0; i < empty; i++){
+      html += `<div class="collSlot collSlot--empty"><span>🚗</span><span>Slot libre</span></div>`;
+    }
+    html += `</div>`;
+  }
+
+  el.innerHTML = html;
+}
+
+// =====================================================================
+// ENCYCLOPÉDIE — render
+// =====================================================================
+let _encFilter  = "Tous";   // filtre tier
+let _encMastery = "Tous";   // filtre maîtrise
+
+const ENC_MASTERY_DEF = [
+  { lvl:0, label:"Inconnu",   color:"",        icon:"⬛", nextReq:"1 réparation" },
+  { lvl:1, label:"Découvert", color:"#4a9eff", icon:"🔵", nextReq:"30 réparations" },
+  { lvl:2, label:"Familier",  color:"#2ee59d", icon:"🟢", nextReq:"50 répa + 5 raretés" },
+  { lvl:3, label:"Maîtrisé",  color:"#ffc83a", icon:"🟡", nextReq:null },
+];
+
+function renderPokedex(){
+  const el = document.getElementById("pokedexPanel");
+  if(!el || typeof CAR_CATALOG === "undefined") return;
+
+  const total    = CAR_CATALOG.length;
+  const seen     = Object.values(state.carBook ?? {}).filter(e => e.seen).length;
+  const familier = Object.values(state.carBook ?? {}).filter(e => (typeof getCarBookMastery!=="undefined"?getCarBookMastery(e):0) >= 2).length;
+  const mastered = Object.values(state.carBook ?? {}).filter(e => (typeof getCarBookMastery!=="undefined"?getCarBookMastery(e):0) >= 3).length;
+  const pct      = Math.round(seen / total * 100);
+
+  const tiers = ["Tous","F","E","D","C","B","A","S","SS","SSS","SSS+"];
+
+  el.innerHTML = `
+    <div class="encHeader">
+      <div class="encHeader__title">📖 Encyclopédie</div>
+      <div class="encHeader__stats">
+        <span class="encStat"><span style="color:#4a9eff">🔵</span> ${seen} découvertes</span>
+        <span class="encStat"><span style="color:#2ee59d">🟢</span> ${familier} familières</span>
+        <span class="encStat"><span style="color:#ffc83a">🟡</span> ${mastered} maîtrisées</span>
+        <span class="encStat" style="color:var(--muted2)">${total} total</span>
+      </div>
+    </div>
+
+    <div class="encProgressBlock">
+      <div class="encProgressRow">
+        <span class="encProgressRow__icon">🔵</span>
+        <span class="encProgressRow__label">Découvertes</span>
+        <div class="encProgressRow__bar"><div class="encProgressRow__fill" style="width:${pct}%;background:#4a9eff"></div></div>
+        <span class="encProgressRow__val" style="color:#4a9eff">${seen} / ${total} <span style="color:var(--muted2)">(${pct}%)</span></span>
+      </div>
+      <div class="encProgressRow">
+        <span class="encProgressRow__icon">🟢</span>
+        <span class="encProgressRow__label">Familières</span>
+        <div class="encProgressRow__bar"><div class="encProgressRow__fill" style="width:${Math.round(familier/total*100)}%;background:#2ee59d"></div></div>
+        <span class="encProgressRow__val" style="color:#2ee59d">${familier} / ${total} <span style="color:var(--muted2)">(${Math.round(familier/total*100)}%)</span></span>
+      </div>
+      <div class="encProgressRow">
+        <span class="encProgressRow__icon">🟡</span>
+        <span class="encProgressRow__label">Maîtrisées</span>
+        <div class="encProgressRow__bar"><div class="encProgressRow__fill" style="width:${Math.round(mastered/total*100)}%;background:#ffc83a"></div></div>
+        <span class="encProgressRow__val" style="color:#ffc83a">${mastered} / ${total} <span style="color:var(--muted2)">(${Math.round(mastered/total*100)}%)</span></span>
+      </div>
+    </div>
+
+    <div class="encFilters" id="encTierFilters">
+      ${tiers.map(t => `<button class="encPill${_encFilter===t?" encPill--active":""}" data-enctier="${t}">${t}</button>`).join("")}
+    </div>
+
+    <div class="encMasteryFilters" id="encMasteryFilters">
+      ${["Tous","Inconnu","Découvert","Familier","Maîtrisé"].map(m =>
+        `<button class="encMPill${_encMastery===m?" encMPill--active":""}" data-encmastery="${m}">${m}</button>`
+      ).join("")}
+    </div>
+
+    <div class="encList" id="encList"></div>
+  `;
+
+  // Filtrer
+  let cars = _encFilter === "Tous" ? CAR_CATALOG : CAR_CATALOG.filter(c => c.tier === _encFilter);
+  if(_encMastery !== "Tous"){
+    const lvlMap = {"Inconnu":0,"Découvert":1,"Familier":2,"Maîtrisé":3};
+    const lvl = lvlMap[_encMastery] ?? 0;
+    cars = cars.filter(c => {
+      const entry = state.carBook?.[c.name];
+      return (typeof getCarBookMastery!=="undefined" ? getCarBookMastery(entry) : 0) === lvl;
+    });
+  }
+
+  const list = document.getElementById("encList");
+  if(!list) return;
+
+  const RARITY_ORDER_LOCAL = typeof RARITY_ORDER !== "undefined" ? RARITY_ORDER : [];
+
+  list.innerHTML = cars.map(c => {
+    const entry   = state.carBook?.[c.name];
+    const mastery = typeof getCarBookMastery !== "undefined" ? getCarBookMastery(entry) : 0;
+    const md      = ENC_MASTERY_DEF[mastery];
+    const t       = TIERS[c.tier] || TIERS["F"];
+
+    if(mastery === 0){
+      return `<div class="encRow encRow--unknown">
+        <div class="encRow__left">
+          <span class="tierBadge" style="background:${t.bg};border-color:${t.border};color:${t.color}">${t.label}</span>
+          <span class="encRow__name encRow__name--unknown">??? · ${t.desc}</span>
+        </div>
+        <div class="encRow__right">
+          <span class="encRow__mastery" style="color:var(--muted2)">⬛ Inconnu</span>
+        </div>
+      </div>`;
+    }
+
+    const repaired  = entry.repaired ?? 0;
+    const bestSale  = entry.bestSale ?? 0;
+    const brKey     = entry.bestRarity ?? "common";
+    const brData    = typeof RARITY_TABLE !== "undefined" ? RARITY_TABLE[brKey] : null;
+    const allRar    = entry.allRarities ?? [];
+
+    // Barres de progression — affichées à tous les niveaux
+    let progressHtml = "";
+    if(mastery === 1){
+      // Découvert → Familier : 30 répa
+      const pct2 = Math.min(100, Math.round(repaired / 30 * 100));
+      progressHtml = `<div class="encRow__prog">
+        <div class="encRow__progLabel">Vers Familier</div>
+        <div class="encRow__progBar"><div class="encRow__progFill encRow__progFill--1" style="width:${pct2}%"></div></div>
+        <span>${repaired} / 30 répa</span>
+      </div>`;
+    } else if(mastery === 2){
+      // Familier → Maîtrisé : 50 répa + 5 raretés
+      const p1 = Math.min(100, Math.round(repaired / 50 * 100));
+      const p2 = Math.min(100, Math.round(allRar.length / 5 * 100));
+      progressHtml = `<div class="encRow__prog">
+        <div class="encRow__progLabel">Vers Maîtrisé</div>
+        <div class="encRow__progBar"><div class="encRow__progFill encRow__progFill--2" style="width:${p1}%"></div></div>
+        <span>${repaired} / 50 répa</span>
+        <div class="encRow__progBar" style="margin-left:8px"><div class="encRow__progFill encRow__progFill--2" style="width:${p2}%"></div></div>
+        <span>${allRar.length} / 5 raretés</span>
+      </div>`;
+    } else if(mastery === 3){
+      // Maîtrisé — barres complètes
+      progressHtml = `<div class="encRow__prog encRow__prog--done">
+        <div class="encRow__progLabel" style="color:#ffc83a">✨ Maîtrisé</div>
+        <div class="encRow__progBar"><div class="encRow__progFill encRow__progFill--3" style="width:100%"></div></div>
+        <span>${repaired} répa</span>
+        <div class="encRow__progBar" style="margin-left:8px"><div class="encRow__progFill encRow__progFill--3" style="width:100%"></div></div>
+        <span>${allRar.length} raretés</span>
+      </div>`;
+    }
+
+    // Raretés vues (icônes dans l'ordre)
+    const rarHtml = RARITY_ORDER_LOCAL.filter(r => allRar.includes(r)).map(r => {
+      const rd = typeof RARITY_TABLE !== "undefined" ? RARITY_TABLE[r] : null;
+      return rd ? `<span class="encRow__rarIcon" title="${rd.label}" style="opacity:1">${rd.icon}</span>` : "";
+    }).join("") + RARITY_ORDER_LOCAL.filter(r => !allRar.includes(r)).map(r => {
+      const rd = typeof RARITY_TABLE !== "undefined" ? RARITY_TABLE[r] : null;
+      return rd ? `<span class="encRow__rarIcon" title="${rd.label}" style="opacity:.2">${rd.icon}</span>` : "";
+    }).join("");
+
+    return `<div class="encRow encRow--mastery-${mastery}">
+      <div class="encRow__main">
+        <div class="encRow__left">
+          <span class="tierBadge" style="background:${t.bg};border-color:${t.border};color:${t.color}">${t.label}</span>
+          <div class="encRow__info">
+            <span class="encRow__name">${c.name}</span>
+            <span class="encRow__desc">${t.desc}</span>
+          </div>
+        </div>
+        <div class="encRow__right">
+          <span class="encRow__mastery" style="color:${md.color}">${md.icon} ${md.label}</span>
+          ${brData ? `<span class="rarityBadge rarityBadge--${brKey}">${brData.icon} ${brData.label}</span>` : ""}
+        </div>
+      </div>
+      <div class="encRow__details">
+        <span class="encRow__stat">🔧 <b>${repaired}</b> répa</span>
+        ${bestSale > 0 ? `<span class="encRow__stat">💰 <b>${formatMoney(bestSale)}</b> meilleure vente</span>` : ""}
+        <div class="encRow__rarities">${rarHtml}</div>
+      </div>
+      ${progressHtml}
+    </div>`;
+  }).join("");
+
+  if(list.innerHTML === ""){
+    list.innerHTML = `<div style="padding:20px;text-align:center;color:var(--muted2);font-size:12px">Aucune entrée pour ces filtres.</div>`;
+  }
+
+  // Listeners
+  el.querySelectorAll("[data-enctier]").forEach(btn => {
+    btn.addEventListener("click", () => { _encFilter = btn.dataset.enctier; renderPokedex(); });
+  });
+  el.querySelectorAll("[data-encmastery]").forEach(btn => {
+    btn.addEventListener("click", () => { _encMastery = btn.dataset.encmastery; renderPokedex(); });
+  });
+}
+
+function openPokedex(){
+  const modal = document.getElementById("pokedexModal");
+  if(modal){ modal.style.display = "flex"; renderPokedex(); }
+}
+function closePokedex(){
+  const modal = document.getElementById("pokedexModal");
+  if(modal) modal.style.display = "none";
+}
+
+// ── Listeners Encyclopédie ─────────────────────────────────────────────────────────
+document.getElementById("btnPokedexClose")?.addEventListener("click", closePokedex);
+document.getElementById("pokedexBackdrop")?.addEventListener("click", closePokedex);
+
+// =====================================================================
+// MODALE GESTION VENTES AUTO — règles globales
+// =====================================================================
+function openAutoSellModal(){
+  document.getElementById("autoSellModal")?.remove();
+
+  if(!state.autoSellRules) state.autoSellRules = { blockedRarities:[], blockedTiers:[], blockedCombos:[] };
+  const rules = state.autoSellRules;
+
+  const TIERS_LIST    = ["F","E","D","C","B","A","S","SS","SSS","SSS+"];
+  const RARITIES_LIST = typeof RARITY_ORDER !== "undefined" ? RARITY_ORDER : ["common","uncommon","rare","epic","legendary","mythic"];
+
+  const modal = document.createElement("div");
+  modal.id = "autoSellModal";
+  modal.className = "autoSellModal";
+  document.body.appendChild(modal);
+
+  function buildModal(){
+    modal.innerHTML = `
+      <div class="autoSellModal__backdrop"></div>
+      <div class="autoSellModal__panel">
+        <div class="autoSellModal__head">
+          <div class="autoSellModal__title">🤵 Règles Vente Auto</div>
+          <button class="autoSellModal__close" id="btnAutoSellClose">✕</button>
+        </div>
+        <div class="autoSellModal__desc">
+          Sélectionne les raretés et/ou tiers à protéger. Si les deux catégories sont actives, seules les voitures qui correspondent aux <b>deux en même temps</b> sont protégées (ex: Tier S <b>ET</b> Légendaire).
+        </div>
+        <div class="autoSellModal__body">
+
+          <!-- Section Raretés -->
+          <div class="asmSection">
+            <div class="asmSection__title">🎨 Protéger par Rareté</div>
+            <div class="asmSection__desc">Le vendeur ne vendra pas ces raretés, quel que soit le tier.</div>
+            <div class="asmSection__pills">
+              ${RARITIES_LIST.map(r => {
+                const rd = typeof RARITY_TABLE !== "undefined" ? RARITY_TABLE[r] : null;
+                const lbl = rd ? `${rd.icon} ${rd.label}` : r;
+                const active = rules.blockedRarities.includes(r);
+                return `<button class="asmPill${active?" asmPill--active":""}" style="${active?`border-color:${rd?.color}40;background:${rd?.color}18;color:${rd?.color}`:""}" data-block-rarity="${r}">${lbl}</button>`;
+              }).join("")}
+            </div>
+          </div>
+
+          <!-- Section Tiers -->
+          <div class="asmSection">
+            <div class="asmSection__title">🏷️ Protéger par Tier</div>
+            <div class="asmSection__desc">Le vendeur ne vendra pas ces tiers, quelle que soit la rareté.</div>
+            <div class="asmSection__pills">
+              ${TIERS_LIST.map(t => {
+                const td = typeof TIERS !== "undefined" ? TIERS[t] : null;
+                const active = rules.blockedTiers.includes(t);
+                return `<button class="asmPill${active?" asmPill--active":""}" style="${active&&td?`border-color:${td.border};background:${td.bg};color:${td.color}`:""}" data-block-tier="${t}">${t}</button>`;
+              }).join("")}
+            </div>
+          </div>
+
+          <!-- Résumé -->
+          ${(rules.blockedRarities.length + rules.blockedTiers.length) > 0 ? `
+          <div class="asmSummary">
+            ${(()=>{
+              const blocked = state.showroom?.filter(c => typeof isCarBlockedByRules!=="undefined" && isCarBlockedByRules(c)).length ?? 0;
+              const total   = state.showroom?.length ?? 0;
+              const parts = [];
+              if(rules.blockedRarities.length) parts.push(rules.blockedRarities.map(r => typeof RARITY_TABLE!=="undefined" ? RARITY_TABLE[r]?.label : r).join(", "));
+              if(rules.blockedTiers.length)    parts.push("Tier " + rules.blockedTiers.join(", "));
+              return `🔒 ${parts.join(" · ")} — ${blocked} / ${total} voiture${total>1?"s":""} protégée${blocked>1?"s":""}`;
+            })()}
+          </div>` : `<div class="asmSummary asmSummary--empty">Aucune règle active — tout est vendu automatiquement.</div>`}
+
+        </div>
+      </div>
+    `;
+
+    // Listeners
+    modal.querySelector(".autoSellModal__backdrop").addEventListener("click", close);
+    modal.querySelector("#btnAutoSellClose").addEventListener("click", close);
+
+    // Toggle rareté
+    modal.querySelectorAll("[data-block-rarity]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const r = btn.dataset.blockRarity;
+        const idx = rules.blockedRarities.indexOf(r);
+        if(idx === -1) rules.blockedRarities.push(r);
+        else           rules.blockedRarities.splice(idx, 1);
+        buildModal();
+      });
+    });
+
+    // Toggle tier
+    modal.querySelectorAll("[data-block-tier]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const t = btn.dataset.blockTier;
+        const idx = rules.blockedTiers.indexOf(t);
+        if(idx === -1) rules.blockedTiers.push(t);
+        else           rules.blockedTiers.splice(idx, 1);
+        buildModal();
+      });
+    });
+
+
+  }
+
+  function close(){
+    modal.classList.remove("autoSellModal--in");
+    setTimeout(() => { modal.remove(); renderShowroom(); save?.(); }, 180);
+  }
+
+  buildModal();
+  requestAnimationFrame(() => modal.classList.add("autoSellModal--in"));
+}

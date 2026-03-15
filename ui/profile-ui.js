@@ -157,6 +157,22 @@ function getProfileStatsHtml(){
       <span class="profileCard__statVal">${achCount} / ${totalAch}</span>
       <span class="profileCard__statLabel">Succès</span>
     </div>
+    <div class="profileCard__stat">
+      <span class="profileCard__statVal" style="color:#4a9eff">${(()=>{ return Object.values(state.carBook??{}).filter(e=>e.seen).length; })()}</span>
+      <span class="profileCard__statLabel">Enc. découvertes</span>
+    </div>
+    <div class="profileCard__stat">
+      <span class="profileCard__statVal" style="color:#ffc83a">${(()=>{ return Object.values(state.carBook??{}).filter(e=>(typeof getCarBookMastery!=="undefined"?getCarBookMastery(e):0)>=3).length; })()}</span>
+      <span class="profileCard__statLabel">Enc. maîtrisées</span>
+    </div>
+    <div class="profileCard__stat">
+      <span class="profileCard__statVal" style="color:#ff4d70">${(state.totalMythicRepaired??0).toLocaleString("fr-FR")}</span>
+      <span class="profileCard__statLabel">Mythiques réparées</span>
+    </div>
+    <div class="profileCard__stat">
+      <span class="profileCard__statVal" style="color:#ffc83a">${(state.totalLegendarySold??0).toLocaleString("fr-FR")}</span>
+      <span class="profileCard__statLabel">Légendaires vendues</span>
+    </div>
   </div>`;
 }
 

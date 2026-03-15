@@ -15,7 +15,7 @@
 
 // Version courante du format de save.
 // À incrémenter à chaque changement de schéma (ajout/renommage de champ).
-const SAVE_VERSION = 10;
+const SAVE_VERSION = 11;
 
 // ─── buildSaveSnapshot ───────────────────────────────────────────────────────
 // Sérialise l'état courant du jeu en un objet JSON pur.
@@ -101,6 +101,22 @@ function buildSaveSnapshot() {
     specialization2: state.specialization2 ?? null,
     bestTier:        state.bestTier        ?? null,
     repMax:          state.repMax          ?? 0,
+    // Rareté
+    bestRarity:          state.bestRarity          ?? "common",
+    totalEpicSeen:       state.totalEpicSeen        ?? 0,
+    totalLegendarySold:  state.totalLegendarySold   ?? 0,
+    totalMythicRepaired: state.totalMythicRepaired  ?? 0,
+    totalMythicSold:     state.totalMythicSold       ?? 0,
+    // Garage Personnel
+    collection:          state.collection          ?? [],
+    collectionCap:       state.collectionCap       ?? 1,
+    collectionRepAccu:   state.collectionRepAccu   ?? 0,
+    autoSellRules:       state.autoSellRules       ?? { blockedRarities:[], blockedTiers:[], blockedCombos:[] },
+    carsSoldByTier:      state.carsSoldByTier      ?? {},
+    history:             state.history             ?? { moneyPerSec:[], rep:[] },
+    pokedexTierRewards:  state.pokedexTierRewards  ?? {},
+    // Pokédex
+    carBook:             state.carBook             ?? {},
 
     // ── Flags internes ─────────────────────────────────────────────────────
     _hasSaved: true,
@@ -198,6 +214,26 @@ function migrateSaveSnapshot(raw) {
     data.v = 10;
   }
 
+  // ── v10 → v11 : rareté + collection + pokédex ────────────────────────────
+  if(data.v < 11) {
+    const _ar = (car) => { if(car && !car.rarity) car.rarity = "common"; };
+    if(Array.isArray(data.queue))    data.queue.forEach(_ar);
+    if(Array.isArray(data.actives))  data.actives.forEach(_ar);
+    if(Array.isArray(data.showroom)) data.showroom.forEach(_ar);
+    if(data.active) _ar(data.active);
+    data.bestRarity          = data.bestRarity          ?? "common";
+    data.totalEpicSeen       = data.totalEpicSeen        ?? 0;
+    data.totalLegendarySold  = data.totalLegendarySold   ?? 0;
+    data.totalMythicRepaired = data.totalMythicRepaired  ?? 0;
+    data.totalMythicSold     = data.totalMythicSold       ?? 0;
+    data.collection          = data.collection           ?? [];
+    data.collectionCap       = data.collectionCap        ?? 1;
+    data.collectionRepAccu   = data.collectionRepAccu    ?? 0;
+    data.pokedexTierRewards  = data.pokedexTierRewards   ?? {};
+    data.carBook             = data.carBook              ?? {};
+    data.v = 11;
+  }
+
   return data;
 }
 
@@ -286,6 +322,19 @@ function applySaveSnapshot(raw) {
   state.specialization2 = data.specialization2 ?? null;
   state.bestTier        = data.bestTier        ?? null;
   state.repMax          = data.repMax          ?? 0;
+  state.bestRarity          = data.bestRarity          ?? "common";
+  state.totalEpicSeen       = data.totalEpicSeen        ?? 0;
+  state.totalLegendarySold  = data.totalLegendarySold   ?? 0;
+  state.totalMythicRepaired = data.totalMythicRepaired  ?? 0;
+  state.totalMythicSold     = data.totalMythicSold       ?? 0;
+  state.collection          = data.collection           ?? [];
+  state.collectionCap       = data.collectionCap        ?? 1;
+  state.collectionRepAccu   = data.collectionRepAccu    ?? 0;
+  state.autoSellRules       = data.autoSellRules        ?? { blockedRarities:[], blockedTiers:[], blockedCombos:[] };
+  state.carsSoldByTier      = data.carsSoldByTier       ?? {};
+  state.history             = data.history              ?? { moneyPerSec:[], rep:[] };
+  state.pokedexTierRewards  = data.pokedexTierRewards   ?? {};
+  state.carBook             = data.carBook              ?? {};
 
   // 11. Flags internes
   state._hasSaved = data._hasSaved ?? false;

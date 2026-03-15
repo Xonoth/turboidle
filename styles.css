@@ -142,7 +142,13 @@ button, a, input, select, [role='button'] { -webkit-tap-highlight-color: transpa
   text-overflow:ellipsis;
   white-space:nowrap;
 }
-.topbar__actions{display:flex; align-items:center; gap:8px;}
+.topbar__actions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  /* Largeur fixe pour éviter que les boutons bougent quand REP/money changent */
+  flex-shrink: 0;
+}
 
 /* ══ BUTTONS ═══════════════════════════════════════════════ */
 .btn{
@@ -204,8 +210,19 @@ button, a, input, select, [role='button'] { -webkit-tap-highlight-color: transpa
   font-size:12px;
   font-weight:700;
   white-space:nowrap;
-  font-family:var(--font-ui);
-  letter-spacing:.8px;
+  font-family:var(--font-mono); /* mono = tous les chiffres à largeur identique */
+  letter-spacing:.5px;
+  /* Largeur fixe pour éviter que le bouton REP change de taille */
+  min-width: 130px;
+  justify-content: flex-end;
+}
+/* Span REP — chiffres tabulaires, largeur réservée pour le pire cas */
+.repbtn #rep {
+  display: inline-block;
+  min-width: 7ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
 }
 
 /* ══ LAYOUT ════════════════════════════════════════════════ */
@@ -3029,6 +3046,9 @@ button, a, input, select, [role='button'] { -webkit-tap-highlight-color: transpa
 /* Le panneau héritage laisse la grid scroller */
 #ptab-heritage{
   overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  min-height:0;
 }
 
 /* ── Milestone prestige ─────────────────────────── */
@@ -5512,11 +5532,27 @@ button, a, input, select, [role='button'] { -webkit-tap-highlight-color: transpa
     touch-action: manipulation;
   }
 
+  /* Panneau héritage : scroll vertical natif sur mobile */
+  #ptab-heritage {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch;
+    /* Hauteur explicite = espace restant après le header du modal */
+    flex: 1 !important;
+    min-height: 0 !important;
+    height: 0 !important; /* force flex child à scroller */
+    /* Compenser la barre de nav mobile en bas */
+    padding-bottom: calc(54px + env(safe-area-inset-bottom) + 16px) !important;
+  }
+
   .heritageGrid {
     grid-template-columns: 1fr !important;
     gap: 8px;
+    /* Laisser la grid s'étendre librement — le scroll est géré par #ptab-heritage */
+    overflow: visible !important;
+    flex-shrink: 0 !important;
+    min-height: 0;
     max-height: none;
-    overflow: visible;
   }
   .heritageCard {
     padding: 10px 12px;
@@ -6858,6 +6894,8 @@ button, a, input, select, [role='button'] { -webkit-tap-highlight-color: transpa
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
+
+  /* [scroll héritage mobile géré par le bloc @media 768px ci-dessus] */
   .prestige__runGrid {
     grid-template-columns: 1fr 1fr;
     gap: 5px;
@@ -6966,4 +7004,1725 @@ button, a, input, select, [role='button'] { -webkit-tap-highlight-color: transpa
     display: block;
     margin-top: -20px;
   }
+}
+
+/* ── Modal Succès — fixes mobile ─────────────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* Header — stack title + counter verticalement */
+  .modal__panel--achievements .achModal__head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 14px 16px 12px;
+  }
+
+  /* Titre sur toute la largeur */
+  .modal__panel--achievements .achModal__title {
+    flex-wrap: wrap;
+    gap: 6px;
+    width: 100%;
+  }
+  .modal__panel--achievements .achModal__titleMain { font-size: 18px; letter-spacing: 2px; }
+
+  /* Counter : barre + % + boutons sur une ligne, bouton close bien visible */
+  .modal__panel--achievements .achModal__counter {
+    width: 100%;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+  .modal__panel--achievements .achModal__bar { flex: 1; width: auto; min-width: 60px; }
+
+  /* Bouton fermer — grand, toujours à droite, touch-friendly */
+  .modal__panel--achievements #btnAchievementsClose {
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 16px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Filtres — scroll horizontal */
+  .modal__panel--achievements .achievementFilters {
+    padding: 0 12px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .modal__panel--achievements .achievementFilters::-webkit-scrollbar { display: none; }
+  .modal__panel--achievements .achFilter {
+    flex-shrink: 0;
+    padding: 10px 12px;
+    font-size: 10px;
+    min-height: 40px;
+    touch-action: manipulation;
+  }
+
+  /* Grille — 1 colonne centrée */
+  .achievementGrid {
+    grid-template-columns: 1fr;
+    padding: 12px 12px 20px;
+    gap: 6px;
+  }
+
+  /* Cards succès — compactes */
+  .achCard {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+  .achCard__icon  { font-size: 22px; width: 36px; flex-shrink: 0; }
+  .achCard__name  { font-size: 12px; }
+  .achCard__desc  { font-size: 11px; }
+  .achCard__reward { font-size: 10px; flex-wrap: wrap; gap: 4px; }
+
+  /* Bouton notifs — masquer le texte sur très petits écrans */
+  .btn--notif-toggle { font-size: 11px; padding: 4px 8px; }
+}
+
+@media (max-width: 380px) {
+  .btn--notif-toggle { display: none; }
+  .modal__panel--achievements .achModal__titleMain { font-size: 16px; }
+}
+
+/* ── Bouton fermer succès — toujours visible ─────────────────────────── */
+.achModal__closeBtn {
+  min-width: 36px;
+  min-height: 36px;
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  border-radius: var(--border-radius-md);
+  border: 1px solid rgba(255,255,255,.15);
+  background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.7);
+  cursor: pointer;
+  transition: background .15s;
+}
+.achModal__closeBtn:hover { background: rgba(255,255,255,.14); color: #fff; }
+@media (max-width: 768px) {
+  .achModal__closeBtn {
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 16px;
+    background: rgba(255,255,255,.08);
+    border-color: rgba(255,255,255,.2);
+  }
+}
+
+/* =====================================================================
+   SYSTÈME DE RARETÉ — badges, bordures, glows, animations
+   ===================================================================== */
+
+.rarityBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+  height: 18px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .02em;
+  padding: 0 7px;
+  border-radius: 4px;
+  border: 1px solid;
+  white-space: nowrap;
+  font-family: var(--font-ui);
+}
+.sItem .rarityBadge { height: 20px; font-size: 11px; }
+
+.rarityBadge--common    { color:#8ca8c0; background:rgba(140,168,192,.08); border-color:rgba(140,168,192,.2); }
+.rarityBadge--uncommon  { color:#4a9eff; background:rgba(74,158,255,.1);   border-color:rgba(74,158,255,.3);  }
+.rarityBadge--rare      { color:#2ee59d; background:rgba(46,229,157,.1);   border-color:rgba(46,229,157,.3);  }
+.rarityBadge--epic      { color:#a78bfa; background:rgba(167,139,250,.12); border-color:rgba(167,139,250,.38); box-shadow:0 0 5px rgba(167,139,250,.18); }
+.rarityBadge--legendary { color:#ffc83a; background:rgba(255,200,58,.1);   border-color:rgba(255,200,58,.45);  box-shadow:0 0 8px rgba(255,200,58,.25),inset 0 1px 0 rgba(255,200,58,.12); }
+.rarityBadge--mythic    { color:#ff4d70; background:rgba(255,77,112,.12);  border-color:rgba(255,77,112,.5);   box-shadow:0 0 10px rgba(255,77,112,.35); animation:rarityGlow 1.6s ease-in-out infinite; }
+
+.sItem--rarity-uncommon  { border-left:2px solid rgba(74,158,255,.45)  !important; }
+.sItem--rarity-rare      { border-left:2px solid rgba(46,229,157,.55)  !important; }
+.sItem--rarity-epic      { border-left:2px solid rgba(167,139,250,.65) !important; background:rgba(167,139,250,.025) !important; }
+.sItem--rarity-legendary { border-left:2px solid rgba(255,200,58,.75)  !important; background:rgba(255,200,58,.025)  !important; }
+.sItem--rarity-mythic    { border-left:2px solid rgba(255,77,112,.85)  !important; background:rgba(255,77,112,.03)   !important; animation:mythicCardGlow 2s ease-in-out infinite; }
+
+.garageSlot--rarity-uncommon::before  { background:linear-gradient(180deg,#4a9eff,rgba(74,158,255,.15))  !important; }
+.garageSlot--rarity-rare::before      { background:linear-gradient(180deg,#2ee59d,rgba(46,229,157,.15))  !important; }
+.garageSlot--rarity-epic::before      { background:linear-gradient(180deg,#a78bfa,rgba(167,139,250,.15)) !important; }
+.garageSlot--rarity-legendary::before { background:linear-gradient(180deg,#ffc83a,rgba(255,200,58,.15))  !important; width:3px !important; }
+.garageSlot--rarity-mythic::before    { background:linear-gradient(180deg,#ff4d70,rgba(255,77,112,.15))  !important; width:3px !important; animation:mythicBarPulse 1.6s ease-in-out infinite; }
+.garageSlot--rarity-epic      { background:rgba(167,139,250,.025) !important; }
+.garageSlot--rarity-legendary { background:rgba(255,200,58,.025)  !important; }
+.garageSlot--rarity-mythic    { background:rgba(255,77,112,.03)   !important; animation:mythicCardGlow 2s ease-in-out infinite; }
+
+@keyframes rarityGlow    { 0%,100%{box-shadow:0 0 8px rgba(255,77,112,.35)} 50%{box-shadow:0 0 18px rgba(255,77,112,.7),0 0 30px rgba(255,77,112,.2)} }
+@keyframes mythicCardGlow{ 0%,100%{box-shadow:inset 3px 0 14px rgba(255,77,112,.07)} 50%{box-shadow:inset 3px 0 22px rgba(255,77,112,.14),0 0 6px rgba(255,77,112,.06)} }
+@keyframes mythicBarPulse{ 0%,100%{opacity:1} 50%{opacity:.45} }
+@keyframes rarityFlashEpic      { 0%{box-shadow:0 0 0 rgba(167,139,250,0)} 30%{box-shadow:0 0 30px rgba(167,139,250,.85)} 100%{box-shadow:0 0 0 rgba(167,139,250,0)} }
+@keyframes rarityFlashLegendary { 0%{box-shadow:0 0 0 rgba(255,200,58,0)} 20%{box-shadow:0 0 48px rgba(255,200,58,1)} 60%{box-shadow:0 0 22px rgba(255,200,58,.5)} 100%{box-shadow:0 0 0 rgba(255,200,58,0)} }
+.btnAnalyze--flash-epic      { animation:rarityFlashEpic .5s ease-out forwards; }
+.btnAnalyze--flash-legendary { animation:rarityFlashLegendary .75s ease-out forwards; }
+
+/* Bouton Exposer dans le showroom */
+.exposeBtn {
+  padding: 5px 10px;
+  border-radius: 7px;
+  border: 1px solid rgba(255,200,58,.25);
+  background: rgba(255,200,58,.07);
+  color: #ffc83a;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 11px;
+  font-family: var(--font-ui);
+  letter-spacing: .3px;
+  transition: background .15s, border-color .15s;
+}
+.exposeBtn:hover { background:rgba(255,200,58,.14); border-color:rgba(255,200,58,.4); }
+.exposeBtn--full { opacity:.4; cursor:not-allowed; }
+
+/* =====================================================================
+   GARAGE PERSONNEL — styles
+   ===================================================================== */
+
+.panel--collection {
+  margin-top: 10px;
+}
+
+.collHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px 6px;
+}
+.collHeader__title { font-size: 13px; font-weight: 700; }
+.collHeader__meta  { font-size: 11px; color: var(--muted2); }
+
+.collIncome {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 14px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+}
+.collIncome__val--money { color: #2ee59d; }
+.collIncome__val--rep   { color: #a78bfa; }
+.collIncome__sep        { color: var(--muted2); }
+
+.collEmpty {
+  padding: 20px 14px;
+  text-align: center;
+  color: var(--muted2);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.collList { display: flex; flex-direction: column; gap: 6px; padding: 10px 10px 4px; }
+
+.collCard {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,.05);
+  background: rgba(0,0,0,.12);
+  position: relative;
+  overflow: hidden;
+  transition: border-color .2s;
+}
+.collCard--rarity-uncommon  { border-left: 2px solid rgba(74,158,255,.5); }
+.collCard--rarity-rare      { border-left: 2px solid rgba(46,229,157,.6); }
+.collCard--rarity-epic      { border-left: 2px solid rgba(167,139,250,.7); background: rgba(167,139,250,.03); }
+.collCard--rarity-legendary { border-left: 2px solid rgba(255,200,58,.8); background: rgba(255,200,58,.03); }
+.collCard--rarity-mythic    { border-left: 2px solid rgba(255,77,112,.9); background: rgba(255,77,112,.04); animation: mythicCardGlow 2s ease-in-out infinite; }
+
+.collCard__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.collCard__top  { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.collCard__name { font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.collCard__income { display: flex; gap: 10px; font-size: 11px; font-weight: 600; }
+
+.collCard__remove {
+  flex-shrink: 0;
+  width: 28px; height: 28px;
+  border-radius: 7px;
+  border: 1px solid rgba(255,77,112,.2);
+  background: rgba(255,77,112,.07);
+  color: #ff4d70;
+  cursor: pointer;
+  font-size: 14px;
+  display: grid; place-items: center;
+  transition: background .15s;
+}
+.collCard__remove:hover { background: rgba(255,77,112,.15); }
+
+.collSlots { display: flex; flex-direction: column; gap: 5px; padding: 6px 10px 10px; }
+.collSlot--empty {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px dashed rgba(255,255,255,.07);
+  color: var(--muted2);
+  font-size: 11px;
+}
+
+
+/* Mobile */
+@media (max-width: 768px) {
+  .modal__panel--pokedex {
+    width: 100vw !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+  }
+  .pdxGrid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+
+  /* Fix scroll héritage */
+  #ptab-heritage {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch;
+    flex: 1 !important;
+    min-height: 0 !important;
+    height: 0 !important;
+    padding-bottom: calc(54px + env(safe-area-inset-bottom) + 16px) !important;
+  }
+  #ptab-heritage .heritageGrid {
+    overflow: visible !important;
+    flex-shrink: 0 !important;
+    max-height: none;
+  }
+}
+
+/* =====================================================================
+   ONGLETS COL-CENTER (Atelier / Garage Personnel)
+   ===================================================================== */
+
+.tabs--center {
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+
+.centerTabPanel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.centerTabPanel--hidden { display: none !important; }
+
+#ctab-atelier {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+#ctab-collection {
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* =====================================================================
+   SHOWROOM — barre filtre/tri + lock
+   ===================================================================== */
+
+.showroomFilterBar {
+  padding: 8px 10px 4px;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  margin-bottom: 4px;
+}
+
+.showroomFilters__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 5px;
+  flex-wrap: wrap;
+}
+.showroomFilters__row--sort { margin-bottom: 2px; }
+
+.showroomFilters__label {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--muted2);
+  min-width: 34px;
+  flex-shrink: 0;
+}
+
+.showroomFilters__pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.srPill {
+  padding: 2px 7px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,.08);
+  background: transparent;
+  color: var(--muted2);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  transition: all .12s;
+  white-space: nowrap;
+}
+.srPill:hover   { color: rgba(255,255,255,.7); border-color: rgba(255,255,255,.18); }
+.srPill--active { color: #31d6ff; border-color: rgba(49,214,255,.4); background: rgba(49,214,255,.08); }
+
+.srSort {
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,.1);
+  background: rgba(0,0,0,.2);
+  color: var(--text);
+  font-size: 11px;
+  font-family: var(--font-ui);
+  cursor: pointer;
+}
+
+.srLockInfo {
+  font-size: 10px;
+  color: rgba(255,200,58,.6);
+  font-weight: 700;
+  margin-left: 4px;
+}
+
+/* Actions showroom — layout en colonne */
+.sItem__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* Bouton lock */
+.lockBtn {
+  padding: 5px 8px;
+  border-radius: 7px;
+  border: 1px solid rgba(255,255,255,.08);
+  background: rgba(0,0,0,.15);
+  color: var(--muted2);
+  cursor: pointer;
+  font-size: 13px;
+  transition: all .15s;
+  line-height: 1;
+  text-align: center;
+}
+.lockBtn:hover      { border-color: rgba(255,200,58,.3); background: rgba(255,200,58,.08); }
+.lockBtn--active    { border-color: rgba(255,200,58,.5); background: rgba(255,200,58,.12); color: #ffc83a; }
+
+/* Badge lock sur la carte */
+.sItem__lockBadge {
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+/* Voiture verrouillée — légèrement différenciée */
+.sItem--locked {
+  border-left: 2px solid rgba(255,200,58,.5) !important;
+  background: rgba(255,200,58,.02) !important;
+}
+
+/* Exposer : icône seule maintenant */
+.exposeBtn {
+  padding: 5px 8px;
+  border-radius: 7px;
+  border: 1px solid rgba(255,200,58,.25);
+  background: rgba(255,200,58,.07);
+  color: #ffc83a;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: var(--font-ui);
+  transition: background .15s, border-color .15s;
+  line-height: 1;
+  text-align: center;
+}
+.exposeBtn:hover { background:rgba(255,200,58,.14); border-color:rgba(255,200,58,.4); }
+.exposeBtn--full { opacity:.35; cursor:not-allowed; }
+
+/* Mobile */
+@media (max-width: 768px) {
+  .showroomFilters__pills { gap: 3px; }
+  .srPill { font-size: 9px; padding: 2px 6px; }
+  .sItem__actions { flex-direction: row; align-items: center; }
+  .lockBtn, .exposeBtn { padding: 6px 8px; min-height: 36px; }
+  #ctab-collection {
+    padding-bottom: calc(54px + env(safe-area-inset-bottom) + 8px);
+  }
+}
+
+
+/* =====================================================================
+   SHOWROOM — barre info vente auto
+   ===================================================================== */
+
+.showroomAutoBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  margin-bottom: 4px;
+  background: rgba(46,229,157,.04);
+  border-bottom: 1px solid rgba(46,229,157,.08);
+  gap: 8px;
+}
+.showroomAutoBar__txt { font-size: 11px; color: var(--muted2); }
+.showroomAutoBar__btn {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,.1);
+  background: rgba(255,255,255,.05);
+  color: rgba(255,255,255,.7);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  flex-shrink: 0;
+  transition: background .15s;
+}
+.showroomAutoBar__btn:hover { background: rgba(255,255,255,.1); }
+
+/* =====================================================================
+   MODALE GESTION VENTES AUTO
+   ===================================================================== */
+
+.autoSellModal {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.autoSellModal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.6);
+}
+
+.autoSellModal__panel {
+  position: relative;
+  z-index: 1;
+  width: min(480px, 94vw);
+  max-height: 80vh;
+  background: var(--bg-panel, #0d1320);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(12px) scale(.97);
+  transition: opacity .18s, transform .18s;
+}
+.autoSellModal--in .autoSellModal__panel {
+  opacity: 1;
+  transform: none;
+}
+
+.autoSellModal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  flex-shrink: 0;
+}
+.autoSellModal__title { font-size: 14px; font-weight: 700; }
+.autoSellModal__close {
+  width: 28px; height: 28px;
+  border-radius: 7px;
+  border: 1px solid rgba(255,255,255,.1);
+  background: rgba(255,255,255,.05);
+  color: rgba(255,255,255,.5);
+  cursor: pointer;
+  font-size: 13px;
+  display: grid; place-items: center;
+  transition: background .15s;
+}
+.autoSellModal__close:hover { background: rgba(255,255,255,.12); color: #fff; }
+
+.autoSellModal__desc {
+  padding: 8px 16px;
+  font-size: 11px;
+  color: var(--muted2);
+  line-height: 1.5;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  flex-shrink: 0;
+}
+
+.autoSellModal__toolbar {
+  display: flex;
+  gap: 6px;
+  padding: 8px 12px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  flex-shrink: 0;
+}
+.autoSellModal__toolBtn {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,.1);
+  background: rgba(255,255,255,.05);
+  color: rgba(255,255,255,.6);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  transition: background .15s;
+}
+.autoSellModal__toolBtn:hover { background: rgba(255,255,255,.12); color: #fff; }
+
+.autoSellModal__list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  scrollbar-width: thin;
+}
+
+.asmEmpty {
+  padding: 20px;
+  text-align: center;
+  color: var(--muted2);
+  font-size: 12px;
+}
+
+.asmRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,.05);
+  background: rgba(0,0,0,.1);
+  transition: background .15s, border-color .15s;
+}
+.asmRow--locked {
+  border-color: rgba(255,200,58,.2);
+  background: rgba(255,200,58,.03);
+}
+
+.asmRow__info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.asmRow__name {
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+.asmRow__val {
+  font-size: 11px;
+  color: #2ee59d;
+  font-weight: 600;
+  font-family: var(--font-mono, monospace);
+  flex-shrink: 0;
+}
+
+.asmRow__toggle {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,.1);
+  background: rgba(0,0,0,.2);
+  color: var(--muted2);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  transition: all .15s;
+  white-space: nowrap;
+}
+.asmRow__toggle:hover { background: rgba(255,255,255,.08); }
+.asmRow__toggle--locked {
+  border-color: rgba(255,200,58,.4);
+  background: rgba(255,200,58,.1);
+  color: #ffc83a;
+}
+.asmRow__toggle--locked:hover { background: rgba(255,200,58,.18); }
+
+@media (max-width: 768px) {
+  .autoSellModal__panel { max-height: 85dvh; border-radius: 14px 14px 0 0; align-self: flex-end; width: 100%; }
+  .autoSellModal { align-items: flex-end; }
+}
+
+/* =====================================================================
+   MODALE RÈGLES VENTE AUTO — refonte
+   ===================================================================== */
+
+.autoSellModal__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.asmSection { display: flex; flex-direction: column; gap: 8px; }
+.asmSection__title {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--muted2);
+}
+
+.asmSection__pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.asmPill {
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,.1);
+  background: transparent;
+  color: var(--muted2);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  transition: all .15s;
+}
+.asmPill:hover   { color: rgba(255,255,255,.8); border-color: rgba(255,255,255,.25); }
+.asmPill--active { font-weight: 800; }
+
+.asmComboBuilder {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.asmSelect {
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 7px;
+  border: 1px solid rgba(255,255,255,.1);
+  background: rgba(0,0,0,.25);
+  color: var(--text);
+  font-size: 12px;
+  font-family: var(--font-ui);
+  cursor: pointer;
+  flex: 1;
+  min-width: 90px;
+}
+
+.asmAddCombo {
+  padding: 5px 12px;
+  border-radius: 7px;
+  border: 1px solid rgba(49,214,255,.25);
+  background: rgba(49,214,255,.08);
+  color: #31d6ff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  transition: background .15s;
+  white-space: nowrap;
+}
+.asmAddCombo:hover { background: rgba(49,214,255,.15); }
+
+.asmComboList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 4px;
+}
+
+.asmComboTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px 3px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.05);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.asmComboTag__del {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,77,112,.2);
+  color: #ff4d70;
+  font-size: 9px;
+  cursor: pointer;
+  display: grid; place-items: center;
+  padding: 0;
+  line-height: 1;
+  transition: background .12s;
+}
+.asmComboTag__del:hover { background: rgba(255,77,112,.4); }
+
+.asmSummary {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(255,200,58,.06);
+  border: 1px solid rgba(255,200,58,.15);
+  font-size: 11px;
+  color: #ffc83a;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .asmComboBuilder { gap: 5px; }
+  .asmSelect { font-size: 11px; }
+}
+
+/* =====================================================================
+   SHOWROOM — onglets Tout / Protégées
+   ===================================================================== */
+
+.showroomTabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid rgba(255,255,255,.05);
+  margin-bottom: 2px;
+  flex-shrink: 0;
+}
+
+.showroomTab {
+  flex: 1;
+  padding: 7px 10px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--muted2);
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-ui);
+  letter-spacing: .04em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: color .15s, border-color .15s;
+}
+.showroomTab:hover      { color: rgba(255,255,255,.65); }
+.showroomTab--active    { color: #fff; border-bottom-color: #31d6ff; }
+
+.showroomTab__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 16px;
+  padding: 0 5px;
+  border-radius: 20px;
+  background: rgba(255,255,255,.1);
+  font-size: 9px;
+  font-weight: 800;
+}
+.showroomTab__count--gold {
+  background: rgba(255,200,58,.18);
+  color: #ffc83a;
+}
+
+.showroomTabEmpty {
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--muted2);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.showroomTabEmpty span { font-size: 11px; }
+
+.asmSection__desc {
+  font-size: 10px;
+  color: var(--muted2);
+  margin-top: -4px;
+}
+.asmSummary--empty {
+  background: rgba(255,255,255,.03);
+  border-color: rgba(255,255,255,.07);
+  color: var(--muted2);
+}
+
+/* =====================================================================
+   ENCYCLOPÉDIE — modal & styles
+   ===================================================================== */
+
+.modal__panel--pokedex {
+  width: min(700px, 96vw);
+  height: min(820px, 92vh);
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────── */
+.encHeader {
+  padding: 12px 18px 8px;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+}
+.encHeader__title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.encHeader__stats {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.encStat {
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ── Barre de progression globale ───────────────────────────────────── */
+.encProgress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 18px;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+}
+.encProgress__bar  { flex:1; height:5px; background:rgba(255,255,255,.07); border-radius:99px; overflow:hidden; }
+.encProgress__fill { height:100%; background:linear-gradient(90deg,#31d6ff,#2ee59d); border-radius:99px; transition:width .4s ease; }
+.encProgress__label { font-size:11px; font-weight:700; color:#31d6ff; white-space:nowrap; }
+
+/* ── Filtres tier ────────────────────────────────────────────────────── */
+.encFilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px 14px 4px;
+  flex-shrink: 0;
+}
+.encPill {
+  padding: 3px 9px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,.08);
+  background: transparent;
+  color: var(--muted2);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .03em;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  transition: all .12s;
+}
+.encPill:hover    { color: rgba(255,255,255,.7); border-color: rgba(255,255,255,.2); }
+.encPill--active  { color: #31d6ff; border-color: rgba(49,214,255,.4); background: rgba(49,214,255,.08); }
+
+/* ── Filtres maîtrise ────────────────────────────────────────────────── */
+.encMasteryFilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px 14px 8px;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(255,255,255,.05);
+}
+.encMPill {
+  padding: 3px 9px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,.06);
+  background: transparent;
+  color: var(--muted2);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  transition: all .12s;
+}
+.encMPill:hover   { color: rgba(255,255,255,.6); }
+.encMPill--active { color: #ffc83a; border-color: rgba(255,200,58,.4); background: rgba(255,200,58,.08); }
+
+/* ── Liste ───────────────────────────────────────────────────────────── */
+.encList {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 6px 6px 20px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(49,214,255,.35) rgba(255,255,255,.04);
+}
+.encList::-webkit-scrollbar        { width: 6px; }
+.encList::-webkit-scrollbar-track  { background: rgba(255,255,255,.04); border-radius: 6px; }
+.encList::-webkit-scrollbar-thumb  { background: rgba(49,214,255,.35); border-radius: 6px; }
+.encList::-webkit-scrollbar-thumb:hover { background: rgba(49,214,255,.6); }
+
+/* ── Ligne catalogue ──────────────────────────────────────────────────── */
+.encRow {
+  border-radius: 9px;
+  border: 1px solid rgba(255,255,255,.05);
+  background: rgba(0,0,0,.12);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  transition: border-color .2s, background .2s;
+}
+.encRow:hover { border-color: rgba(255,255,255,.1); background: rgba(255,255,255,.02); }
+
+.encRow--unknown { opacity: .35; }
+
+.encRow--mastery-2 { border-left: 2px solid rgba(46,229,157,.35); }
+.encRow--mastery-3 {
+  border-left: 2px solid rgba(255,200,58,.6);
+  background: rgba(255,200,58,.02);
+}
+
+/* Ligne principale (tier + nom + maîtrise) */
+.encRow__main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.encRow__left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+.encRow__info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.encRow__name {
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.encRow__name--unknown { color: var(--muted2); font-style: italic; }
+.encRow__desc {
+  font-size: 10px;
+  color: var(--muted2);
+}
+.encRow__right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.encRow__mastery {
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* Détails (répa + vente + raretés) */
+.encRow__details {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.encRow__stat {
+  font-size: 11px;
+  color: var(--muted2);
+}
+.encRow__stat b { color: rgba(255,255,255,.8); }
+
+.encRow__rarities {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+}
+.encRow__rarIcon { font-size: 13px; line-height: 1; }
+
+/* Barres de progression vers prochain niveau */
+.encRow__prog {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  padding-top: 2px;
+  border-top: 1px solid rgba(255,255,255,.04);
+  margin-top: 2px;
+}
+.encRow__prog span {
+  font-size: 10px;
+  color: var(--muted2);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.encRow__progLabel {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--muted2);
+  width: 100%;
+  margin-bottom: 1px;
+}
+.encRow__prog--done .encRow__progLabel { color: #ffc83a; }
+.encRow__progBar {
+  flex: 1;
+  min-width: 55px;
+  height: 4px;
+  background: rgba(255,255,255,.07);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.encRow__progFill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width .4s ease;
+}
+.encRow__progFill--1 { background: linear-gradient(90deg, #31d6ff, #2ee59d); }
+.encRow__progFill--2 { background: linear-gradient(90deg, #ffa53a, #ffc83a); }
+.encRow__progFill--3 { background: linear-gradient(90deg, #ffc83a, #fff3a0); box-shadow: 0 0 6px rgba(255,200,58,.4); }
+
+/* Mobile */
+@media (max-width: 768px) {
+  .modal__panel--pokedex {
+    width: 100vw !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+  }
+  .encRow__right { flex-wrap: wrap; justify-content: flex-end; }
+}
+
+/* =====================================================================
+   MICRO-ANIMATIONS — GSAP + CSS
+   ===================================================================== */
+
+/* ── Float text amélioré ─────────────────────────────────────────────── */
+.floatText {
+  font-family: var(--font-ui);
+  font-weight: 800;
+  font-size: 14px;
+  pointer-events: none;
+  position: fixed;
+  z-index: 9998;
+  white-space: nowrap;
+  letter-spacing: .5px;
+  text-shadow: 0 1px 8px rgba(0,0,0,.5);
+}
+.floatText--money { color: #2ee59d; }
+.floatText--rep   { color: #ffc83a; }
+.floatText--diag  { color: #31d6ff; }
+
+/* ── Shimmer sur les cartes Mythiques ────────────────────────────────── */
+@keyframes mythicShimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+.sItem--rarity-mythic::after,
+.garageSlot--rarity-mythic::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    105deg,
+    transparent 35%,
+    rgba(255, 77, 112, 0.12) 50%,
+    transparent 65%
+  );
+  background-size: 200% 100%;
+  animation: mythicShimmer 2.4s linear infinite;
+  pointer-events: none;
+}
+.sItem--rarity-mythic   { position: relative; overflow: hidden; }
+.garageSlot--rarity-mythic { position: relative; overflow: hidden; }
+
+/* Shimmer Légendaire (plus discret) */
+@keyframes legendaryShimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+.sItem--rarity-legendary::after,
+.garageSlot--rarity-legendary::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 200, 58, 0.09) 50%,
+    transparent 60%
+  );
+  background-size: 200% 100%;
+  animation: legendaryShimmer 3s linear infinite;
+  pointer-events: none;
+}
+.sItem--rarity-legendary   { position: relative; overflow: hidden; }
+.garageSlot--rarity-legendary { position: relative; overflow: hidden; }
+
+/* ── Pulse badges rareté Épique+ ─────────────────────────────────────── */
+@keyframes epicPulse {
+  0%,100% { box-shadow: 0 0 4px rgba(167,139,250,.25); }
+  50%     { box-shadow: 0 0 10px rgba(167,139,250,.55), 0 0 20px rgba(167,139,250,.18); }
+}
+@keyframes legendaryPulse {
+  0%,100% { box-shadow: 0 0 6px rgba(255,200,58,.35); }
+  50%     { box-shadow: 0 0 14px rgba(255,200,58,.75), 0 0 28px rgba(255,200,58,.2); }
+}
+@keyframes mythicPulse {
+  0%,100% { box-shadow: 0 0 8px rgba(255,77,112,.45); }
+  50%     { box-shadow: 0 0 18px rgba(255,77,112,.9), 0 0 36px rgba(255,77,112,.25); }
+}
+.rarityBadge--epic      { animation: epicPulse      2.2s ease-in-out infinite; }
+.rarityBadge--legendary { animation: legendaryPulse 1.8s ease-in-out infinite; }
+.rarityBadge--mythic    { animation: mythicPulse    1.4s ease-in-out infinite; }
+
+/* ── Barre de réparation — rebond à la complétion ────────────────────── */
+@keyframes barBounce {
+  0%   { transform: scaleX(1); }
+  40%  { transform: scaleX(1.03); }
+  70%  { transform: scaleX(0.99); }
+  100% { transform: scaleX(1); }
+}
+.garageSlot__barFill--bounce {
+  animation: barBounce .35s ease-out forwards;
+  transform-origin: left center;
+}
+
+/* ── Entrée des slots atelier (fallback CSS si GSAP pas chargé) ──────── */
+@keyframes slotEnterCSS {
+  from { opacity: 0; transform: translateX(-16px) scale(.97); }
+  to   { opacity: 1; transform: none; }
+}
+.garageSlot--entering {
+  animation: slotEnterCSS .3s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+
+/* ── Entrée des sItems showroom ──────────────────────────────────────── */
+@keyframes sItemEnterCSS {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: none; }
+}
+.sItem--new {
+  animation: sItemEnterCSS .28s ease-out forwards;
+}
+
+/* ── Toast amélioré ──────────────────────────────────────────────────── */
+#partsToast {
+  will-change: transform, opacity;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* ── Glow sur les slots de rareté élevée ─────────────────────────────── */
+@keyframes legendarySlotPulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(255,200,58,0); }
+  50%     { box-shadow: 0 0 12px 2px rgba(255,200,58,.18); }
+}
+@keyframes mythicSlotPulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(255,77,112,0); }
+  50%     { box-shadow: 0 0 16px 3px rgba(255,77,112,.22); }
+}
+.garageSlot--rarity-legendary {
+  animation: legendarySlotPulse 2.2s ease-in-out infinite;
+}
+.garageSlot--rarity-mythic {
+  animation: mythicSlotPulse 1.6s ease-in-out infinite;
+}
+
+/* ── Bounce barre sur fin de réparation ──────────────────────────────── */
+@keyframes repairDone {
+  0%   { transform: scaleY(1); }
+  30%  { transform: scaleY(1.12); }
+  60%  { transform: scaleY(0.96); }
+  100% { transform: scaleY(1); }
+}
+.garageSlot__bar--done {
+  animation: repairDone .4s ease-out;
+}
+
+/* Réduire les animations si préférence système */
+@media (prefers-reduced-motion: reduce) {
+  .rarityBadge--epic,
+  .rarityBadge--legendary,
+  .rarityBadge--mythic,
+  .sItem--rarity-mythic::after,
+  .sItem--rarity-legendary::after,
+  .garageSlot--rarity-mythic::after,
+  .garageSlot--rarity-legendary::after,
+  .garageSlot--rarity-legendary,
+  .garageSlot--rarity-mythic {
+    animation: none;
+  }
+}
+
+/* =====================================================================
+   TIPPY.JS — Thème GT Dark (dans le thème du jeu)
+   ===================================================================== */
+
+/* Conteneur principal */
+.tippy-box[data-theme~="gt-dark"] {
+  background: rgba(10, 16, 28, 0.97);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.3);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  font-family: var(--font-ui);
+  color: rgba(255,255,255,.88);
+  padding: 0;
+}
+
+/* Flèche */
+.tippy-box[data-theme~="gt-dark"] > .tippy-arrow::before {
+  border-color: transparent;
+}
+.tippy-box[data-theme~="gt-dark"][data-placement^="left"] > .tippy-arrow::before {
+  border-left-color: rgba(10,16,28,.97);
+}
+.tippy-box[data-theme~="gt-dark"][data-placement^="right"] > .tippy-arrow::before {
+  border-right-color: rgba(10,16,28,.97);
+}
+.tippy-box[data-theme~="gt-dark"][data-placement^="top"] > .tippy-arrow::before {
+  border-top-color: rgba(10,16,28,.97);
+}
+.tippy-box[data-theme~="gt-dark"][data-placement^="bottom"] > .tippy-arrow::before {
+  border-bottom-color: rgba(10,16,28,.97);
+}
+
+.tippy-box[data-theme~="gt-dark"] > .tippy-content {
+  padding: 0;
+}
+
+/* ── Contenu gt-tip ──────────────────────────────────────────────────── */
+.gt-tip {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 220px;
+}
+
+/* Header upgrade */
+.gt-tip__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.gt-tip__icon {
+  font-size: 22px;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.gt-tip__name {
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.3;
+}
+.gt-tip__lvlBadge {
+  display: inline-block;
+  padding: 0 6px;
+  border-radius: 20px;
+  background: rgba(255,255,255,.1);
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255,255,255,.55);
+  vertical-align: middle;
+  margin-left: 4px;
+}
+.gt-tip__scale {
+  font-size: 10px;
+  color: rgba(255,255,255,.35);
+  margin-top: 2px;
+}
+
+/* Tags */
+.gt-tip__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.gt-tip__tag {
+  padding: 2px 7px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  border: 1px solid;
+}
+.gt-tip__tag--vitesse    { color:#31d6ff; border-color:rgba(49,214,255,.3);  background:rgba(49,214,255,.08); }
+.gt-tip__tag--argent     { color:#2ee59d; border-color:rgba(46,229,157,.3);  background:rgba(46,229,157,.08); }
+.gt-tip__tag--vente      { color:#ffc83a; border-color:rgba(255,200,58,.3);  background:rgba(255,200,58,.08); }
+.gt-tip__tag--diagnostic { color:#a78bfa; border-color:rgba(167,139,250,.3); background:rgba(167,139,250,.08); }
+.gt-tip__tag--stock      { color:#ff9f43; border-color:rgba(255,159,67,.3);  background:rgba(255,159,67,.08); }
+
+/* Description */
+.gt-tip__desc {
+  font-size: 11px;
+  color: rgba(255,255,255,.55);
+  line-height: 1.5;
+  border-top: 1px solid rgba(255,255,255,.06);
+  padding-top: 6px;
+}
+
+/* Barre progression */
+.gt-tip__prog {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.gt-tip__progBar {
+  flex: 1;
+  height: 3px;
+  background: rgba(255,255,255,.08);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.gt-tip__progFill {
+  height: 100%;
+  background: linear-gradient(90deg, #31d6ff, #2ee59d);
+  border-radius: 99px;
+  transition: width .3s;
+}
+.gt-tip__progFill--max { background: linear-gradient(90deg, #2ee59d, #ffc83a); }
+.gt-tip__progLabel {
+  font-size: 10px;
+  color: rgba(255,255,255,.4);
+  white-space: nowrap;
+}
+
+/* Prérequis */
+.gt-tip__prereq {
+  font-size: 10px;
+  color: rgba(255,150,50,.8);
+  background: rgba(255,150,50,.07);
+  border-radius: 5px;
+  padding: 3px 7px;
+}
+
+/* Titre section niveaux */
+.gt-tip__lvlTitle {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.3);
+  border-top: 1px solid rgba(255,255,255,.06);
+  padding-top: 6px;
+}
+.gt-tip__maxed {
+  font-size: 11px;
+  color: #2ee59d;
+  border-top: 1px solid rgba(255,255,255,.06);
+  padding-top: 6px;
+}
+
+/* Lignes des prochains niveaux */
+.gt-tip__lvlRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 0;
+  font-size: 11px;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+}
+.gt-tip__lvlRow:last-child { border-bottom: none; }
+.gt-tip__lvlRow--next { background: rgba(255,255,255,.03); border-radius: 4px; padding: 4px 5px; margin: 0 -5px; }
+.gt-tip__lvlNum     { min-width: 38px; font-weight: 700; color: rgba(255,255,255,.5); font-size: 10px; }
+.gt-tip__lvlEffect  { flex: 1; color: rgba(255,255,255,.7); }
+.gt-tip__lvlCost    { font-weight: 700; font-size: 10px; font-family: var(--font-mono); white-space: nowrap; }
+.gt-tip__lvlCost--ok   { color: #2ee59d; }
+.gt-tip__lvlCost--miss { color: #ff4d70; }
+
+/* ── Tooltip rareté ──────────────────────────────────────────────────── */
+.gt-tip__rarHeader {
+  font-size: 13px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.gt-tip__rarProba {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255,255,255,.35);
+}
+.gt-tip__rarSep {
+  height: 1px;
+  background: rgba(255,255,255,.06);
+  margin: 0 0 2px;
+}
+.gt-tip__rarRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+.gt-tip__rarLabel {
+  flex: 1;
+  color: rgba(255,255,255,.5);
+}
+.gt-tip__rarVal {
+  font-weight: 800;
+  font-size: 12px;
+  min-width: 30px;
+  text-align: right;
+}
+.gt-tip__rarBar {
+  width: 60px;
+  height: 3px;
+  background: rgba(255,255,255,.07);
+  border-radius: 99px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.gt-tip__rarBarFill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width .3s;
+}
+
+/* =====================================================================
+   STATS MODAL — onglets Stats / Graphiques
+   ===================================================================== */
+
+.statsTabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  flex-shrink: 0;
+  padding: 0 20px;
+}
+.statsTab {
+  padding: 10px 18px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: rgba(255,255,255,.4);
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font-ui);
+  letter-spacing: .04em;
+  cursor: pointer;
+  transition: color .15s, border-color .15s;
+}
+.statsTab:hover     { color: rgba(255,255,255,.7); }
+.statsTab--active   { color: #48c78e; border-bottom-color: #48c78e; }
+
+.statsTabPanel { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.statsTabPanel--hidden { display: none !important; }
+
+/* Hériter le scroll du statsGrid */
+#statsPanel-stats { overflow: hidden; }
+#statsPanel-stats .statsGrid { flex: 1; }
+
+/* =====================================================================
+   GRAPHIQUES — chartsGrid
+   ===================================================================== */
+
+.chartsGrid {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 18px 20px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-content: start;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(72,199,142,.15) transparent;
+}
+.chartsGrid::-webkit-scrollbar       { width: 4px; }
+.chartsGrid::-webkit-scrollbar-track { background: transparent; }
+.chartsGrid::-webkit-scrollbar-thumb { background: rgba(72,199,142,.2); border-radius: 4px; }
+
+.chartCard {
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.05);
+  background: rgba(255,255,255,.02);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.chartCard--wide {
+  grid-column: 1 / -1;
+}
+.chartCard__title {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255,255,255,.8);
+}
+.chartCard__hint {
+  font-size: 10px;
+  color: rgba(255,255,255,.25);
+  margin-top: -4px;
+}
+.chartCard__wrap {
+  height: 160px;
+  position: relative;
+}
+.chartCard__wrap--donut {
+  height: 180px;
+}
+.chartCard__wrap--source {
+  height: 100px;
+}
+.chartCard--wide .chartCard__wrap {
+  height: 140px;
+}
+
+@media (max-width: 768px) {
+  .chartsGrid { grid-template-columns: 1fr; }
+  .chartCard--wide { grid-column: 1; }
+  .statsTabs { padding: 0 12px; }
+  .statsTab  { padding: 8px 12px; font-size: 11px; }
+}
+
+/* =====================================================================
+   TOASTIFY — Thème Garage Turbo
+   ===================================================================== */
+
+/* Override Toastify base */
+.toastify {
+  font-family: var(--font-ui) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  padding: 10px 18px !important;
+  border-radius: 10px !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,.6), 0 2px 8px rgba(0,0,0,.4) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  color: rgba(255,255,255,.92) !important;
+  letter-spacing: .2px !important;
+  line-height: 1.4 !important;
+  max-width: 380px !important;
+  min-width: 200px !important;
+  cursor: default !important;
+  border: 1px solid rgba(255,255,255,.06) !important;
+  /* Empilage — chaque toast a sa propre position */
+  margin-bottom: 8px !important;
+}
+
+/* Masquer l'ancien toast custom */
+#partsToast { display: none !important; }
+
+/* Types */
+.gt-toast--mythic {
+  font-weight: 800 !important;
+  font-size: 14px !important;
+  letter-spacing: .4px !important;
+  animation: toastMythicPulse 1.8s ease-in-out infinite !important;
+}
+.gt-toast--legendary {
+  font-weight: 700 !important;
+}
+.gt-toast--prestige {
+  font-weight: 800 !important;
+  font-size: 14px !important;
+}
+.gt-toast--talent {
+  font-style: normal;
+}
+
+@keyframes toastMythicPulse {
+  0%,100% { box-shadow: 0 8px 32px rgba(0,0,0,.6), 0 0 0 0 rgba(255,77,112,0); }
+  50%     { box-shadow: 0 8px 32px rgba(0,0,0,.6), 0 0 20px 4px rgba(255,77,112,.35); }
+}
+
+/* Bouton fermer Toastify */
+.toast-close {
+  font-size: 16px !important;
+  opacity: .45 !important;
+  color: #fff !important;
+  margin-left: 10px !important;
+}
+.toast-close:hover { opacity: .85 !important; }
+
+/* Mobile */
+@media (max-width: 600px) {
+  .toastify {
+    font-size: 12px !important;
+    padding: 8px 14px !important;
+    max-width: calc(100vw - 32px) !important;
+  }
+}
+
+/* =====================================================================
+   ENCYCLOPÉDIE — barres de progression globales (3 niveaux)
+   ===================================================================== */
+.encProgressBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px 12px;
+  background: rgba(255,255,255,.02);
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,.05);
+  margin-bottom: 4px;
+}
+.encProgressRow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+}
+.encProgressRow__icon { font-size: 12px; flex-shrink: 0; }
+.encProgressRow__label {
+  min-width: 72px;
+  color: var(--muted2);
+  font-size: 10px;
+  flex-shrink: 0;
+}
+.encProgressRow__bar {
+  flex: 1;
+  height: 4px;
+  background: rgba(255,255,255,.07);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.encProgressRow__fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width .4s ease;
+}
+.encProgressRow__val {
+  font-size: 10px;
+  white-space: nowrap;
+  min-width: 90px;
+  text-align: right;
 }

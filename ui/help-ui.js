@@ -76,11 +76,24 @@ const HELP_SECTIONS = {
       <div class="helpSection">
         <div class="helpBlock">
           <div class="helpBlock__title">💰 Vente manuelle</div>
-          <p>Clique sur <b>VENDRE</b> sous une voiture pour l'encaisser immédiatement. Tu récupères l'argent et la REP associée au tier.</p>
+          <p>Clique sur <b>VENDRE</b> sous une voiture pour l'encaisser immédiatement. Tu récupères l'argent et la REP selon le tier et la rareté du véhicule.</p>
         </div>
         <div class="helpBlock">
-          <div class="helpBlock__title">🤖 Vendeur automatique</div>
-          <p><b>Vendeur Junior</b> vend automatiquement toutes les 15s au niv.1 (min 6s au niv.10). <b>Vendeur Confirmé</b> descend jusqu'à 1s. <b>Vendeur Expert</b> (P5) atteint 0.5s. ⚠️ Le vendeur auto ne fait pas de distinction de tier — vends manuellement tes voitures rares (S+).</p>
+          <div class="helpBlock__title">🤖 Vendeur automatique & Règles</div>
+          <p><b>Vendeur Junior</b> vend automatiquement toutes les 15s (min 6s niv.10). <b>Vendeur Confirmé</b> descend à 1s. <b>Vendeur Expert</b> (P5) atteint 0.5s.</p>
+          <p style="margin-top:6px">⚙️ Clique sur <b>Règles</b> dans la barre du showroom pour définir quelles voitures le vendeur auto ne vendra jamais : par rareté, par tier, ou les deux combinés (ET). Les voitures protégées apparaissent dans l'onglet <b>🔒 Protégées</b>.</p>
+        </div>
+        <div class="helpBlock">
+          <div class="helpBlock__title">✨ Système de Rareté</div>
+          <p>Chaque voiture diagnostiquée reçoit une rareté aléatoire qui <b>multiplie sa valeur de vente et son gain REP</b>.</p>
+          <div class="helpTierList">
+            <div class="helpTier" style="color:#8ca8c0">⬜ Commune — ×1 vente · ×1 REP <span>57.45% de chance</span></div>
+            <div class="helpTier" style="color:#4a9eff">🔵 Peu commune — ×1.3 vente · ×1.25 REP <span>26.33%</span></div>
+            <div class="helpTier" style="color:#2ee59d">🟢 Rare — ×1.8 vente · ×1.6 REP <span>13.71%</span></div>
+            <div class="helpTier" style="color:#a78bfa">🟣 Épique — ×2.5 vente · ×2.2 REP <span>2%</span></div>
+            <div class="helpTier" style="color:#ffc83a">🟡 Légendaire — ×10 vente · ×10 REP <span>0.5%</span></div>
+            <div class="helpTier" style="color:#ff4d70">🔴 Mythique — ×100 vente · ×100 REP <span>0.01%</span></div>
+          </div>
         </div>
         <div class="helpBlock">
           <div class="helpBlock__title">🏷️ Tiers de véhicules</div>
@@ -96,10 +109,16 @@ const HELP_SECTIONS = {
             <div class="helpTier" style="color:#ff4d70">SSS — Légendaire <span>180 000 REP · +160 REP/vente</span></div>
             <div class="helpTier" style="color:#ffffff">SSS+ — Mythique <span>450 000 REP · +350 REP/vente</span></div>
           </div>
+          <p style="margin-top:6px;font-size:12px;color:#7788aa">Le gain REP par vente est multiplié par la rareté du véhicule.</p>
         </div>
         <div class="helpBlock">
           <div class="helpBlock__title">📦 Slots showroom</div>
           <p>Tu commences avec 3 emplacements. Augmente-les via <b>Extension Showroom</b> (Contrats), le talent <b>Expansion Vitrine</b> (+1/rang), ou l'upgrade prestige <b>Galerie Marchande</b> (P2, +2 slots/rang, max 4).</p>
+        </div>
+        <div class="helpBlock">
+          <div class="helpBlock__title">🏠 Garage Personnel (Exposition)</div>
+          <p>Depuis le showroom, tu peux <b>Exposer</b> une voiture dans ton garage personnel (onglet 🏠 GARAGE dans la colonne centrale). Les voitures exposées génèrent des <b>€/s et REP/s passifs</b> selon leur tier et rareté — sans être vendues.</p>
+          <p style="margin-top:6px">Tu commences avec <b>1 slot d'exposition</b>. Débloque <b>Exposition Premium</b> (Affaires, P1, max 4 rangs) pour obtenir jusqu'à 5 slots. La REP générée par l'exposition est réduite (×0.3) pour équilibre.</p>
         </div>
       </div>
     `
@@ -158,7 +177,8 @@ const HELP_SECTIONS = {
         <div class="helpBlock">
           <div class="helpBlock__title">Comment gagner de la REP ?</div>
           <ul class="helpList">
-            <li>🚗 <b>Vendre des voitures</b> — chaque tier donne un gain REP différent</li>
+            <li>🚗 <b>Vendre des voitures</b> — chaque tier donne un gain REP différent, multiplié par la rareté</li>
+            <li>🏠 <b>Garage Personnel</b> — les voitures exposées génèrent de la REP/s passif (×0.3 sur les valeurs de base)</li>
             <li>📣 <b>Talent Bouche-à-Oreille</b> — +5% REP par vente par rang</li>
             <li>⭐ <b>Talent Expertise Reconnue</b> — +2 REP par diagnostic manuel par rang</li>
             <li>📅 <b>Défis journaliers</b> — bonus REP aux paliers Argent et Or</li>
@@ -293,7 +313,7 @@ const HELP_SECTIONS = {
             <li>🔵 <b>Base</b> : 1 point garanti</li>
             <li>📈 <b>Niveau garage</b> : +1 par tranche de 10 niveaux au-dessus du minimum</li>
             <li>🚗 <b>Ventes</b> : +1 par tranche de 5 000 voitures vendues</li>
-            <li>⭐ <b>REP</b> : +1 par tranche de 25 000 REP au-dessus de 50 000</li>
+            <li>⭐ <b>REP</b> : progression exponentielle — 1er point à 50k REP, chaque point suivant coûte 2× plus (50k → 100k → 200k → 400k…). Difficile à farmer.</li>
             <li>✨ <b>Perk Gain Prestige</b> : multiplie le total · P100 → ×1.5 permanent</li>
           </ul>
         </div>
@@ -386,6 +406,7 @@ const HELP_SECTIONS = {
             <li>🏦 <b>Holding Automobile</b> (P4) — +250€/s passif par rang. Illimité.</li>
             <li>🏬 <b>Galerie Marchande</b> (P2, max 4) — +2 slots showroom par rang. Prérequis : Extension Showroom niv.4.</li>
             <li>🔧 <b>Extension Atelier</b> (P3, max 4) — +1 slot garage par rang. Prérequis : Agrandissement Garage niv.5.</li>
+            <li>🖼️ <b>Exposition Premium</b> (P1, max 4) — +1 slot d'exposition dans le Garage Personnel par rang. Coût ×2 entre chaque niveau (500k → 1M → 2M → 4M€).</li>
           </ul>
         </div>
         <div class="helpBlock">
@@ -440,6 +461,41 @@ const HELP_SECTIONS = {
     `
   },
 
+  encyclopedie: {
+    title: "📖 Encyclopédie",
+    content: `
+      <div class="helpSection">
+        <p class="helpLead">L'Encyclopédie (accessible via le menu latéral ☰) recense toutes les voitures du jeu et suit ta progression sur chaque modèle.</p>
+        <div class="helpBlock">
+          <div class="helpBlock__title">📊 Niveaux de maîtrise</div>
+          <div class="helpTierList">
+            <div class="helpTier" style="color:#888">⬛ Inconnu — voiture jamais réparée</div>
+            <div class="helpTier" style="color:#4a9eff">🔵 Découvert — 1ère réparation effectuée</div>
+            <div class="helpTier" style="color:#2ee59d">🟢 Familier — 30 réparations de ce modèle</div>
+            <div class="helpTier" style="color:#ffc83a">🟡 Maîtrisé — 50 réparations + 5 raretés différentes vues</div>
+          </div>
+        </div>
+        <div class="helpBlock">
+          <div class="helpBlock__title">📈 Détails par voiture</div>
+          <ul class="helpList">
+            <li>Tier, nom et description de la catégorie</li>
+            <li>Niveau de maîtrise avec barres de progression vers le suivant</li>
+            <li>Meilleure rareté obtenue et toutes les raretés vues (icônes)</li>
+            <li>Nombre total de réparations · Meilleur prix de vente</li>
+          </ul>
+        </div>
+        <div class="helpBlock">
+          <div class="helpBlock__title">🏆 Récompenses de complétion</div>
+          <p>Découvrir tous les modèles d'un tier débloque des <b>récompenses instantanées</b> : points talent et argent. Plus le tier est élevé, plus la récompense est importante.</p>
+        </div>
+        <div class="helpBlock">
+          <div class="helpBlock__title">🔍 Filtres</div>
+          <p>Filtre par <b>tier</b> (F → SSS+) et par <b>niveau de maîtrise</b> (Inconnu / Découvert / Familier / Maîtrisé) pour suivre ta progression sur des catégories précises.</p>
+        </div>
+      </div>
+    `
+  },
+
   tips: {
     title: "💡 Astuces",
     content: `
@@ -456,7 +512,7 @@ const HELP_SECTIONS = {
         <div class="helpBlock">
           <div class="helpBlock__title">💰 Optimiser ses revenus</div>
           <ul class="helpList">
-            <li>Vends manuellement les voitures <b>S, SS, SSS, SSS+</b> — le vendeur auto ne fait pas de tri</li>
+            <li>Configure les <b>⚙️ Règles</b> du vendeur auto pour protéger tes voitures rares — filtre par rareté et/ou tier. Elles restent dans l'onglet 🔒 Protégées.</li>
             <li><b>Bochmann</b> : meilleur fournisseur (−30% temps, +10% gain) mais lent · <b>TopDrive</b> pour les urgences (5s)</li>
             <li>Talent <b>Clientèle Haut de Gamme</b> très rentable sur les tiers S+ en fin de run</li>
             <li>Upgrades <b>Réseau National</b> et <b>Holding</b> génèrent du passif même en AFK</li>
@@ -475,7 +531,7 @@ const HELP_SECTIONS = {
           <ul class="helpList">
             <li>Vide ton showroom et dépense tout ton argent en upgrades — tu ne gardes rien</li>
             <li>Dépense tous tes points Héritage disponibles avant de confirmer</li>
-            <li>Vise REP > 75 000 pour maximiser les points Héritage</li>
+            <li>La REP apporte peu de points Héritage (progression exponentielle — 50k/100k/200k/400k… par point). Vise surtout un <b>niveau garage élevé</b> et un maximum de <b>voitures vendues</b>.</li>
             <li>Choisis ta spécia selon ton style : Atelier Turbo si actif, Logistique Pro si AFK</li>
             <li>À P40 la 2e spécialisation se choisit juste après — prévoie ta combinaison</li>
           </ul>

@@ -201,16 +201,23 @@ function renderPrestigeModal(){
     tab.classList.toggle("prestigeTab--active", tab.dataset.ptab === _prestigeTab);
     tab.onclick = () => {
       _prestigeTab = tab.dataset.ptab;
-      document.getElementById("ptab-prestige").classList.toggle("prestigeTabPanel--hidden", _prestigeTab !== "prestige");
-      document.getElementById("ptab-heritage").classList.toggle("prestigeTabPanel--hidden", _prestigeTab !== "heritage");
+      const _p = document.getElementById("ptab-prestige");
+      const _h = document.getElementById("ptab-heritage");
+      if(_p) _p.style.display = _prestigeTab === "prestige" ? "flex" : "none";
+      if(_h) _h.style.display = _prestigeTab === "heritage" ? "flex" : "none";
       document.querySelectorAll(".prestigeTab").forEach(t => t.classList.toggle("prestigeTab--active", t.dataset.ptab === _prestigeTab));
-      // Badge points sur l'onglet héritage
+      // Rendre le contenu héritage uniquement à la demande
+      if(_prestigeTab === "heritage") _renderHeritageContent();
       _updateHeritageTabBadge();
     };
   });
-  // Sync visibilité initiale
-  document.getElementById("ptab-prestige")?.classList.toggle("prestigeTabPanel--hidden", _prestigeTab !== "prestige");
-  document.getElementById("ptab-heritage")?.classList.toggle("prestigeTabPanel--hidden", _prestigeTab !== "heritage");
+  // Sync visibilité initiale — classList.add/remove explicite (évite ambiguïté toggle)
+  const _tabPrestige = document.getElementById("ptab-prestige");
+  const _tabHeritage = document.getElementById("ptab-heritage");
+  if(_tabPrestige) _tabPrestige.style.display = _prestigeTab === "prestige" ? "flex" : "none";
+  if(_tabHeritage) _tabHeritage.style.display = _prestigeTab === "heritage" ? "flex" : "none";
+  // Rendu héritage uniquement si l'onglet héritage est actif — évite pollution visuelle
+  if(_prestigeTab === "heritage") _renderHeritageContent();
   _updateHeritageTabBadge();
 
   // Rebind prestige button
@@ -221,7 +228,11 @@ function renderPrestigeModal(){
     if(gainEl) gainEl.textContent = "+" + pts + " points Héritage";
   });
 
-  // Filters
+  // Contenu héritage rendu séparément via _renderHeritageContent()
+}
+
+// ── Rendu du panneau Héritage (filtres + grid) — appelé uniquement si onglet actif ──
+function _renderHeritageContent(){
   const branches = ["Tous", "Mécanique", "Commerce", "Réputation", "Logistique", "Expertise"];
   const filtersEl = document.getElementById("heritageFilters");
   if(filtersEl){
@@ -235,7 +246,7 @@ function renderPrestigeModal(){
     filtersEl.querySelectorAll(".heritageFilter").forEach(btn => {
       btn.addEventListener("click", () => {
         _heritageFilter = btn.getAttribute("data-hbranch");
-        renderPrestigeModal();
+        _renderHeritageContent();
       });
     });
   }

@@ -114,6 +114,7 @@ const state = {
     { id:"holding_auto",      tab:"deals", icon:"🏦",  name:"Holding Automobile",       lvl:0, desc:"+250 €/s de revenu passif · 🔒 Prestige 4",                                  cost:2000000 },
     { id:"showroom_slot",     tab:"deals", icon:"🖼️", name:"Extension Showroom",       lvl:0, desc:"+2 emplacements showroom (max 4 achats → 11 max)",                           cost:35000,  maxLvl:4 },
     { id:"galerie_marchande", tab:"deals", icon:"🏬",  name:"Galerie Marchande",        lvl:0, desc:"+2 emplacements showroom par rang · 🔒 Prestige 2 · Extension Showroom max", cost:300000, maxLvl:4 },
+    { id:"expo_premium",      tab:"deals", icon:"🖼️",  name:"Exposition Premium",        lvl:0, desc:"+1 slot d'exposition dans votre Garage Personnel par rang · 🔒 Prestige 1",      cost:500000, maxLvl:4 },
     { id:"nego",              tab:"deals", icon:"🧾",  name:"Formation Négociation",    lvl:0, desc:"+5% valeur de vente",                                                        cost:1000 },
     { id:"lift",              tab:"deals", icon:"🅿️", name:"Agrandissement Garage",    lvl:0, desc:"+1 Emplacement de garage",                                                   cost:5000,   maxLvl:5 },
     { id:"extension_atelier", tab:"deals", icon:"🔧",  name:"Extension Atelier",        lvl:0, desc:"+1 emplacement garage par rang · 🔒 Prestige 3 · Agrandissement Garage max", cost:400000, maxLvl:4 },
@@ -450,6 +451,28 @@ if(state.specialization2 === undefined) state.specialization2 = null;
 if(state._isAutoOrder === undefined)    state._isAutoOrder    = false;
 if(!state.bestTier)          state.bestTier          = null;
 if(!state.repMax)            state.repMax             = 0;
+// Rareté
+if(!state.bestRarity)           state.bestRarity           = "common";
+if(!state.totalEpicSeen)        state.totalEpicSeen        = 0;
+if(!state.totalLegendarySold)   state.totalLegendarySold   = 0;
+if(!state.totalMythicRepaired)  state.totalMythicRepaired  = 0;
+if(!state.totalMythicSold)      state.totalMythicSold      = 0;
+// Garage Personnel (collection)
+if(!state.collection)           state.collection           = [];   // voitures exposées
+if(!state.collectionCap)        state.collectionCap        = 1;    // 1 slot au départ
+if(!state.collectionRepAccu)    state.collectionRepAccu    = 0;    // accumulateur REP/s
+// Règles vente auto globales
+if(!state.autoSellRules) state.autoSellRules = { blockedRarities:[], blockedTiers:[], blockedCombos:[] };
+// Historique graphiques (ring buffer 120 points max)
+if(!state.history) state.history = {
+  moneyPerSec: [],  // { t, v }
+  rep:         [],  // { t, v }
+};
+if(!state._historyTimer) state._historyTimer = 0;
+// Compteur voitures par tier (cross-prestige)
+if(!state.carsSoldByTier) state.carsSoldByTier = {};
+// Encyclopédie
+if(!state.carBook)              state.carBook              = {};   // { carName: { seen, repaired, bestRarity, bestSale, allRarities } }
 // Effets de spécialisation (recalculés à chaque applySpecializationEffects)
 if(!state.specSpeedMult)         state.specSpeedMult         = 1.0;
 if(!state.specAutoMult)          state.specAutoMult          = 1.0;
@@ -545,6 +568,26 @@ function renderStatsUI(){
       <div class="statSection__title"><span class="statSection__titleIcon">🎖️</span>Succès</div>
       <div class="statRow"><span class="statRow__label">Débloqués</span><span class="statRow__val statRow__val--green">${achUnlocked} / ${ACHIEVEMENTS.length}</span></div>
       <div class="statRow"><span class="statRow__label">Complétion</span><span class="statRow__val statRow__val--green">${Math.round(achUnlocked/ACHIEVEMENTS.length*100)}%</span></div>
+    </div>
+
+    <div class="statSection statSection--activity">
+      <div class="statSection__title"><span class="statSection__titleIcon">✨</span>Rareté & Collection</div>
+      ${(()=>{
+        const br = state.bestRarity ?? "common";
+        const brData = typeof RARITY_TABLE !== "undefined" ? RARITY_TABLE[br] : null;
+        const collIncome = typeof calcCollectionTotalIncome !== "undefined" ? calcCollectionTotalIncome() : {moneyPerSec:0,repPerSec:0};
+        return `
+          <div class="statRow"><span class="statRow__label">Meilleure rareté</span><span class="statRow__val" style="color:${brData?.color??'#aaa'}">${brData?.icon??''} ${brData?.label??'Commune'}</span></div>
+          <div class="statRow"><span class="statRow__label">Épiques+ vues</span><span class="statRow__val statRow__val--purple">${(state.totalEpicSeen??0).toLocaleString("fr-FR")}</span></div>
+          <div class="statRow"><span class="statRow__label">Légendaires vendues</span><span class="statRow__val statRow__val--gold">${(state.totalLegendarySold??0).toLocaleString("fr-FR")}</span></div>
+          <div class="statRow"><span class="statRow__label">Mythiques réparées</span><span class="statRow__val" style="color:#ff4d70">${(state.totalMythicRepaired??0).toLocaleString("fr-FR")}</span></div>
+          <div class="statRow"><span class="statRow__label">Voitures en expo</span><span class="statRow__val" style="color:#ffc83a">${(state.collection?.length??0)} / ${state.collectionCap??1}</span></div>
+          <div class="statRow"><span class="statRow__label">Revenus expo</span><span class="statRow__val statRow__val--green">${formatMoney(collIncome.moneyPerSec)}/s · ${collIncome.repPerSec.toFixed(2)} REP/s</span></div>
+          <div class="statRow"><span class="statRow__label">Encyclopédie découvertes</span><span class="statRow__val" style="color:#4a9eff">${Object.values(state.carBook??{}).filter(e=>e.seen).length} / ${typeof CAR_CATALOG!=="undefined"?CAR_CATALOG.length:324}</span></div>
+          <div class="statRow"><span class="statRow__label">Encyclopédie familières</span><span class="statRow__val" style="color:#2ee59d">${Object.values(state.carBook??{}).filter(e=>(typeof getCarBookMastery!=="undefined"?getCarBookMastery(e):0)>=2).length} / ${typeof CAR_CATALOG!=="undefined"?CAR_CATALOG.length:324}</span></div>
+          <div class="statRow"><span class="statRow__label">Encyclopédie maîtrisées</span><span class="statRow__val" style="color:#ffc83a">${Object.values(state.carBook??{}).filter(e=>(typeof getCarBookMastery!=="undefined"?getCarBookMastery(e):0)>=3).length} / ${typeof CAR_CATALOG!=="undefined"?CAR_CATALOG.length:324}</span></div>
+        `;
+      })()}
     </div>
 
     <div class="statSection statSection--full statSection--rep">
@@ -647,7 +690,8 @@ function calcSaleValue(car){
   const heritagePartsBonus = car.repairedFromStock ? (state.heritageBonuses?.partsValueBonus ?? 0) : 0;
   const warehouseBonus = (car.repairedFromStock && typeof getWarehouseValueBonus === "function")
     ? (1 + getWarehouseValueBonus() + heritagePartsBonus) : 1.0;
-  return Math.round(car.baseValue * bonus * specSale * partsMult * rareMult * saleMult * warehouseBonus);
+  const rarityMult = (typeof RARITY_TABLE !== "undefined") ? (RARITY_TABLE[car.rarity ?? "common"]?.multSale ?? 1.0) : 1.0;
+  return Math.round(car.baseValue * bonus * specSale * partsMult * rareMult * saleMult * warehouseBonus * rarityMult);
 }
 
 function finishRepair(slotIndex = 0){
@@ -655,12 +699,21 @@ function finishRepair(slotIndex = 0){
   if(!car) return;
 
   state._lastRepairedTier = car.tier;
-  // Tracker le meilleur tier réparé (pour le profil)
   const TIER_ORDER = ["F","E","D","C","B","A","S","SS","SSS","SSS+"];
   const curBest = state.bestTier ?? "F";
   if(TIER_ORDER.indexOf(car.tier) > TIER_ORDER.indexOf(curBest)){
     state.bestTier = car.tier;
   }
+  // ── Stats rareté ─────────────────────────────────────────────────────
+  if(typeof RARITY_ORDER !== "undefined"){
+    const _fRarity = car.rarity ?? "common";
+    const _fIdx = RARITY_ORDER.indexOf(_fRarity);
+    if(_fIdx > RARITY_ORDER.indexOf(state.bestRarity ?? "common")) state.bestRarity = _fRarity;
+    if(_fRarity === "mythic")   state.totalMythicRepaired = (state.totalMythicRepaired ?? 0) + 1;
+    if(_fIdx >= RARITY_ORDER.indexOf("epic")) state.totalEpicSeen = (state.totalEpicSeen ?? 0) + 1;
+  }
+  // ── Encyclopédie ───────────────────────────────────────────────────────
+  _updateCarBook(car, "repaired");
   const cap = getShowroomCap();
   if(state.showroom.length >= cap){
     return;
@@ -698,7 +751,10 @@ function finishRepair(slotIndex = 0){
   }
 
   tryStartNextRepair();
-  if(!_isOfflineCatchup) _needsFullRender = true;
+  if(!_isOfflineCatchup){
+    _needsFullRender = true;
+    checkPokedexTierCompletion();
+  }
 }
 
 function applyRepairTime(seconds, slotIndex = 0){
@@ -762,6 +818,37 @@ btnAnalyze.addEventListener("click", () => {
   // Défi actions : compter le diag (place était disponible, sinon on aurait return plus haut)
   state.totalActionClicks = (state.totalActionClicks ?? 0) + 1;
   state.queue.push(diagCar);
+  // ── Animation rareté ─────────────────────────────────────────────────
+  if(typeof RARITY_TABLE !== "undefined"){
+    const _nr = diagCar.rarity ?? "common";
+    if(_nr === "mythic"){
+      // Flash fullscreen
+      let _mf = document.getElementById("rarityFullscreenFlash");
+      if(!_mf){
+        _mf = document.createElement("div");
+        _mf.id = "rarityFullscreenFlash";
+        _mf.style.cssText = "position:fixed;inset:0;z-index:99998;pointer-events:none;opacity:0;background:radial-gradient(ellipse at center,rgba(255,77,112,0.45) 0%,transparent 70%);transition:opacity .15s";
+        document.body.appendChild(_mf);
+      }
+      _mf.style.opacity = "1";
+      setTimeout(() => { _mf.style.opacity = "0"; }, 600);
+      // Émettre sur le bus (confetti + toast gérés par mitt-bus.js)
+      window.gtEmit?.("car:mythic", { car: diagCar, el: btnAnalyze });
+      // Fallback si bus pas encore prêt
+      if(!window.GT_BUS){ showToast("🔴 MYTHIQUE ! " + diagCar.name); burstMythic?.(btnAnalyze); }
+    } else if(_nr === "legendary"){
+      btnAnalyze.classList.add("btnAnalyze--flash-legendary");
+      setTimeout(() => btnAnalyze.classList.remove("btnAnalyze--flash-legendary"), 700);
+      window.gtEmit?.("car:legendary", { car: diagCar, el: btnAnalyze });
+      if(!window.GT_BUS){ showToast("✨ Voiture Légendaire ! " + diagCar.name); burstLegendary?.(btnAnalyze); }
+    } else if(_nr === "epic"){
+      window.gtEmit?.("car:epic", { car: diagCar, el: btnAnalyze });
+      if(!window.GT_BUS){
+        btnAnalyze.classList.add("btnAnalyze--flash-epic");
+        setTimeout(() => btnAnalyze.classList.remove("btnAnalyze--flash-epic"), 500);
+      }
+    }
+  }
   tryStartNextRepair();
   _needsFullRender = true;
 });
@@ -802,10 +889,41 @@ btnRepairClick.addEventListener("click", () => {
 });
 
 let _lastSellClick = 0;
+// Délégation onglets showroom (forsale / protected) — survit aux re-renders
+showroomListEl.addEventListener("click", (e) => {
+  const stabBtn = e.target.closest("[data-stab]");
+  if(stabBtn){
+    if(typeof _showroomTab !== "undefined" && typeof renderShowroom === "function"){
+      window._showroomTab = stabBtn.dataset.stab;
+      // Mettre à jour la variable dans render.js
+      renderShowroom();
+    }
+    return;
+  }
+});
+
+// Listener vente / expose — séparé pour ne pas être bloqué par le cooldown lors d'un clic sur les onglets
 showroomListEl.addEventListener("click", (e) => {
   const now = Date.now();
   if(now - _lastSellClick < CONFIG.CLICK_COOLDOWN_MS) return;
   _lastSellClick = now;
+
+  // ── Bouton "Exposer" → collection ───────────────────────────────────
+  const exposeBtn = e.target.closest("[data-expose]");
+  if(exposeBtn){
+    const id  = exposeBtn.getAttribute("data-expose");
+    const idx = state.showroom.findIndex(c => c.id === id);
+    if(idx === -1) return;
+    if((state.collection?.length ?? 0) >= getCollectionCap()){
+      showToast("🏠 Garage plein ! Améliorez votre espace d'exposition.");
+      return;
+    }
+    const [car] = state.showroom.splice(idx, 1);
+    addToCollection(car);
+    _needsFullRender = true;
+    save();
+    return;
+  }
 
   const btn = e.target.closest("[data-sell]");
   if(!btn) return;
@@ -834,13 +952,21 @@ showroomListEl.addEventListener("click", (e) => {
   const tierData = TIERS[car.tier] || TIERS["F"];
   const repMult = (state.heritageBonuses?.repGainMult ?? 1.0)
     * (state._heritageRepBoost && Date.now() < state._heritageRepBoost.until ? state._heritageRepBoost.mult : 1.0);
-  const repGain = Math.round(tierData.repGain * repMult * (state.specRepMult ?? 1.0) * (1 + (state.talentRepGainBonus ?? 0)));
+  const _manualRarityRepMult = (typeof RARITY_TABLE !== "undefined") ? (RARITY_TABLE[car.rarity ?? "common"]?.multRep ?? 1.0) : 1.0;
+  const repGain = Math.round(tierData.repGain * repMult * (state.specRepMult ?? 1.0) * (1 + (state.talentRepGainBonus ?? 0)) * _manualRarityRepMult);
   if(isFinite(repGain)) {
     state.rep += repGain;
     if(state.rep > (state.repMax ?? 0)) state.repMax = state.rep;
     setTimeout(() => spawnFloatText("+" + repGain + " REP", "rep", btnPos), 120);
   }
-
+  if(typeof RARITY_ORDER !== "undefined"){
+    const _sr = car.rarity ?? "common";
+    if(_sr === "legendary") state.totalLegendarySold = (state.totalLegendarySold ?? 0) + 1;
+    if(_sr === "mythic")    state.totalMythicSold    = (state.totalMythicSold    ?? 0) + 1;
+  }
+  _updateCarBook(car, "sold", saleValue);
+  if(!state.carsSoldByTier) state.carsSoldByTier = {};
+  state.carsSoldByTier[car.tier] = (state.carsSoldByTier[car.tier] ?? 0) + 1;
   state.carsSold += 1;
   state.totalCarsSold  = (state.totalCarsSold  ?? 0) + 1;
   state.manualCarsSold = (state.manualCarsSold ?? 0) + 1;  // défi : ventes manuelles
@@ -861,6 +987,7 @@ const UPGRADE_MULT = {
   loc_outils:1.28, contrat_taxi:1.28, assurance:1.28, atelier_nuit:1.30, franchise:1.32,
   reseau_national:1.35, holding_auto:1.40,
   showroom_slot:1.30,
+  expo_premium:2.00,
   galerie_marchande:2.00, extension_atelier:2.00,
   stagiaire:1.35, receptionnaire:1.40, vendeur:1.35, vendeur_confirme:1.40,
   vendeur_expert:2.00, ia_diagnostic:2.00, chef_atelier:2.00,
@@ -909,6 +1036,8 @@ const UPGRADE_TAGS = {
   nego:            ["vente"],
   showroom_slot:   ["vente"],
   galerie_marchande: ["vente"],
+  expo_premium:      ["vente"],
+  expo_premium:      ["vente"],
   lift:              ["vitesse"],
   extension_atelier: ["vitesse"],
   // Stock
@@ -960,6 +1089,10 @@ if(id === "diagpro") state.diagReward += 40;
 if(id === "showroom_slot")    state.showroomCap = (state.showroomCap ?? 3) + 2;
 if(id === "galerie_marchande") state.showroomCap = (state.showroomCap ?? 3) + 2;
 if(id === "extension_atelier") state.garageCap  += 1;
+if(id === "expo_premium"){
+  state.collectionCap = (state.collectionCap ?? 1) + 1;
+  if(typeof renderCollection === "function") requestAnimationFrame(renderCollection);
+}
 
 // Équipe auto-repair : on recalcule repairAuto depuis les niveaux
 if(id === "apprenti" || id === "mecanicien") recalcRepairAuto();
@@ -1002,6 +1135,7 @@ function recalcUpgradeEffects(){
   state.saleBonusPct = b.saleBonus          ?? 0;
   state.garageCap    = 1;   // sera incrémenté par lift
   state.showroomCap  = 3;   // sera incrémenté par showroom_slot
+  state.collectionCap = 1 + (state.heritageBonuses?.collectionCap ?? 0); // sera incrémenté par expo_premium
 
   // Rejouer les effets de chaque upgrade selon son niveau actuel
   for(const u of state.upgrades){
@@ -1019,8 +1153,9 @@ function recalcUpgradeEffects(){
       case "chef_atelier": state.garageCap    += lvl;        break;
       case "cle_dynamometrique": state.repairClick += 0.5 * lvl; break;
       case "turbocompresseur":   state.speedMult  *= Math.pow(1.15 * (1 + (state.heritageBonuses?.expTurboBonus ?? 0)), lvl); break;
-      case "showroom_slot":   state.showroomCap  += 2    * lvl; break;
-      case "galerie_marchande": state.showroomCap += 2    * lvl; break;
+      case "showroom_slot":    state.showroomCap  += 2    * lvl; break;
+      case "galerie_marchande":  state.showroomCap  += 2    * lvl; break;
+      case "expo_premium":       state.collectionCap = (state.collectionCap ?? 1) + lvl; break;
       case "extension_atelier": state.garageCap   += lvl;        break;
       case "comp":
         // speedMult est multiplicatif : (1.10)^lvl
@@ -1038,6 +1173,129 @@ function recalcRepairAuto(){
   const mecanicienLvl = getUpgrade("mecanicien")?.lvl || 0;
   const heritageAuto  = state.heritageBonuses?.autoBonus ?? 0;
   state.repairAuto = heritageAuto + (apprentiLvl * 0.15) + (mecanicienLvl * 0.5);
+}
+
+// Vérifie si une voiture est bloquée par les règles globales de vente auto
+// Logique : ET entre catégories actives, OR au sein de chaque catégorie
+// Ex: Tier [S,SS] + Rareté [legendary,mythic] → seules les S/SS légendaires ou mythiques sont bloquées
+function isCarBlockedByRules(car){
+  const rules = state.autoSellRules;
+  if(!rules) return false;
+  const rarity = car.rarity ?? "common";
+  const tier   = car.tier   ?? "F";
+
+  const hasRarityRules = rules.blockedRarities?.length > 0;
+  const hasTierRules   = rules.blockedTiers?.length   > 0;
+
+  // Si aucune règle → pas bloquée
+  if(!hasRarityRules && !hasTierRules) return false;
+
+  // Chaque catégorie active doit matcher (ET entre catégories)
+  const rarityMatch = !hasRarityRules || rules.blockedRarities.includes(rarity);
+  const tierMatch   = !hasTierRules   || rules.blockedTiers.includes(tier);
+
+  return rarityMatch && tierMatch;
+}
+
+// =====================================================================
+// GARAGE PERSONNEL — fonctions
+// =====================================================================
+
+function getCollectionCap(){
+  const base = state.collectionCap ?? 1;
+  // Upgrades futurs pourront incrémenter via state.collectionCap
+  return base;
+}
+
+function calcCollectionTotalIncome(){
+  if(!state.collection?.length || typeof calcCollectionIncome === "undefined") return { moneyPerSec:0, repPerSec:0 };
+  let money = 0, rep = 0;
+  for(const car of state.collection){
+    const inc = calcCollectionIncome(car);
+    money += inc.moneyPerSec;
+    rep   += inc.repPerSec;
+  }
+  return { moneyPerSec: money, repPerSec: rep };
+}
+
+function addToCollection(car){
+  if(!state.collection) state.collection = [];
+  if(state.collection.length >= getCollectionCap()) return false;
+  state.collection.push(car);
+  return true;
+}
+
+function removeFromCollection(carId){
+  if(!state.collection) return null;
+  const idx = state.collection.findIndex(c => c.id === carId);
+  if(idx === -1) return null;
+  const [car] = state.collection.splice(idx, 1);
+  return car;
+}
+
+// =====================================================================
+// POKÉDEX — fonctions
+// =====================================================================
+
+function _updateCarBook(car, action, saleValue = 0){
+  if(!car?.name) return;
+  if(!state.carBook) state.carBook = {};
+  const entry = state.carBook[car.name] ?? { seen:false, repaired:0, bestRarity:"common", bestSale:0, allRarities:[] };
+  const rarity = car.rarity ?? "common";
+
+  if(action === "repaired"){
+    entry.seen     = true;
+    entry.repaired = (entry.repaired ?? 0) + 1;
+    if(!entry.allRarities) entry.allRarities = [];
+    if(!entry.allRarities.includes(rarity)) entry.allRarities.push(rarity);
+    // Meilleure rareté vue
+    if(typeof RARITY_ORDER !== "undefined"){
+      if(RARITY_ORDER.indexOf(rarity) > RARITY_ORDER.indexOf(entry.bestRarity ?? "common")){
+        entry.bestRarity = rarity;
+      }
+    }
+  }
+  if(action === "sold" && saleValue > 0){
+    entry.bestSale = Math.max(entry.bestSale ?? 0, saleValue);
+  }
+  state.carBook[car.name] = entry;
+}
+
+function getCarBookMastery(entry){
+  // 0=inconnu, 1=découvert (1 répa), 2=familier (30 répa), 3=maîtrisé (50 répa + 5 raretés)
+  if(!entry?.seen) return 0;
+  if(entry.repaired >= 50 && (entry.allRarities?.length ?? 0) >= 5) return 3;
+  if(entry.repaired >= 30) return 2;
+  return 1;
+}
+
+// Vérifie bonus de complétion par tier et distribue récompenses
+function checkPokedexTierCompletion(){
+  if(typeof CAR_CATALOG === "undefined") return;
+  if(!state.pokedexTierRewards) state.pokedexTierRewards = {};
+  const tiers = ["F","E","D","C","B","A","S","SS","SSS","SSS+"];
+  const TIER_REWARDS = {
+    "F":   { talent:1, money:5000    }, "E": { talent:1, money:15000  },
+    "D":   { talent:2, money:50000   }, "C": { talent:2, money:150000 },
+    "B":   { talent:3, money:500000  }, "A": { talent:3, money:1000000},
+    "S":   { talent:4, money:3000000 }, "SS":{ talent:4, money:8000000},
+    "SSS": { talent:5, money:20000000}, "SSS+":{ talent:5, money:50000000},
+  };
+  for(const tier of tiers){
+    if(state.pokedexTierRewards[tier + "_disc"]) continue; // déjà réclamé
+    const cars = CAR_CATALOG.filter(c => c.tier === tier);
+    const allSeen = cars.every(c => state.carBook?.[c.name]?.seen);
+    if(allSeen){
+      state.pokedexTierRewards[tier + "_disc"] = true;
+      const rew = TIER_REWARDS[tier];
+      if(rew){
+        state.money += rew.money;
+        state.totalMoneyEarned = (state.totalMoneyEarned ?? 0) + rew.money;
+        state.talentPoints = (state.talentPoints ?? 0) + rew.talent;
+        showToast(`📖 Tier ${tier} découvert ! +${rew.talent} talent · +${formatMoney(rew.money)}`);
+      }
+    }
+  }
 }
 
 // =====================
@@ -1061,6 +1319,26 @@ function applyTickLogic(dt){
     state.money += passiveGain;
     state.totalMoneyEarned = (state.totalMoneyEarned ?? 0) + passiveGain;
     state.runMoneyPassive  = (state.runMoneyPassive  ?? 0) + passiveGain;
+  }
+  // ── Revenus Garage Personnel ──────────────────────────────────────────
+  if(state.collection?.length > 0 && typeof calcCollectionIncome !== "undefined"){
+    for(const car of state.collection){
+      const inc = calcCollectionIncome(car);
+      if(isFinite(inc.moneyPerSec)){
+        state.money += inc.moneyPerSec * dt;
+        state.totalMoneyEarned = (state.totalMoneyEarned ?? 0) + inc.moneyPerSec * dt;
+        state.runMoneyPassive  = (state.runMoneyPassive  ?? 0) + inc.moneyPerSec * dt;
+      }
+      if(isFinite(inc.repPerSec)){
+        state.collectionRepAccu = (state.collectionRepAccu ?? 0) + inc.repPerSec * dt;
+        if(state.collectionRepAccu >= 1){
+          const gained = Math.floor(state.collectionRepAccu);
+          state.collectionRepAccu -= gained;
+          state.rep += gained;
+          if(state.rep > (state.repMax ?? 0)) state.repMax = state.rep;
+        }
+      }
+    }
   }
 
   // Traitement des livraisons de pièces
@@ -1148,7 +1426,15 @@ function applyTickLogic(dt){
     while(autoSellTimer >= delay){
       autoSellTimer -= delay;
       if(state.showroom.length > 0){
-        const car = state.showroom[state.showroom.length - 1];
+        // Chercher la première voiture vendable (non bloquée par les règles)
+        const sellIdx = (() => {
+          for(let i = state.showroom.length - 1; i >= 0; i--){
+            if(!isCarBlockedByRules(state.showroom[i])) return i;
+          }
+          return -1;
+        })();
+        if(sellIdx === -1){ break; } // toutes bloquées — le timer continue
+        const car = state.showroom[sellIdx];
         const saleValue = calcSaleValue(car);
         if(isFinite(saleValue)){
           state.money += saleValue;
@@ -1159,8 +1445,15 @@ function applyTickLogic(dt){
         }
         const tierData = TIERS[car.tier] || TIERS["F"];
         const repMult = state.heritageBonuses?.repGainMult ?? 1.0;
-        const repGain = Math.round(tierData.repGain * repMult * (state.specRepMult ?? 1.0) * (1 + (state.talentRepGainBonus ?? 0)));
+        const _autoRarityRepMult = (typeof RARITY_TABLE !== "undefined") ? (RARITY_TABLE[car.rarity ?? "common"]?.multRep ?? 1.0) : 1.0;
+        const repGain = Math.round(tierData.repGain * repMult * (state.specRepMult ?? 1.0) * (1 + (state.talentRepGainBonus ?? 0)) * _autoRarityRepMult);
         if(isFinite(repGain)) state.rep += repGain;
+        if(typeof RARITY_ORDER !== "undefined"){
+          const _ar = car.rarity ?? "common";
+          if(_ar === "legendary") state.totalLegendarySold = (state.totalLegendarySold ?? 0) + 1;
+          if(_ar === "mythic")    state.totalMythicSold    = (state.totalMythicSold    ?? 0) + 1;
+        }
+        _updateCarBook(car, "sold", calcSaleValue(car));
         state.carsSold += 1;
         state.totalCarsSold = (state.totalCarsSold ?? 0) + 1;
         // Ventes auto en jeu actif → comptent pour les défis (sauf catchup AFK)
@@ -1168,7 +1461,7 @@ function applyTickLogic(dt){
           state.manualCarsSold = (state.manualCarsSold ?? 0) + 1;
           if(typeof trackChallengeSale === 'function') trackChallengeSale(car.tier);
         }
-        state.showroom.pop();
+        state.showroom.splice(sellIdx, 1);
         updateGarageLevel();
         _needsFullRender = true;
         _autoSellFlash = true; // G2 — signal flash showroom
@@ -1222,6 +1515,48 @@ function tick(now){
   // Mise à jour snap défis (léger, 1x/frame) — ignoré pendant le catchup AFK
   if(!_isOfflineCatchup && typeof updateChallengeSnap === 'function') updateChallengeSnap();
 
+  // ── Historique graphiques (1 point toutes les 5s) ─────────────────────────
+  if(!_isOfflineCatchup){
+    state._historyTimer = (state._historyTimer ?? 0) + dt;
+    if(state._historyTimer >= 5){
+      state._historyTimer = 0;
+      const now = Date.now();
+      const MAX = 120;
+      const push = (arr, v) => { arr.push({ t: now, v }); if(arr.length > MAX) arr.shift(); };
+      if(!state.history) state.history = { moneyPerSec:[], rep:[] };
+      push(state.history.moneyPerSec, state.moneyPerSec ?? 0);
+      push(state.history.rep,         state.rep ?? 0);
+    }
+  }
+
   requestAnimationFrame(tick);
 }
 
+
+// ── Listener collection (bouton Retirer) ─────────────────────────────────────
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-remove-collection]");
+  if(!btn) return;
+  const id  = btn.getAttribute("data-remove-collection");
+  const car = removeFromCollection(id);
+  if(!car) return;
+  // Remettre dans le showroom si de la place, sinon bloquer
+  const cap = getShowroomCap();
+  if(state.showroom.length < cap){
+    state.showroom.unshift(car);
+    showToast("🚗 Voiture retirée de l'exposition → Showroom");
+  } else {
+    // Plus de place dans le showroom → remettre en collection
+    addToCollection(car);
+    showToast("⚠️ Showroom plein ! Vendez une voiture d'abord.");
+    return;
+  }
+  _needsFullRender = true;
+  save();
+});
+
+// ── Bouton Encyclopédie dans le side menu ─────────────────────────────────────────
+document.getElementById("sideMenuPokedex")?.addEventListener("click", () => {
+  closeSideMenu?.();
+  openPokedex();
+});

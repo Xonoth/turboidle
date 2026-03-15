@@ -401,6 +401,26 @@ const ACHIEVEMENTS = [
   // ── Succès combinés ──────────────────────────────────────────────────────────
   { id:"combo_arsenal",      cat:"Défis",         icon:"🎯", name:"Arsenal Complet",          desc:"Posséder Scanner Pro X + Clé Dynamométrique + Turbocompresseur",cond:s=>s.upgrades?.find(u=>u.id==="scanner_pro")?.lvl>=1&&s.upgrades?.find(u=>u.id==="cle_dynamometrique")?.lvl>=1&&s.upgrades?.find(u=>u.id==="turbocompresseur")?.lvl>=1, reward:{rep:3000, money:1000000,talent:3} },
   { id:"combo_pdg",          cat:"Défis",         icon:"👑", name:"PDG",                      desc:"Posséder Réseau National + Holding + Galerie Marchande + Extension Atelier", cond:s=>["reseau_national","holding_auto","galerie_marchande","extension_atelier"].every(id=>s.upgrades?.find(u=>u.id===id)?.lvl>=1),                              reward:{rep:5000, money:2000000,talent:4} },
+
+  // ── Rareté ────────────────────────────────────────────────────────────────
+  { id:"rarity_first_epic",      cat:"Rareté", icon:"🟣", name:"Premier Éclair",             desc:"Obtenir une première voiture Épique",           cond:s=>(s.totalEpicSeen??0)>=1,              reward:{rep:500,   money:50000,   talent:1} },
+  { id:"rarity_sell_legendary",  cat:"Rareté", icon:"🟡", name:"Touche d'Or",                desc:"Vendre une voiture Légendaire",                  cond:s=>(s.totalLegendarySold??0)>=1,         reward:{rep:2000,  money:500000,  talent:2} },
+  { id:"rarity_repair_mythic",   cat:"Rareté", icon:"🔴", name:"Le Mythe",                   desc:"Réparer une voiture Mythique",                   cond:s=>(s.totalMythicRepaired??0)>=1,        reward:{rep:5000,  money:2000000, talent:3} },
+  { id:"rarity_sell_mythic",     cat:"Rareté", icon:"💀", name:"Jackpot",                    desc:"Vendre une voiture Mythique",                    cond:s=>(s.totalMythicSold??0)>=1,            reward:{rep:10000, money:5000000, talent:4} },
+  { id:"rarity_legendary_x10",   cat:"Rareté", icon:"✨", name:"Collectionneur de Légendes", desc:"Vendre 10 voitures Légendaires",                 cond:s=>(s.totalLegendarySold??0)>=10,        reward:{rep:8000,  money:3000000, talent:3} },
+  { id:"rarity_mythic_x3",       cat:"Rareté", icon:"🌌", name:"Élu des Dieux",              desc:"Vendre 3 voitures Mythiques",                    cond:s=>(s.totalMythicSold??0)>=3,            reward:{rep:25000, money:15000000,talent:5} },
+
+  // ── Garage Personnel ──────────────────────────────────────────────────────
+  { id:"coll_first",     cat:"Collection", icon:"🏠", name:"Mon Chez-Moi",       desc:"Exposer une première voiture dans votre garage personnel", cond:s=>(s.collection?.length??0)>=1,                       reward:{rep:500,  money:20000,  talent:1} },
+  { id:"coll_full",      cat:"Collection", icon:"🏡", name:"Garage Complet",     desc:"Avoir tous vos slots d'exposition occupés",                cond:s=>(s.collection?.length??0)>=(s.collectionCap??1)&&(s.collectionCap??1)>=1, reward:{rep:1000, money:50000, talent:1} },
+  { id:"coll_legendary", cat:"Collection", icon:"🏆", name:"Pièce de Musée",     desc:"Exposer une voiture Légendaire",                           cond:s=>s.collection?.some?.(c=>c.rarity==="legendary"),    reward:{rep:5000, money:1000000,talent:2} },
+  { id:"coll_mythic",    cat:"Collection", icon:"🌟", name:"Trésor National",    desc:"Exposer une voiture Mythique",                             cond:s=>s.collection?.some?.(c=>c.rarity==="mythic"),       reward:{rep:15000,money:5000000,talent:4} },
+
+  // ── Pokédex ───────────────────────────────────────────────────────────────
+  { id:"pdx_first",     cat:"Pokédex", icon:"📖", name:"Premiers Pas",       desc:"Découvrir 10 modèles différents",                          cond:s=>Object.values(s.carBook??{}).filter(e=>e.seen).length>=10,  reward:{rep:200,  money:5000,   talent:1} },
+  { id:"pdx_100",       cat:"Pokédex", icon:"📚", name:"Cent Découvertes",   desc:"Découvrir 100 modèles différents",                         cond:s=>Object.values(s.carBook??{}).filter(e=>e.seen).length>=100, reward:{rep:2000, money:200000, talent:2} },
+  { id:"pdx_all",       cat:"Pokédex", icon:"🎯", name:"Encyclopédie",       desc:"Découvrir tous les modèles du jeu (324 voitures)",          cond:s=>Object.values(s.carBook??{}).filter(e=>e.seen).length>=324, reward:{rep:20000,money:10000000,talent:5} },
+  { id:"pdx_mastered10",cat:"Pokédex", icon:"⭐", name:"Expert Confirmé",    desc:"Maîtriser 10 modèles de voitures",                         cond:s=>Object.values(s.carBook??{}).filter(e=>e?.repaired>=10&&(e?.allRarities?.length??0)>=3).length>=10, reward:{rep:3000,money:500000,talent:3} },
 ];
 
 // =====================

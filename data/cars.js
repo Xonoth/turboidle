@@ -1021,6 +1021,50 @@ const CAR_CATALOG = [
 // helpers
 function pick(arr){ return arr[Math.floor(Math.random() * arr.length)]; }
 
+// =====================================================================
+// SYSTÈME DE RARETÉ
+// =====================================================================
+const RARITY_TABLE = {
+  common:    { pct:57.45, multSale:1.0,   multRep:1.0,   label:"Commune",     icon:"⬜", color:"#8ca8c0" },
+  uncommon:  { pct:26.33, multSale:1.30,  multRep:1.25,  label:"Peu commune", icon:"🔵", color:"#4a9eff" },
+  rare:      { pct:13.71, multSale:1.80,  multRep:1.60,  label:"Rare",        icon:"🟢", color:"#2ee59d" },
+  epic:      { pct: 2.00, multSale:2.50,  multRep:2.20,  label:"Épique",      icon:"🟣", color:"#a78bfa" },
+  legendary: { pct: 0.50, multSale:10.0,  multRep:10.0,  label:"Légendaire",  icon:"🟡", color:"#ffc83a" },
+  mythic:    { pct: 0.01, multSale:100.0, multRep:100.0, label:"Mythique",    icon:"🔴", color:"#ff4d70" },
+};
+const RARITY_ORDER = ["common","uncommon","rare","epic","legendary","mythic"];
+
+function rollRarity(){
+  const r = Math.random() * 100;
+  let cumul = 0;
+  for(const key of RARITY_ORDER){
+    cumul += RARITY_TABLE[key].pct;
+    if(r < cumul) return key;
+  }
+  return "common";
+}
+
+// =====================================================================
+// GARAGE PERSONNEL — revenus fixes par tier
+// =====================================================================
+const COLLECTION_TIER_DATA = {
+  "F":    { baseE:0.5,  baseR:0.08 }, "E":    { baseE:1.0,  baseR:0.15 },
+  "D":    { baseE:2.2,  baseR:0.30 }, "C":    { baseE:4.5,  baseR:0.55 },
+  "B":    { baseE:9,    baseR:1.0  }, "A":    { baseE:18,   baseR:2.0  },
+  "S":    { baseE:40,   baseR:4.0  }, "SS":   { baseE:90,   baseR:9.0  },
+  "SSS":  { baseE:200,  baseR:20   }, "SSS+": { baseE:420,  baseR:45   },
+};
+const COLLECTION_RARITY_MULT = {
+  common:    { multE:1,   multR:1   }, uncommon:  { multE:1.5, multR:1.4 },
+  rare:      { multE:2.5, multR:2.2 }, epic:      { multE:5,   multR:4   },
+  legendary: { multE:12,  multR:10  }, mythic:    { multE:30,  multR:25  },
+};
+function calcCollectionIncome(car){
+  const td = COLLECTION_TIER_DATA[car.tier]   ?? COLLECTION_TIER_DATA["F"];
+  const rm = COLLECTION_RARITY_MULT[car.rarity ?? "common"] ?? COLLECTION_RARITY_MULT.common;
+  return { moneyPerSec: td.baseE * rm.multE, repPerSec: td.baseR * rm.multR * 0.3 };
+}
+
 // Génération d'un véhicule selon le tier tiré au sort (basé sur la réputation)
 function makeCar(){
   const tier = weightedPickTier(state.rep);
@@ -1032,6 +1076,7 @@ function makeCar(){
 
   // Tire une panne compatible avec le tier
   const failure = pickFailure(tier);
+  const rarity  = rollRarity();
 
   return {
     id: crypto.randomUUID(),
@@ -1039,6 +1084,7 @@ function makeCar(){
     tier: base.tier,
     baseValue: value,
     repairTime: time,
+    rarity,
     timeRemaining: time,
     failure: { id: failure.id, name: failure.name, category: failure.category, parts: [...failure.parts] },
     partsQuality: null,   // sera rempli lors de la réparation
