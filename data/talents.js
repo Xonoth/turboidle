@@ -106,4 +106,37 @@ const TALENTS = [
     desc:"+50 slots d'entrepôt par rang",
     requires:[] },
 
+
+  // ══ NOUVEAUX TALENTS — features récentes ══════════════════════════════
+
+  // ── Business T2 — Exposition ─────────────────────────────────────────
+  { id:"expo_income_1", name:"Vitrine Rentable", maxRank:20, category:"Business", icon:"🏠", tier:2,
+    desc:"+8% revenus €/s du Garage Personnel par rang",
+    requires:[] },
+
+  // ── Business T3 — Exposition Légendaire+ ─────────────────────────────
+  { id:"expo_rep_1", name:"Conservateur d'Élite", maxRank:20, category:"Business", icon:"🖼️", tier:3,
+    desc:"+10% REP/s des voitures Légendaires et Mythiques exposées par rang",
+    requires:[] },
+
+  // ── Business T2 — Rareté vente ────────────────────────────────────────
+  { id:"rarity_sale_1", name:"Pisteur de Rareté", maxRank:20, category:"Business", icon:"✨", tier:2,
+    desc:"+2% valeur de vente pour les voitures Rares, Épiques, Légendaires et Mythiques par rang",
+    requires:[] },
+
+  // ── Business T3 — Encyclopédie × vente ───────────────────────────────
+  { id:"enc_sale_1", name:"Œil de Connaisseur", maxRank:20, category:"Business", icon:"📖", tier:3,
+    desc:"+0.05% valeur de vente par modèle Maîtrisé dans l'Encyclopédie, par rang",
+    requires:[] },
+
+  // ── Diagnostic T2 — Encyclopédie × vitesse ───────────────────────────
+  { id:"enc_speed_1", name:"Savoir-Faire", maxRank:20, category:"Diagnostic", icon:"🧩", tier:2,
+    desc:"+0.3% vitesse de réparation par tranche de 10 modèles Familiers ou Maîtrisés, par rang",
+    requires:[] },
+
+  // ── Diagnostic T3 — Rareté × REP ─────────────────────────────────────
+  { id:"rarity_rep_1", name:"Instinct du Chasseur", maxRank:20, category:"Diagnostic", icon:"🎯", tier:3,
+    desc:"Chaque voiture Épique+ diagnostiquée rapporte un bonus REP : +5 (Épique) · +25 (Légendaire) · +150 (Mythique) par rang",
+    requires:[] },
+
 ];

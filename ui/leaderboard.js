@@ -7,6 +7,11 @@ let _lbTab = "prestige";
 // ── Push score ────────────────────────────────────────────────────────────────
 async function pushLeaderboard(){
   if(!currentUser) return;
+  // Bloquer du leaderboard si save suspecte
+  if(state._suspectSave){
+    dbg("[leaderboard] push bloqué — save suspecte");
+    return;
+  }
   try {
     const p = state.profile || {};
     const achCount = Object.keys(state.achievements ?? {}).length;

@@ -348,7 +348,13 @@ function computeTalentEffects(){
   let diagRepBonus = 0;   // diag_rep_1 : +2 REP par diag manuel (T2 Diagnostic)
   let deliveryDisc = 0;
   let extraSlots   = 0;
-  let warehouseBonus = 0; // logistique_avancee : +50 slots/rang
+  let warehouseBonus   = 0;   // logistique_avancee : +50 slots/rang
+  let expoIncomeMult   = 1.0; // expo_income_1 : +8%/rang revenus €/s exposition
+  let expoRepMult      = 1.0; // expo_rep_1 : +10%/rang REP/s Légendaire+ exposition
+  let raritySaleBonus  = 0;   // rarity_sale_1 : +2%/rang vente Rare+
+  let encSaleBonus     = 0;   // enc_sale_1 : +0.05%/rang/modèle maîtrisé
+  let encSpeedBonus    = 0;   // enc_speed_1 : +0.3%/rang par tranche 10 Familiers+
+  let rarityRepBonus   = 0;   // rarity_rep_1 : +REP par Épique+ diagnostiquée
 
   // ── Business ────────────────────────────────────────
   passive      += getTalentRank("passive_1")    * 5;
@@ -372,15 +378,36 @@ function computeTalentEffects(){
   warehouseBonus += getTalentRank("logistique_avancee") * 50; // +50 slots/rang
 
   // ── Diagnostic ──────────────────────────────────────
-  diagBonus    += getTalentRank("diag_1")       * 3  * 2;   // ×2
-  diagBonus    += getTalentRank("diag_2")       * 8  * 2;   // ×2
+  diagBonus    += getTalentRank("diag_1")       * 3  * 2;
+  diagBonus    += getTalentRank("diag_2")       * 8  * 2;
   diagMult     *= (1 + getTalentRank("diag_3")  * 0.05);
   repGainBonus += getTalentRank("rep_1")        * 0.05;
   diagRepBonus += getTalentRank("diag_rep_1")   * 2;
 
+  // ── Nouveaux talents ─────────────────────────────────────────────────
+  // Exposition
+  expoIncomeMult *= (1 + getTalentRank("expo_income_1") * 0.08);
+  expoRepMult    *= (1 + getTalentRank("expo_rep_1")    * 0.10);
+  // Rareté × vente
+  raritySaleBonus += getTalentRank("rarity_sale_1") * 0.02;
+  // Encyclopédie × vente (calcul dynamique depuis carBook)
+  const _masteredCount = typeof state !== "undefined"
+    ? Object.values(state.carBook ?? {}).filter(e => typeof getCarBookMastery !== "undefined" ? getCarBookMastery(e) >= 3 : false).length
+    : 0;
+  encSaleBonus += getTalentRank("enc_sale_1") * _masteredCount * 0.0005;
+  // Encyclopédie × vitesse (Savoir-Faire)
+  const _familiarCount = typeof state !== "undefined"
+    ? Object.values(state.carBook ?? {}).filter(e => typeof getCarBookMastery !== "undefined" ? getCarBookMastery(e) >= 2 : false).length
+    : 0;
+  encSpeedBonus += getTalentRank("enc_speed_1") * Math.floor(_familiarCount / 10) * 0.003;
+  speedMult *= (1 + encSpeedBonus);
+  // Rareté × REP diagnostic
+  rarityRepBonus += getTalentRank("rarity_rep_1");
+
   return { passive, passiveMult, speedMult, diagBonus, diagMult, diagAutoDisc, saleBonus, saleMult,
            clickBonus, showroomSlots, rareMult, repairAuto, repairBonus, repairMult,
-           repGainBonus, diagRepBonus, deliveryDisc, extraSlots, warehouseBonus };
+           repGainBonus, diagRepBonus, deliveryDisc, extraSlots, warehouseBonus,
+           expoIncomeMult, expoRepMult, raritySaleBonus, encSaleBonus, rarityRepBonus };
 }
 
 function calcDealsPassive(){
@@ -413,11 +440,17 @@ function applyTalentEffects(){
   state.talentRepairBonus   = fx.repairBonus;
   state.talentRepairMult    = fx.repairMult;
   state.talentSaleMult      = fx.saleMult;
-  state.talentRepGainBonus  = fx.repGainBonus;
-  state.talentDiagRepBonus  = fx.diagRepBonus;
-  state.talentDeliveryDisc  = Math.min(0.90, fx.deliveryDisc + (state.specDeliveryDisc ?? 0));
-  state.talentExtraSlots    = Math.round(fx.extraSlots * (state.specDeliverySlotsMult ?? 1.0));
+  state.talentRepGainBonus   = fx.repGainBonus;
+  state.talentDiagRepBonus   = fx.diagRepBonus;
+  state.talentDeliveryDisc   = Math.min(0.90, fx.deliveryDisc + (state.specDeliveryDisc ?? 0));
+  state.talentExtraSlots     = Math.round(fx.extraSlots * (state.specDeliverySlotsMult ?? 1.0));
   state.talentWarehouseBonus = fx.warehouseBonus;
+  // Nouveaux talents
+  state.talentExpoIncomeMult  = fx.expoIncomeMult  ?? 1.0;
+  state.talentExpoRepMult     = fx.expoRepMult     ?? 1.0;
+  state.talentRaritySaleBonus = fx.raritySaleBonus ?? 0;
+  state.talentEncSaleBonus    = fx.encSaleBonus    ?? 0;
+  state.talentRarityRepBonus  = fx.rarityRepBonus  ?? 0;
 }
 
 // =====================
@@ -437,6 +470,7 @@ if(!state.totalClickRepairs) state.totalClickRepairs = 0;
 if(!state.totalCarsSold)     state.totalCarsSold     = 0;
 // Trackers run actuel (remis à 0 au prestige)
 if(!state.runMoneyPassive)   state.runMoneyPassive   = 0;
+if(!state.runMoneyCollection) state.runMoneyCollection = 0; // revenus garage personnel séparés
 if(!state.runMoneySales)     state.runMoneySales     = 0;
 if(!state.runMoneyDiag)      state.runMoneyDiag      = 0;
 if(!state.runMoneyParts)     state.runMoneyParts     = 0;
@@ -661,7 +695,8 @@ function tryStartNextRepair(){
 // Temps de réparation estimé en tenant compte de tous les multiplicateurs actifs
 function calcEstimatedRepairTime(car){
   const partsMult  = getPartsSpeedMult(car);           // 0.5 si pièce manquante, sinon timeMult qualité
-  const speedMult  = (state.speedMult ?? 1) * (state.talentSpeedMult ?? 1) * partsMult;
+  const _catalogBonus = state.heritageBonuses?.catalogSpeedBonus ?? 0;
+  const speedMult  = (state.speedMult ?? 1) * (state.talentSpeedMult ?? 1) * partsMult * Math.max(0.01, 1 - _catalogBonus);
   const secPerSec  = (state.repairAuto + (state.talentRepairAuto ?? 0)) * speedMult;
   if(secPerSec <= 0) return null;                      // pas de réparation auto active
   const remaining = car.timeRemaining ?? car.repairTime;
@@ -691,7 +726,12 @@ function calcSaleValue(car){
   const warehouseBonus = (car.repairedFromStock && typeof getWarehouseValueBonus === "function")
     ? (1 + getWarehouseValueBonus() + heritagePartsBonus) : 1.0;
   const rarityMult = (typeof RARITY_TABLE !== "undefined") ? (RARITY_TABLE[car.rarity ?? "common"]?.multSale ?? 1.0) : 1.0;
-  return Math.round(car.baseValue * bonus * specSale * partsMult * rareMult * saleMult * warehouseBonus * rarityMult);
+  // Pisteur de Rareté — bonus vente Rare+
+  const _rSale = car.rarity ?? "common";
+  const _raritySaleBonus = ["rare","epic","legendary","mythic"].includes(_rSale) ? (1 + (state.talentRaritySaleBonus ?? 0)) : 1.0;
+  // Œil de Connaisseur — bonus vente par modèles maîtrisés
+  const _encSaleBonus = 1 + (state.talentEncSaleBonus ?? 0);
+  return Math.round(car.baseValue * bonus * specSale * partsMult * rareMult * saleMult * warehouseBonus * rarityMult * _raritySaleBonus * _encSaleBonus);
 }
 
 function finishRepair(slotIndex = 0){
@@ -810,6 +850,19 @@ btnAnalyze.addEventListener("click", () => {
   // diag_rep_1 : +2 REP par diag manuel par rang
   const drb = state.talentDiagRepBonus ?? 0;
   if(drb > 0){ state.rep += drb; if(state.rep > (state.repMax??0)) state.repMax = state.rep; }
+  // rarity_rep_1 (Instinct du Chasseur) : bonus REP selon rareté diagnostiquée
+  const _rrb = state.talentRarityRepBonus ?? 0;
+  if(_rrb > 0 && diagCar){
+    const _diagRarity = diagCar.rarity ?? "common";
+    let _rarityRepGain = 0;
+    if(_diagRarity === "mythic")    _rarityRepGain = 150 * _rrb;
+    else if(_diagRarity === "legendary") _rarityRepGain = 25  * _rrb;
+    else if(_diagRarity === "epic") _rarityRepGain = 5   * _rrb;
+    if(_rarityRepGain > 0){
+      state.rep += _rarityRepGain;
+      if(state.rep > (state.repMax??0)) state.repMax = state.rep;
+    }
+  }
   // Spécialisation Centre Diagnostic : +1 pt talent toutes les 100 analyses
   if(state.specialization === "diag" && state.totalAnalyses % 100 === 0){
     state.talentPoints = (state.talentPoints ?? 0) + 1;
@@ -953,7 +1006,16 @@ showroomListEl.addEventListener("click", (e) => {
   const repMult = (state.heritageBonuses?.repGainMult ?? 1.0)
     * (state._heritageRepBoost && Date.now() < state._heritageRepBoost.until ? state._heritageRepBoost.mult : 1.0);
   const _manualRarityRepMult = (typeof RARITY_TABLE !== "undefined") ? (RARITY_TABLE[car.rarity ?? "common"]?.multRep ?? 1.0) : 1.0;
-  const repGain = Math.round(tierData.repGain * repMult * (state.specRepMult ?? 1.0) * (1 + (state.talentRepGainBonus ?? 0)) * _manualRarityRepMult);
+  // Héritage Rare : +20% REP Légendaire, +50% REP Mythique par rang
+  const _hlb = state.heritageBonuses?.rareLegendaryBonus ?? 0;
+  const _manualRarityBonus = (() => {
+    if(_hlb <= 0) return 1.0;
+    const _mr = car.rarity ?? "common";
+    if(_mr === "mythic")    return 1 + 0.50 * _hlb;
+    if(_mr === "legendary") return 1 + 0.20 * _hlb;
+    return 1.0;
+  })();
+  const repGain = Math.round(tierData.repGain * repMult * (state.specRepMult ?? 1.0) * (1 + (state.talentRepGainBonus ?? 0)) * _manualRarityRepMult * _manualRarityBonus);
   if(isFinite(repGain)) {
     state.rep += repGain;
     if(state.rep > (state.repMax ?? 0)) state.repMax = state.rep;
@@ -1207,13 +1269,26 @@ function getCollectionCap(){
   return base;
 }
 
+// Vérifie si le tier d'une voiture en expo est débloqué (REP suffisante)
+function isCollectionCarUnlocked(car){
+  const tierData = typeof TIERS !== "undefined" ? TIERS[car.tier] : null;
+  if(!tierData) return true; // fallback : débloqué par défaut
+  return (state.rep ?? 0) >= (tierData.repReq ?? 0);
+}
+
 function calcCollectionTotalIncome(){
   if(!state.collection?.length || typeof calcCollectionIncome === "undefined") return { moneyPerSec:0, repPerSec:0 };
   let money = 0, rep = 0;
   for(const car of state.collection){
+    if(!isCollectionCarUnlocked(car)) continue; // tier non débloqué → pas de revenus
     const inc = calcCollectionIncome(car);
-    money += inc.moneyPerSec;
-    rep   += inc.repPerSec;
+    const _expoMult = (state.talentExpoIncomeMult ?? 1.0) * (state.heritageBonuses?.expoIncomeMult ?? 1.0);
+    money += inc.moneyPerSec * _expoMult;
+    // Conservateur d'Élite : bonus REP/s Légendaire+
+    const _rarity = car.rarity ?? "common";
+    const _isHighRarity = _rarity === "legendary" || _rarity === "mythic";
+    const _repMult = _isHighRarity ? ((state.talentExpoRepMult ?? 1.0) * (state.heritageBonuses?.expoIncomeMult ?? 1.0)) : (state.heritageBonuses?.expoIncomeMult ?? 1.0);
+    rep   += inc.repPerSec * _repMult;
   }
   return { moneyPerSec: money, repPerSec: rep };
 }
@@ -1326,8 +1401,8 @@ function applyTickLogic(dt){
       const inc = calcCollectionIncome(car);
       if(isFinite(inc.moneyPerSec)){
         state.money += inc.moneyPerSec * dt;
-        state.totalMoneyEarned = (state.totalMoneyEarned ?? 0) + inc.moneyPerSec * dt;
-        state.runMoneyPassive  = (state.runMoneyPassive  ?? 0) + inc.moneyPerSec * dt;
+        state.totalMoneyEarned    = (state.totalMoneyEarned    ?? 0) + inc.moneyPerSec * dt;
+        state.runMoneyCollection  = (state.runMoneyCollection  ?? 0) + inc.moneyPerSec * dt;
       }
       if(isFinite(inc.repPerSec)){
         state.collectionRepAccu = (state.collectionRepAccu ?? 0) + inc.repPerSec * dt;
@@ -1446,7 +1521,15 @@ function applyTickLogic(dt){
         const tierData = TIERS[car.tier] || TIERS["F"];
         const repMult = state.heritageBonuses?.repGainMult ?? 1.0;
         const _autoRarityRepMult = (typeof RARITY_TABLE !== "undefined") ? (RARITY_TABLE[car.rarity ?? "common"]?.multRep ?? 1.0) : 1.0;
-        const repGain = Math.round(tierData.repGain * repMult * (state.specRepMult ?? 1.0) * (1 + (state.talentRepGainBonus ?? 0)) * _autoRarityRepMult);
+        const _autoHlb = state.heritageBonuses?.rareLegendaryBonus ?? 0;
+        const _autoRarityBonus = (() => {
+          if(_autoHlb <= 0) return 1.0;
+          const _ar2 = car.rarity ?? "common";
+          if(_ar2 === "mythic")    return 1 + 0.50 * _autoHlb;
+          if(_ar2 === "legendary") return 1 + 0.20 * _autoHlb;
+          return 1.0;
+        })();
+        const repGain = Math.round(tierData.repGain * repMult * (state.specRepMult ?? 1.0) * (1 + (state.talentRepGainBonus ?? 0)) * _autoRarityRepMult * _autoRarityBonus);
         if(isFinite(repGain)) state.rep += repGain;
         if(typeof RARITY_ORDER !== "undefined"){
           const _ar = car.rarity ?? "common";
@@ -1560,3 +1643,5 @@ document.getElementById("sideMenuPokedex")?.addEventListener("click", () => {
   closeSideMenu?.();
   openPokedex();
 });
+
+window.isCollectionCarUnlocked = isCollectionCarUnlocked;

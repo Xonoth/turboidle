@@ -286,7 +286,7 @@ function renderActive(){
       if(pct >= 0.999 && !_activeBarFill._bouncePlayed){
         _activeBarFill._bouncePlayed = true;
         _activeBarFill.classList.add("garageSlot__barFill--bounce");
-        setTimeout(() => { _activeBarFill?.classList.remove("garageSlot__barFill--bounce"); _activeBarFill._bouncePlayed = false; }, 400);
+        setTimeout(() => { _activeBarFill?.classList.remove("garageSlot__barFill--bounce"); if(_activeBarFill) _activeBarFill._bouncePlayed = false; }, 400);
       } else if(pct < 0.999){
         _activeBarFill._bouncePlayed = false;
       }
@@ -1389,22 +1389,28 @@ function renderCollection(){
   } else {
     html += `<div class="collList">`;
     for(const car of collection){
-      const t     = TIERS[car.tier] || TIERS["F"];
-      const rKey  = car.rarity ?? "common";
-      const rData = typeof RARITY_TABLE !== "undefined" ? RARITY_TABLE[rKey] : null;
-      const rBadge= rData ? `<span class="rarityBadge rarityBadge--${rKey}">${rData.icon} ${rData.label}</span>` : "";
-      const inc   = typeof calcCollectionIncome !== "undefined" ? calcCollectionIncome(car) : {moneyPerSec:0,repPerSec:0};
+      const t        = TIERS[car.tier] || TIERS["F"];
+      const rKey     = car.rarity ?? "common";
+      const rData    = typeof RARITY_TABLE !== "undefined" ? RARITY_TABLE[rKey] : null;
+      const rBadge   = rData ? `<span class="rarityBadge rarityBadge--${rKey}">${rData.icon} ${rData.label}</span>` : "";
+      const unlocked = typeof isCollectionCarUnlocked !== "undefined" ? isCollectionCarUnlocked(car) : true;
+      const inc      = (unlocked && typeof calcCollectionIncome !== "undefined") ? calcCollectionIncome(car) : {moneyPerSec:0,repPerSec:0};
+      const repReqStr = (t.repReq > 0) ? t.repReq.toLocaleString("fr-FR") + " REP" : "";
       html += `
-        <div class="collCard collCard--rarity-${rKey}">
+        <div class="collCard collCard--rarity-${rKey}${unlocked ? "" : " collCard--locked"}">
           <div class="collCard__body">
             <div class="collCard__top">
               <span class="tierBadge" style="background:${t.bg};border-color:${t.border};color:${t.color}">${t.label}</span>
               ${rBadge}
               <span class="collCard__name">${car.name}</span>
             </div>
+            ${!unlocked ? `<div class="collCard__lockedBadge">🔒 Tier non débloqué — ${repReqStr} requis</div>` : ""}
             <div class="collCard__income">
-              <span style="color:#2ee59d">+${formatMoney(inc.moneyPerSec)}/s</span>
-              <span style="color:#a78bfa">+${inc.repPerSec.toFixed(2)} REP/s</span>
+              ${unlocked
+                ? `<span style="color:#2ee59d">+${formatMoney(inc.moneyPerSec)}/s</span>
+                   <span style="color:#a78bfa">+${inc.repPerSec.toFixed(2)} REP/s</span>`
+                : `<span class="collCard__incomeGelé">Revenus gelés</span>`
+              }
             </div>
           </div>
           <button class="collCard__remove" data-remove-collection="${car.id}" title="Retirer de l'exposition">↩</button>

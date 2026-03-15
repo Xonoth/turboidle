@@ -164,7 +164,7 @@ async function doManualSave() {
   if(subEl) subEl.textContent = "En cours…";
 
   try {
-    const snap = buildSaveSnapshot();
+    const snap = await buildSaveSnapshot();
     _saveService._lsWrite(snap);
     await _supa.from("saves").upsert(
       { user_id: currentUser.id, save_data: snap, updated_at: new Date().toISOString() },
@@ -227,7 +227,7 @@ setInterval(() => { if(currentUser) pushLeaderboard(); }, CONFIG.LB_PUSH_INTERVA
 // nécessaire pour intercepter le gel par le système.
 function _emergencySave() {
   try {
-    const snap = buildSaveSnapshot();
+    const snap = buildSaveSnapshot(); // async — pas await ici (beforeunload synchrone)
     // Toujours écrire localStorage synchrone — garanti avant fermeture
     if(typeof _saveService !== "undefined") _saveService._lsWrite(snap);
   } catch(e) {}
@@ -255,8 +255,9 @@ document.addEventListener("visibilitychange", () => {
     // Sur mobile, écrire localStorage SYNCHRONEMENT d'abord (garanti)
     // puis tenter le cloud (peut être annulé par iOS avant complétion)
     try {
-      const snap = buildSaveSnapshot();
-      if(typeof _saveService !== "undefined") _saveService._lsWrite(snap);
+      buildSaveSnapshot().then(snap => { // async — on n'attend pas
+        if(typeof _saveService !== "undefined") _saveService._lsWrite(snap);
+      }).catch(()=>{});
     } catch(e) {}
     save();
   } else {

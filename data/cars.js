@@ -1015,7 +1015,129 @@ const CAR_CATALOG = [
   { tier:"SSS+", name:"Lambo Égoïsta Solitaire",  baseValue:1800000,repairTime:11050}, // Lamborghini Egoista
   { tier:"SSS+", name:"Rimac Nêvera Apoc Record", baseValue:1300000,repairTime:8970}, // Rimac Nevera Record
   { tier:"SSS+", name:"Aston Marten Valkyrie AMR", baseValue:1950000,repairTime:11570}, // Aston Valkyrie AMR Pro
-  { tier:"SSS+", name:"Bugatti Bolide Atomique",   baseValue:2800000,repairTime:13000}, // Bugatti Bolide
+  { tier:"SSS+", name:"Bugatti Bolide Atomique",   baseValue:2800000,repairTime:13000}, // Bugatti Bolide,
+
+  // ── 100 NOUVEAUX VÉHICULES ──────────────────────────────────────────────────
+
+  // TIER F (×12)
+  { tier:"F", name:"Renno 5 Supère",              baseValue:85,  repairTime:10  },
+  { tier:"F", name:"Pijot Cent Quatre Cahotante", baseValue:78,  repairTime:10  },
+  { tier:"F", name:"Fiato Seicenski",             baseValue:65,  repairTime:8   },
+  { tier:"F", name:"Opal Kadetski Poussivet",     baseValue:72,  repairTime:10  },
+  { tier:"F", name:"Volksgeist Polo Mk2 Sage",    baseValue:90,  repairTime:12  },
+  { tier:"F", name:"Hyondaille Athos Pantoufle",  baseValue:82,  repairTime:10  },
+  { tier:"F", name:"Mitsoubichi Coltard",         baseValue:77,  repairTime:10  },
+  { tier:"F", name:"Daewoo Nexiah Fantôme",       baseValue:68,  repairTime:8   },
+  { tier:"F", name:"Citron C1 Moucheron",         baseValue:95,  repairTime:12  },
+  { tier:"F", name:"Toyo Yariski Bonsaï",         baseValue:110, repairTime:14  },
+  { tier:"F", name:"Skodah Fabiote Tchèque",      baseValue:88,  repairTime:12  },
+  { tier:"F", name:"Séat Ibise Plageuse",         baseValue:93,  repairTime:12  },
+
+  // TIER E (×12)
+  { tier:"E", name:"Renno Mégânon Première",      baseValue:210, repairTime:26  },
+  { tier:"E", name:"Pijot Trois Cent Sept Zéro",  baseValue:235, repairTime:28  },
+  { tier:"E", name:"Volksgeist Golf Mk4 Rondoulet",baseValue:280,repairTime:32  },
+  { tier:"E", name:"Fjord Focussé Première",      baseValue:220, repairTime:26  },
+  { tier:"E", name:"Opal Astrah Astronome",       baseValue:195, repairTime:24  },
+  { tier:"E", name:"Fiato Stilo Stiliste",        baseValue:205, repairTime:26  },
+  { tier:"E", name:"Alfa Roméa 156 Belluzzo",     baseValue:260, repairTime:30  },
+  { tier:"E", name:"Toyo Corolla Corollave",      baseValue:230, repairTime:28  },
+  { tier:"E", name:"Hinda Civikette Mk7",         baseValue:245, repairTime:28  },
+  { tier:"E", name:"Merko Classe A W168 Courte",  baseValue:290, repairTime:34  },
+  { tier:"E", name:"Niss Almeira Presque Neuve",  baseValue:215, repairTime:26  },
+  { tier:"E", name:"Séat Léonne Première Venue",  baseValue:255, repairTime:30  },
+
+  // TIER D (×10)
+  { tier:"D", name:"Volksgeist Passat Passeport", baseValue:680, repairTime:62  },
+  { tier:"D", name:"Fjord Mondéo Mondial",        baseValue:620, repairTime:58  },
+  { tier:"D", name:"Toyo Avenssi Venteux",        baseValue:590, repairTime:56  },
+  { tier:"D", name:"Hinda Accorde Cordiale",      baseValue:730, repairTime:66  },
+  { tier:"D", name:"Merko Classe C W203 Coco",    baseValue:850, repairTime:74  },
+  { tier:"D", name:"BimV 3 Série E46 Brèle",      baseValue:920, repairTime:80  },
+  { tier:"D", name:"Odi A4 B6 Odierne",           baseValue:870, repairTime:76  },
+  { tier:"D", name:"Kia Cêed Céder",              baseValue:560, repairTime:54  },
+  { tier:"D", name:"Renno Lagounne Lagoonarde",   baseValue:640, repairTime:60  },
+  { tier:"D", name:"Subaro Légazy Héritier",      baseValue:780, repairTime:68  },
+
+  // TIER C (×12)
+  { tier:"C", name:"Volksgeist Golf GTI Mk6 Gaulois",baseValue:2600,repairTime:165},
+  { tier:"C", name:"Renno Clioz 3 RS Rugissant",  baseValue:2400, repairTime:158 },
+  { tier:"C", name:"BimV 1 Série 135i Tordu",     baseValue:2800, repairTime:170 },
+  { tier:"C", name:"Odi TT Mk2 Tortille",         baseValue:3100, repairTime:183 },
+  { tier:"C", name:"Merko C180 Komp Costarde",    baseValue:2900, repairTime:175 },
+  { tier:"C", name:"Fjord Focus ST Mk2 Soufflé",  baseValue:2500, repairTime:162 },
+  { tier:"C", name:"Toyo GT86 Hachi-Rolé",        baseValue:3300, repairTime:188 },
+  { tier:"C", name:"Mâzda MX-5 NC Frissonnant",   baseValue:2700, repairTime:168 },
+  { tier:"C", name:"Subaro Imprézah WRX Wagon",   baseValue:3000, repairTime:180 },
+  { tier:"C", name:"Hinda Civikette Type-Solide",  baseValue:2200, repairTime:150 },
+  { tier:"C", name:"Volksgeist Scirocco Kerfouillé",baseValue:2450,repairTime:160},
+  { tier:"C", name:"Pijot RCZ Roucoule",          baseValue:3200, repairTime:185 },
+
+  // TIER B (×11)
+  { tier:"B", name:"Mâzda RX-8 Rotatif Dingue",  baseValue:4500, repairTime:368 },
+  { tier:"B", name:"Mitsoubichi Lânser Evo X Onze",baseValue:5900,repairTime:412 },
+  { tier:"B", name:"Nissou Silviah S15 Drifteur", baseValue:5100, repairTime:388 },
+  { tier:"B", name:"Toyo Souprah Mk4 Boîte Noire",baseValue:6300, repairTime:424 },
+  { tier:"B", name:"Volksgeist Golf R Mk7 Taciturne",baseValue:4100,repairTime:355},
+  { tier:"B", name:"Odi RS4 B7 Quattro Baguenaud",baseValue:5400, repairTime:396 },
+  { tier:"B", name:"Merko C55 AMG Gueulard",      baseValue:4800, repairTime:380 },
+  { tier:"B", name:"BimV Z4 M Coupé Moustachu",   baseValue:5700, repairTime:408 },
+  { tier:"B", name:"Porsha Boxstère S 986 Frisquet",baseValue:5000,repairTime:384},
+  { tier:"B", name:"Fjord Mustângu Boss Cowboy",   baseValue:5300, repairTime:392 },
+  { tier:"B", name:"Lotus Exigez S Maigrichonne",  baseValue:6100, repairTime:420 },
+
+  // TIER A (×10)
+  { tier:"A", name:"Odi RS6 C8 Familial Fou",      baseValue:16500,repairTime:744},
+  { tier:"A", name:"Merko S63 AMG Pompeux",        baseValue:18500,repairTime:772},
+  { tier:"A", name:"BimV M3 G80 Tourmenté",        baseValue:15800,repairTime:735},
+  { tier:"A", name:"Porsha Panaméra GTS Grosse",   baseValue:14500,repairTime:720},
+  { tier:"A", name:"Rollz Wrâïs Coupé Princier",   baseValue:19700,repairTime:786},
+  { tier:"A", name:"Bentlaï Conti GT Mk3 Milord",  baseValue:18200,repairTime:768},
+  { tier:"A", name:"Jaguârd F-Type R Félin",       baseValue:13800,repairTime:712},
+  { tier:"A", name:"Alfa Roméa Giulia QV Quadrille",baseValue:13200,repairTime:704},
+  { tier:"A", name:"Aston Marten DB11 Debonnaire", baseValue:19400,repairTime:782},
+  { tier:"A", name:"Lôtus Évora GT430 Légère",     baseValue:14000,repairTime:715},
+
+  // TIER S (×10)
+  { tier:"S", name:"McLoren GT Confortable",       baseValue:29500,repairTime:1065},
+  { tier:"S", name:"Ferrero 296 GTB Bicylindre",   baseValue:32000,repairTime:1105},
+  { tier:"S", name:"Lambo Sterratosse Baroudeur",  baseValue:31000,repairTime:1090},
+  { tier:"S", name:"Porsha 911 GT3 RS Aileron",    baseValue:42000,repairTime:1235},
+  { tier:"S", name:"BimV XM Brûlant Hybride",      baseValue:25500,repairTime:1025},
+  { tier:"S", name:"Merko AMG GT 63 Omnibus",      baseValue:36000,repairTime:1155},
+  { tier:"S", name:"Jaguârd XKR-S Griffu",        baseValue:24000,repairTime:1010},
+  { tier:"S", name:"Rollz Coupé Black Ébène",      baseValue:48000,repairTime:1315},
+  { tier:"S", name:"Bentlaï Mulsânne Ambassadeur", baseValue:45000,repairTime:1280},
+  { tier:"S", name:"Aston Marten Vantage V12 Dogue",baseValue:38000,repairTime:1180},
+
+  // TIER SS (×9)
+  { tier:"SS", name:"Ferrero Purossângu Sanguinaire",baseValue:112000,repairTime:2205},
+  { tier:"SS", name:"Lambo Revuelto Révolutionnaire",baseValue:142000,repairTime:2420},
+  { tier:"SS", name:"McLoren 620R Pistouze",       baseValue:108000,repairTime:2175},
+  { tier:"SS", name:"Porsha GT3 RS 992 Percé",     baseValue:138000,repairTime:2400},
+  { tier:"SS", name:"Bugatti Chiron Pur Obèse",    baseValue:190000,repairTime:2680},
+  { tier:"SS", name:"Koenigsmeg Agérah Agité",     baseValue:175000,repairTime:2590},
+  { tier:"SS", name:"Rimac Concept Électrobête",   baseValue:122000,repairTime:2310},
+  { tier:"SS", name:"Pagânì Huayrah Boursoufflé",  baseValue:155000,repairTime:2505},
+  { tier:"SS", name:"Merko AMG One Formule Masquée",baseValue:168000,repairTime:2560},
+
+  // TIER SSS (×8)
+  { tier:"SSS", name:"Ferrero LaFérraille Hybridée",  baseValue:690000,repairTime:5160},
+  { tier:"SSS", name:"McLoren P1 Route Légale",        baseValue:580000,repairTime:4740},
+  { tier:"SSS", name:"Porsha 918 Spidré Venimeux",     baseValue:620000,repairTime:4920},
+  { tier:"SSS", name:"Lambo Sian Foudroiement",        baseValue:510000,repairTime:4560},
+  { tier:"SSS", name:"Aston Marten Vulcân Volcanique", baseValue:450000,repairTime:4320},
+  { tier:"SSS", name:"Pagânì Zondah Zodiaque R",       baseValue:740000,repairTime:5400},
+  { tier:"SSS", name:"Koenigsmeg Réggérah Hurlant",    baseValue:680000,repairTime:5100},
+  { tier:"SSS", name:"BimV M1 Homologué Taré",         baseValue:395000,repairTime:4080},
+
+  // TIER SSS+ (×6)
+  { tier:"SSS+", name:"Ferrero FXX K Évôlux Suprême",  baseValue:2600000,repairTime:13250},
+  { tier:"SSS+", name:"Bugatti Tourbijoux W16 Divin",   baseValue:3200000,repairTime:14500},
+  { tier:"SSS+", name:"Koenigsmeg Jéscô Absolu Ultime", baseValue:2500000,repairTime:13000},
+  { tier:"SSS+", name:"McLoren Solus GT Extraterrestre",baseValue:3500000,repairTime:15000},
+  { tier:"SSS+", name:"Lambo SC63 Le Mans Monstre",     baseValue:2900000,repairTime:14000},
+  { tier:"SSS+", name:"Pagânì Huayrah R Apothéose",     baseValue:3800000,repairTime:15800}
 ];
 
 // helpers

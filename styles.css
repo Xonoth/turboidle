@@ -8726,3 +8726,28 @@ button, a, input, select, [role='button'] { -webkit-tap-highlight-color: transpa
   min-width: 90px;
   text-align: right;
 }
+
+/* =====================================================================
+   COLLECTION — voitures tier non débloqué (gelées au prestige)
+   ===================================================================== */
+.collCard--locked {
+  opacity: 0.65;
+  filter: grayscale(40%);
+  border-color: rgba(255,255,255,.06) !important;
+  background: rgba(255,255,255,.01) !important;
+}
+.collCard__lockedBadge {
+  font-size: 10px;
+  color: rgba(255,200,58,.7);
+  background: rgba(255,200,58,.07);
+  border: 1px solid rgba(255,200,58,.15);
+  border-radius: 5px;
+  padding: 2px 8px;
+  margin-top: 3px;
+  display: inline-block;
+}
+.collCard__incomeGelé {
+  font-size: 10px;
+  color: rgba(255,255,255,.25);
+  font-style: italic;
+}

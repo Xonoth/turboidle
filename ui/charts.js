@@ -271,19 +271,23 @@ function _buildMoneySourceChart(canvasId){
   const ctx = document.getElementById(canvasId)?.getContext("2d");
   if(!ctx) return;
 
-  const repair  = state?.runMoneyRepair  ?? 0;
-  const sales   = state?.runMoneySales   ?? 0;
-  const passive = state?.runMoneyPassive ?? 0;
-  const total   = repair + sales + passive || 1;
+  const diag       = state?.runMoneyDiag       ?? 0;
+  const sales      = state?.runMoneySales      ?? 0;
+  const parts      = state?.runMoneyParts      ?? 0;
+  const passive    = state?.runMoneyPassive    ?? 0;
+  const collection = state?.runMoneyCollection ?? 0;
+  const total      = diag + sales + parts + passive + collection || 1;
 
   _charts["msrc"] = new Chart(ctx, {
     type: "bar",
     data: {
       labels: ["Cette run"],
       datasets: [
-        { label:"Réparations", data:[repair],  backgroundColor: C.cyan   + "cc", borderColor: C.cyan,   borderWidth:1.5, borderRadius:{topLeft:0,topRight:0,bottomLeft:5,bottomRight:5}, borderSkipped:false },
-        { label:"Ventes",      data:[sales],   backgroundColor: C.gold   + "cc", borderColor: C.gold,   borderWidth:1.5, borderRadius:0, borderSkipped:false },
-        { label:"Passif",      data:[passive], backgroundColor: C.green  + "cc", borderColor: C.green,  borderWidth:1.5, borderRadius:{topLeft:5,topRight:5,bottomLeft:0,bottomRight:0}, borderSkipped:false },
+        { label:"Diagnostics",  data:[diag],       backgroundColor: C.cyan   + "cc", borderColor: C.cyan,   borderWidth:1.5, borderRadius:{topLeft:0,topRight:0,bottomLeft:5,bottomRight:5}, borderSkipped:false },
+        { label:"Ventes",       data:[sales],      backgroundColor: C.gold   + "cc", borderColor: C.gold,   borderWidth:1.5, borderRadius:0, borderSkipped:false },
+        { label:"Bonus pièces", data:[parts],      backgroundColor: "#ff8c40cc",     borderColor: "#ff8c40", borderWidth:1.5, borderRadius:0, borderSkipped:false },
+        { label:"Passif €/s",   data:[passive],    backgroundColor: C.green  + "cc", borderColor: C.green,  borderWidth:1.5, borderRadius:0, borderSkipped:false },
+        { label:"Exposition",   data:[collection], backgroundColor: C.purple + "cc", borderColor: C.purple, borderWidth:1.5, borderRadius:{topLeft:5,topRight:5,bottomLeft:0,bottomRight:0}, borderSkipped:false },
       ],
     },
     options: {

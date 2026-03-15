@@ -29,21 +29,16 @@ class SaveService {
     this._pendingSave = false;  // un save a été demandé pendant qu'un autre tournait
     this._loadFailed  = false;  // true si le load cloud a échoué — bloque l'autosave
 
-    this._LS_KEY = "garage_turbo_backup";  // clé localStorage
+    this._LS_KEY      = "garage_turbo_backup";  // clé localStorage
+    this._lastSaveAt  = 0;                       // timestamp dernier save cloud (rate limit)
+    this._saveMinGap  = 30_000;                  // 30s minimum entre deux saves cloud
   }
 
   // ── Backup localStorage ──────────────────────────────────────────────────────
 
   _lsWrite(snapshot) {
     try {
-      const json = JSON.stringify(snapshot);
-      // Compression LZ-String si disponible (divise la taille par 3-5)
-      const data = (typeof LZString !== "undefined")
-        ? LZString.compressToUTF16(json)
-        : json;
-      localStorage.setItem(this._LS_KEY, data);
-      // Marquer si compressé pour la lecture
-      localStorage.setItem(this._LS_KEY + "_lz", typeof LZString !== "undefined" ? "1" : "0");
+      localStorage.setItem(this._LS_KEY, JSON.stringify(snapshot));
     } catch(e) {
       dbg("[SaveService] localStorage write échoué:", e.message);
     }
@@ -52,13 +47,7 @@ class SaveService {
   _lsRead() {
     try {
       const raw = localStorage.getItem(this._LS_KEY);
-      if(!raw) return null;
-      // Décompresser si la save a été compressée avec LZ-String
-      const isLZ = localStorage.getItem(this._LS_KEY + "_lz") === "1";
-      const json = (isLZ && typeof LZString !== "undefined")
-        ? LZString.decompressFromUTF16(raw)
-        : raw;
-      return json ? JSON.parse(json) : null;
+      return raw ? JSON.parse(raw) : null;
     } catch(e) {
       dbg("[SaveService] localStorage read échoué:", e.message);
       return null;
@@ -146,6 +135,17 @@ class SaveService {
 
       if(snapshot) {
         dbg("[SaveService] snapshot trouvé, application...");
+
+        // ── Vérification HMAC ───────────────────────────────────────────
+        if(snapshot._sig && typeof _hmacVerify !== "undefined") {
+          const { _sig, ...unsigned } = snapshot;
+          const valid = await _hmacVerify(JSON.stringify(unsigned), _sig);
+          if(!valid) {
+            dbg("[SaveService] ⚠️ Signature invalide — save potentiellement modifiée");
+            snapshot._suspectSave = true;
+          }
+        }
+
         const currentTab = state.activeTab; // préserver l'onglet actif
         applySaveSnapshot(snapshot);
         if(currentTab) state.activeTab = currentTab;
@@ -214,7 +214,7 @@ class SaveService {
       } catch(e) {
         dbg("[SaveService] save() BLOQUÉ — retry échoué:", e.message);
         showSaveIndicator("⚠️ Sauvegarde cloud bloquée (réseau indispo)");
-        try { const snap = buildSaveSnapshot(); this._lsWrite(snap); } catch(_) {}
+        try { const snap = await buildSaveSnapshot(); this._lsWrite(snap); } catch(_) {}
         return;
       }
     }
@@ -231,10 +231,21 @@ class SaveService {
     this._pendingSave = false;
     dbg("[SaveService] save() pour user:", userId);
 
+    // ── Rate limit cloud save (30s minimum) ─────────────────────────────
+    const _now = Date.now();
+    if(_now - this._lastSaveAt < this._saveMinGap) {
+      dbg("[SaveService] save() rate-limité — dernier save il y a", Math.round((_now - this._lastSaveAt)/1000) + "s");
+      // Écriture locale quand même
+      try { const snap = await buildSaveSnapshot(); this._lsWrite(snap); } catch(_) {}
+      this._saving = false;
+      return;
+    }
+    this._lastSaveAt = _now;
+
     // Snapshot déclaré ici pour être accessible dans le catch (fallback LS)
     let snapshot = null;
     try {
-      snapshot = buildSaveSnapshot();
+      snapshot = await buildSaveSnapshot();
       await this._repo.upsert(userId, snapshot);
       this._lsWrite(snapshot);  // backup local systématique après save cloud OK
       dbg("[SaveService] save() ✅ succès");

@@ -191,6 +191,28 @@ const HERITAGE_PERKS = [
     desc:"Les upgrades prestige débloqués conservent leurs niveaux au prestige (unique)",
     maxRank:1, costPerRank:12,
     requires:[{id:"exp_turbo", rank:3}, {id:"exp_chef", rank:5}] },
+
+  // ══ NOUVEAUX PERKS — features récentes ═══════════════════════════════════
+
+  { id:"com_expo_slots",  branch:"Commerce",    icon:"🏠",  name:"Exposition Héritée",
+    desc:"+1 slot d'exposition dans le Garage Personnel par rang",
+    maxRank:3, costPerRank:3,
+    requires:[{id:"com_passive_1", rank:2}] },
+
+  { id:"com_expo_income", branch:"Commerce",    icon:"🖼️", name:"Revenus Patrimoniaux",
+    desc:"+15% revenus €/s et REP/s du Garage Personnel par rang",
+    maxRank:3, costPerRank:4,
+    requires:[{id:"com_ultimate", rank:1}] },
+
+  { id:"rep_rare_bonus",  branch:"Réputation",  icon:"💎",  name:"Héritage Rare",
+    desc:"+20% REP par vente Légendaire · +50% REP par vente Mythique par rang (sans limite)",
+    maxRank:null, costPerRank:3,
+    requires:[{id:"rep_ultimate", rank:1}] },
+
+  { id:"exp_catalog",     branch:"Expertise",   icon:"📖",  name:"Mémoire du Catalogue",
+    desc:"-0.1% temps de réparation par modèle Maîtrisé dans l'Encyclopédie, par rang",
+    maxRank:3, costPerRank:3,
+    requires:[{id:"exp_scanner", rank:1}] },
 ];
 
 function getHeritagePerkRank(id){
@@ -206,18 +228,8 @@ function calcHeritagePoints(){
   const fromLevel = Math.max(0, Math.floor((state.garageLevel - 50) / 10));
   // +1 par tranche de 5000 voitures vendues
   const fromSales = Math.max(0, Math.floor((state.carsSold ?? 0) / 5000));
-  // Progression exponentielle ×2 — chaque point coûte 2× plus de REP que le précédent
-  // Seuil du point N = 50 000 × (2^N - 1)
-  // Point 1 : 50k REP · Point 2 : 150k · Point 3 : 350k · Point 4 : 750k · Point 5 : 1.55M…
-  const rep = Math.max(0, (state.rep ?? 0));
-  let fromRep = 0;
-  let threshold = 50000; // seuil du prochain point
-  let cumul = 0;
-  while(rep >= cumul + threshold){
-    cumul += threshold;
-    fromRep++;
-    threshold *= 2; // doubler la tranche à chaque point
-  }
+  // +1 par tranche de 25 000 REP au-dessus de 50k
+  const fromRep   = Math.max(0, Math.floor(((state.rep ?? 0) - 50000) / 25000));
   const base = 1 + fromLevel + fromSales + fromRep;
   const mult = state.heritageBonuses?.prestigeGainMult ?? 1.0;
   return Math.max(1, Math.floor(base * mult));
@@ -348,6 +360,10 @@ function applyHeritageBonuses(){
     warehouseUltimateMult: 1.0,
     partsValueBonus:     0,
     gestionStock:        false,  // gestionnaire de stock : pièces F/E/D = 0.5 slot
+    collectionCap:       0,      // com_expo_slots : +1 slot expo/rang
+    expoIncomeMult:      1.0,    // com_expo_income : +15% revenus expo
+    rareLegendaryBonus:  0,      // rep_rare_bonus : rang stocké pour calcul vente
+    catalogSpeedBonus:   0,      // exp_catalog : -0.1%/modèle maîtrisé/rang
   };
 
   for(const p of HERITAGE_PERKS){
@@ -418,6 +434,17 @@ function applyHeritageBonuses(){
     if(p.id === "exp_chef")       b.expChefMalusRed = rank * 0.02;
     if(p.id === "exp_infinite")   b.expInfiniteBonus = rank * 0.005;
     if(p.id === "exp_ultimate")   b.keepPrestigeUpgrades = true;
+
+    // ── Nouveaux perks ───────────────────────────────────────────────────────
+    if(p.id === "com_expo_slots")  b.collectionCap     += rank;
+    if(p.id === "com_expo_income") b.expoIncomeMult    *= Math.pow(1.15, rank);
+    if(p.id === "rep_rare_bonus")  b.rareLegendaryBonus = rank;
+    if(p.id === "exp_catalog"){
+      const _m = typeof state !== "undefined"
+        ? Object.values(state.carBook ?? {}).filter(e => typeof getCarBookMastery !== "undefined" ? getCarBookMastery(e) >= 3 : false).length
+        : 0;
+      b.catalogSpeedBonus = rank * _m * 0.001;
+    }
   }
 
   // +1% argent par prestige total (plafonné à +50%)
